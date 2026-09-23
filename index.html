@@ -529,6 +529,7 @@
       <button class="filter-chip" data-filter="personal" type="button">Personalni</button>
       <button class="filter-chip" data-filter="phone" type="button">Sa telefonom</button>
       <button class="filter-chip" data-filter="email" type="button">Sa emailom</button>
+      <button class="filter-chip" id="resetSortChip" type="button" title="Reset sortiranja">↕️ A-Z</button>
     </div>
 
     <div class="controls">
@@ -1467,7 +1468,7 @@ document.querySelectorAll('th[data-key]').forEach(th => {
   });
 });
 
-document.querySelectorAll('.filter-chip').forEach(chip => {
+document.querySelectorAll('.filter-chip[data-filter]').forEach(chip => {
   chip.addEventListener('click', () => {
     const value = chip.dataset.filter;
     document.querySelectorAll('.filter-chip').forEach(btn => btn.classList.toggle('active', btn === chip));
@@ -1487,6 +1488,17 @@ document.querySelectorAll('.filter-chip').forEach(chip => {
     }
     applyFilters();
   });
+});
+
+document.getElementById('resetSortChip').addEventListener('click', () => {
+  sortKey = 'name';
+  sortAsc = true;
+  localStorage.setItem('contacts_sort_key', 'name');
+  document.querySelectorAll('th').forEach(header => {
+    header.textContent = header.textContent.replace(/[▾▴]/g, '').trim();
+  });
+  applyFilters();
+  showToast('↕️ Sortirano A-Z');
 });
 
 searchInput.addEventListener('input', applyFilters);
