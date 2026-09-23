@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
 <title>Kontakt Lista</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1f6feb">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Kontakti">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📞</text></svg>">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   :root {
@@ -31,40 +37,25 @@
   }
   .container { max-width: 1480px; margin: 0 auto; }
   .workspace-layout {
-    display: grid;
-    grid-template-columns: 230px minmax(0, 1fr);
-    gap: 18px;
-    align-items: stretch;
-    transition: grid-template-columns .25s ease;
+    display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 18px;
+    align-items: stretch; transition: grid-template-columns .25s ease;
   }
   .workspace-layout.sidebar-collapsed { grid-template-columns: 72px minmax(0, 1fr); }
   .sidebar {
     background: linear-gradient(180deg, rgba(24, 29, 38, 0.96), rgba(17, 21, 27, 0.94));
-    border: 1px solid var(--border);
-    border-radius: 24px;
-    padding: 18px 14px 14px;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    box-shadow: 0 18px 36px var(--shadow);
+    border: 1px solid var(--border); border-radius: 24px;
+    padding: 18px 14px 14px; display: flex; flex-direction: column;
+    gap: 14px; box-shadow: 0 18px 36px var(--shadow);
   }
   .brand-block {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 8px 8px 14px;
-    border-bottom: 1px solid var(--border-light);
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 8px 14px; border-bottom: 1px solid var(--border-light);
   }
   .brand-mark {
-    width: 42px;
-    height: 42px;
-    border-radius: 14px;
+    width: 42px; height: 42px; border-radius: 14px;
     background: linear-gradient(135deg, var(--accent-bg), var(--accent-bg-hover));
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 20px;
-    box-shadow: 0 12px 24px rgba(88,166,255,0.22);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; box-shadow: 0 12px 24px rgba(88,166,255,0.22);
   }
   .brand-copy { display: flex; flex-direction: column; gap: 2px; }
   .brand-copy strong { font-size: 14px; }
@@ -75,51 +66,41 @@
     display: flex; align-items: center; gap: 10px;
     padding: 10px 12px; border-radius: 12px;
     color: var(--text-dim); border: 1px solid transparent;
-    font-weight: 600; background: transparent;
+    font-weight: 600; background: transparent; cursor: pointer;
   }
+  .nav-item:hover { background: rgba(255,255,255,0.03); }
   .nav-item.active {
-    background: rgba(88,166,255,0.12);
-    border-color: rgba(88,166,255,0.2);
-    color: var(--text);
+    background: rgba(88,166,255,0.12); border-color: rgba(88,166,255,0.2); color: var(--text);
   }
   .nav-item .nav-icon { width: 28px; height: 28px; border-radius: 9px; background: rgba(255,255,255,0.04); display: flex; align-items: center; justify-content: center; font-size: 14px; }
   .sidebar-toggle { width: 100%; border: 1px solid var(--border); background: rgba(255,255,255,0.03); color: var(--text-muted); border-radius: 10px; padding: 8px; cursor: pointer; font-size: 12px; font-weight: 700; }
   .sidebar-toggle:hover { color: var(--text); border-color: var(--accent); }
   .workspace-layout.sidebar-collapsed .sidebar { padding-left: 10px; padding-right: 10px; }
   .workspace-layout.sidebar-collapsed .brand-block { justify-content: center; padding-left: 0; padding-right: 0; }
-  .workspace-layout.sidebar-collapsed .brand-copy, .workspace-layout.sidebar-collapsed .nav-label, .workspace-layout.sidebar-collapsed .nav-item:not(.active)::after, .workspace-layout.sidebar-collapsed .sidebar-metric { display: none; }
+  .workspace-layout.sidebar-collapsed .brand-copy,
+  .workspace-layout.sidebar-collapsed .nav-label,
+  .workspace-layout.sidebar-collapsed .sidebar-metric { display: none; }
   .workspace-layout.sidebar-collapsed .nav-item { justify-content: center; padding-left: 6px; padding-right: 6px; font-size: 0; }
   .workspace-layout.sidebar-collapsed .nav-item .nav-icon { margin: 0; }
-  .sidebar-metric {
-    margin-top: auto; padding: 12px 10px 8px; border-top: 1px solid var(--border-light);
-  }
+  .sidebar-metric { margin-top: auto; padding: 12px 10px 8px; border-top: 1px solid var(--border-light); }
   .mini-card {
     background: linear-gradient(180deg, rgba(88,166,255,0.1), rgba(255,255,255,0.02));
-    border: 1px solid var(--border);
-    border-radius: 16px; padding: 12px;
+    border: 1px solid var(--border); border-radius: 16px; padding: 12px;
   }
   .mini-card-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
   .mini-card strong { font-size: 22px; }
   .mini-card span { color: var(--text-muted); font-size: 11px; }
-  .mini-progress {
-    height: 7px; border-radius: 99px; background: rgba(255,255,255,0.05); overflow: hidden; margin-top: 10px;
-  }
+  .mini-progress { height: 7px; border-radius: 99px; background: rgba(255,255,255,0.05); overflow: hidden; margin-top: 10px; }
   .mini-progress > i { display: block; width: 76%; height: 100%; background: linear-gradient(90deg, var(--accent-bg), var(--accent-bg-hover)); border-radius: inherit; }
   .app-shell {
     background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0));
-    border: 1px solid var(--border);
-    border-radius: 28px;
-    padding: 18px;
-    box-shadow: 0 16px 40px var(--shadow);
-    backdrop-filter: blur(8px);
-    min-height: 100%;
+    border: 1px solid var(--border); border-radius: 28px; padding: 18px;
+    box-shadow: 0 16px 40px var(--shadow); backdrop-filter: blur(8px); min-height: 100%;
   }
   .workspace-toolbar {
     display: flex; justify-content: space-between; align-items: center; gap: 12px;
     padding: 10px 10px 18px; background: linear-gradient(180deg, rgba(88,166,255,0.06), rgba(255,255,255,0));
-    border: 1px solid var(--border);
-    border-radius: 18px;
-    margin-bottom: 14px;
+    border: 1px solid var(--border); border-radius: 18px; margin-bottom: 14px;
   }
   .command-line { display: flex; align-items: center; gap: 8px; color: var(--text-muted); font-size: 11px; }
   .live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 4px rgba(86,211,100,.12); }
@@ -129,7 +110,8 @@
   .section-badge {
     display: inline-flex; align-items: center; gap: 8px;
     padding: 7px 10px; border-radius: 999px; border: 1px solid var(--border);
-    background: rgba(255,255,255,0.02); color: var(--text-muted); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .75px;
+    background: rgba(255,255,255,0.02); color: var(--text-muted); font-size: 11px;
+    font-weight: 700; text-transform: uppercase; letter-spacing: .75px;
   }
   .section-badge strong { color: var(--accent); }
   .top-bar { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
@@ -137,54 +119,42 @@
   h1 { font-size: 22px; margin-bottom: 4px; background: linear-gradient(90deg, var(--accent), var(--accent-hover)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-weight: 700; }
   .subtitle { font-size: 13px; color: var(--text-muted); }
   .top-actions { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
-  .stats-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 12px;
-    margin: 14px 0 16px;
-  }
+  .stats-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 14px 0 16px; }
   .stat-card {
     background: linear-gradient(180deg, rgba(88,166,255,0.06), rgba(255,255,255,0.02));
-    border: 1px solid var(--border);
-    border-radius: 18px;
-    padding: 14px 16px;
-    display: flex; justify-content: space-between; align-items: center;
-    min-height: 84px;
+    border: 1px solid var(--border); border-radius: 18px;
+    padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; min-height: 84px;
   }
   .stat-meta { display: flex; flex-direction: column; gap: 4px; }
   .stat-label { color: var(--text-muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.7px; font-weight: 700; }
   .stat-value { font-size: 28px; font-weight: 800; color: var(--text); }
   .stat-icon { width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; background: linear-gradient(135deg, var(--accent-bg), var(--accent-bg-hover)); color: #fff; box-shadow: 0 12px 24px rgba(88,166,255,0.2); }
-  .filter-chip-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 12px;
-  }
+  .filter-chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
   .filter-chip {
-    border: 1px solid var(--border);
-    background: var(--bg-card);
-    color: var(--text);
-    border-radius: 999px;
-    padding: 8px 12px;
-    font-size: 12px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.2s ease;
+    border: 1px solid var(--border); background: var(--bg-card); color: var(--text);
+    border-radius: 999px; padding: 8px 12px; font-size: 12px; font-weight: 700;
+    cursor: pointer; transition: all 0.2s ease;
   }
+  .filter-chip:hover { border-color: var(--accent); }
   .filter-chip.active {
     background: linear-gradient(135deg, var(--accent-bg), var(--accent-bg-hover));
-    border-color: transparent;
-    color: #fff;
-    box-shadow: 0 10px 20px rgba(88,166,255,0.18);
+    border-color: transparent; color: #fff; box-shadow: 0 10px 20px rgba(88,166,255,0.18);
   }
-  .icon-btn { width: 42px; height: 42px; border-radius: 10px; background: var(--bg-card); border: 1px solid var(--border); color: var(--text); font-size: 16px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; -webkit-appearance: none; appearance: none; padding: 0; touch-action: manipulation; flex-shrink: 0; position: relative; }
-  .icon-btn:hover, .icon-btn:active { background: var(--bg-hover); border-color: var(--accent); transform: translateY(-1px); }
+  .icon-btn {
+    width: 42px; height: 42px; border-radius: 10px; background: var(--bg-card);
+    border: 1px solid var(--border); color: var(--text); font-size: 16px; font-weight: 700;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s; padding: 0; flex-shrink: 0; position: relative;
+  }
+  .icon-btn:hover { background: var(--bg-hover); border-color: var(--accent); transform: translateY(-1px); }
   .icon-btn.active { background: var(--accent-bg); border-color: var(--accent-bg); color: #fff; }
   .icon-btn .badge { position: absolute; top: -4px; right: -4px; background: var(--star); color: #000; font-size: 10px; font-weight: 700; border-radius: 10px; padding: 1px 5px; min-width: 16px; text-align: center; border: 2px solid var(--bg); }
+  .icon-btn.hidden { display: none; }
+  
+  /* SETTINGS PANEL */
   .settings-panel { position: fixed; top: 0; right: -360px; width: 340px; max-width: 90vw; height: 100vh; background: var(--bg-card); border-left: 1px solid var(--border); box-shadow: -8px 0 24px var(--shadow); z-index: 9998; transition: right 0.3s ease; overflow-y: auto; padding: 20px; -webkit-overflow-scrolling: touch; }
   .settings-panel.open { right: 0; }
-  .settings-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9997; display: none; animation: fadeIn 0.2s; }
+  .settings-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9997; display: none; }
   .settings-overlay.active { display: block; }
   .settings-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
   .settings-title { font-size: 18px; font-weight: 700; color: var(--text); }
@@ -193,7 +163,7 @@
   .settings-group { margin-bottom: 22px; }
   .settings-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-muted); font-weight: 600; margin-bottom: 10px; }
   .text-color-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-  .text-color-btn { height: 44px; border-radius: 10px; border: 2px solid var(--border); cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
+  .text-color-btn { height: 44px; border-radius: 10px; border: 2px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
   .text-color-btn.selected { border-color: var(--accent); border-width: 3px; }
   .text-color-btn.default { background: linear-gradient(135deg, #8b949e, #656d76); }
   .text-color-btn.white { background: linear-gradient(135deg, #ffffff, #e6e6e6); color: #000; text-shadow: none; }
@@ -204,16 +174,59 @@
   .text-color-btn.purple { background: linear-gradient(135deg, #a371f7, #8250df); }
   .text-color-btn.pink { background: linear-gradient(135deg, #db61a2, #bf3989); }
   .size-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-  .size-btn { padding: 12px 8px; border-radius: 10px; border: 2px solid var(--border); background: var(--bg-header); color: var(--text); cursor: pointer; transition: all 0.15s; font-weight: 600; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .size-btn { padding: 12px 8px; border-radius: 10px; border: 2px solid var(--border); background: var(--bg-header); color: var(--text); cursor: pointer; font-weight: 600; display: flex; flex-direction: column; align-items: center; gap: 4px; }
   .size-btn.selected { border-color: var(--accent); background: var(--accent-bg); color: #fff; }
   .size-btn .size-preview { font-weight: 700; line-height: 1; }
   .size-btn .size-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
   .style-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
-  .style-btn { padding: 14px; border-radius: 10px; border: 2px solid var(--border); background: var(--bg-header); color: var(--text); cursor: pointer; transition: all 0.15s; font-size: 16px; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 700; }
+  .style-btn { padding: 14px; border-radius: 10px; border: 2px solid var(--border); background: var(--bg-header); color: var(--text); cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 700; }
   .style-btn.selected { border-color: var(--accent); background: var(--accent-bg); color: #fff; }
   .style-btn .style-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.8; }
   .reset-btn { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid var(--danger); background: transparent; color: var(--danger); font-weight: 600; cursor: pointer; font-size: 14px; }
   .reset-btn:hover { background: var(--danger); color: #fff; }
+  
+  /* LANGUAGE TOGGLE */
+  .lang-toggle {
+    display: flex; gap: 4px; padding: 4px; background: var(--bg-card);
+    border: 1px solid var(--border); border-radius: 10px;
+  }
+  .lang-btn {
+    padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer;
+    font-size: 12px; font-weight: 700; color: var(--text-muted); background: transparent;
+  }
+  .lang-btn.active { background: var(--accent-bg); color: #fff; }
+  
+  /* PIN LOCK */
+  .pin-lock {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: var(--bg); z-index: 99999; display: none;
+    align-items: center; justify-content: center; padding: 20px;
+  }
+  .pin-lock.active { display: flex; }
+  .pin-box {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px;
+    padding: 30px; max-width: 340px; width: 100%; text-align: center;
+    box-shadow: 0 20px 60px var(--shadow);
+  }
+  .pin-icon { font-size: 48px; margin-bottom: 12px; }
+  .pin-title { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+  .pin-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; }
+  .pin-input {
+    width: 100%; padding: 14px; border: 1px solid var(--border); border-radius: 10px;
+    background: var(--bg-input); color: var(--text); font-size: 20px;
+    text-align: center; letter-spacing: 8px; font-weight: 700;
+    outline: none; margin-bottom: 12px;
+  }
+  .pin-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(88,166,255,0.15); }
+  .pin-btn {
+    width: 100%; padding: 14px; border: 1px solid var(--accent-bg);
+    background: var(--accent-bg); color: #fff; border-radius: 10px;
+    font-size: 15px; font-weight: 700; cursor: pointer;
+  }
+  .pin-btn:hover { background: var(--accent-bg-hover); }
+  .pin-error { color: var(--danger); font-size: 13px; margin-top: 8px; height: 18px; }
+  
+  /* CONTROLS */
   .controls { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; background: var(--bg-card); padding: 12px; border-radius: 12px; border: 1px solid var(--border); }
   .search-row { display: flex; gap: 8px; width: 100%; }
   .controls input, .controls select { padding: 12px 14px; border: 1px solid var(--border); border-radius: 8px; font-size: 16px; outline: none; background: var(--bg-input); color: var(--text); width: 100%; font-family: inherit; }
@@ -229,6 +242,9 @@
   .top-actions .add-contact-btn { background: linear-gradient(135deg, var(--accent-bg), var(--accent-bg-hover)); border-color: transparent; color: #fff; }
   .top-actions .add-contact-btn:hover { transform: translateY(-1px) scale(1.02); }
   #countInfo { font-size: 13px; color: var(--text-muted); padding: 8px 0; }
+  #countInfo b { color: var(--accent); }
+  
+  /* ACTION BAR */
   .action-bar { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: 12px 0 10px; flex-wrap: wrap; }
   .bulk-bar { display: flex; align-items: center; gap: 10px; min-height: 38px; }
   .bulk-bar label { display: flex; align-items: center; gap: 7px; color: var(--text-muted); font-size: 12px; font-weight: 700; }
@@ -239,22 +255,10 @@
   .bulk-action:hover { border-color: var(--accent); color: var(--accent); }
   .action-bar .status-pill { padding: 8px 12px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 999px; color: var(--text-muted); font-size: 12px; font-weight: 600; }
   .action-bar .status-pill strong { color: var(--accent); }
+  
+  /* TABLE */
   .dragging { opacity: 0.55; background: rgba(88,166,255,0.12); }
   .drag-over { outline: 2px dashed var(--accent); outline-offset: -4px; }
-  .contact-editor { padding: 20px; }
-  .editor-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
-  .field { display: flex; flex-direction: column; gap: 6px; }
-  .field.full { grid-column: 1 / -1; }
-  .field label { font-size: 11px; letter-spacing: 0.5px; text-transform: uppercase; color: var(--text-muted); font-weight: 700; }
-  .field input, .field textarea, .field select { width: 100%; background: var(--bg-input); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; color: var(--text); font: inherit; resize: vertical; min-height: 42px; }
-  .field textarea { min-height: 92px; }
-  .field input:focus, .field textarea:focus, .field select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(88,166,255,0.12); outline: none; }
-  .editor-actions { display: flex; justify-content: flex-end; gap: 10px; padding-top: 10px; }
-  .mini-action-btn { cursor: pointer; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-header); color: var(--text); padding: 8px 12px; font-weight: 600; }
-  .mini-action-btn.primary { background: var(--accent-bg); border-color: var(--accent-bg); color: #fff; }
-  .mini-action-btn.danger { color: var(--danger); border-color: rgba(255,123,114,0.5); }
-  .tablet-header-controls { display: none; }
-  #countInfo b { color: var(--accent); }
   .table-wrap { background: var(--bg-card); border-radius: 12px; overflow-x: auto; border: 1px solid var(--border); -webkit-overflow-scrolling: touch; }
   table { width: 100%; border-collapse: collapse; font-size: var(--font-size-base); min-width: 800px; }
   thead { background: var(--bg-header); position: sticky; top: 0; z-index: 10; }
@@ -266,7 +270,6 @@
   td { color: var(--text-dim); }
   .name-cell { font-weight: 600; color: var(--accent); cursor: pointer; }
   .name-cell:hover { color: var(--accent-hover); text-decoration: underline; }
-  .name-cell::after { content: " ℹ️"; font-size: 11px; opacity: 0.5; }
   .phone-cell a, .email-cell a { color: var(--accent); text-decoration: none; word-break: break-all; }
   .phone-cell a:hover, .email-cell a:hover { color: var(--accent-hover); text-decoration: underline; }
   .fav-cell { width: 40px; text-align: center; padding: 10px 4px !important; }
@@ -275,6 +278,8 @@
   .fav-star.active { filter: grayscale(0) opacity(1); color: var(--star); text-shadow: 0 0 8px rgba(240,180,41,0.5); }
   .no-results { text-align: center; padding: 50px 20px; color: var(--text-muted); font-size: 14px; }
   .no-results::before { content: "🔍"; display: block; font-size: 36px; margin-bottom: 12px; opacity: 0.5; }
+  
+  /* MODAL */
   .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--overlay); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 9999; display: none; align-items: center; justify-content: center; padding: 16px; }
   .modal-overlay.active { display: flex; }
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -291,8 +296,8 @@
   .modal-name { font-size: 20px; font-weight: 700; color: #fff; line-height: 1.3; word-break: break-word; padding-right: 100px; }
   .modal-subtitle { font-size: 13px; color: rgba(255,255,255,0.85); margin-top: 4px; word-break: break-word; }
   .modal-header-actions { position: absolute; top: 14px; right: 14px; display: flex; gap: 6px; z-index: 3; }
-  .modal-close, .modal-fav, .modal-color { width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); color: #fff; font-size: 18px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-  .modal-close:hover, .modal-fav:hover, .modal-color:hover { background: rgba(255,255,255,0.3); transform: scale(1.05); }
+  .modal-close, .modal-fav, .modal-color, .modal-edit, .modal-delete, .modal-vcard, .modal-print { width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); color: #fff; font-size: 16px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .modal-close:hover, .modal-fav:hover, .modal-color:hover, .modal-edit:hover, .modal-delete:hover, .modal-vcard:hover, .modal-print:hover { background: rgba(255,255,255,0.3); transform: scale(1.05); }
   .modal-fav.active { background: rgba(240,180,41,0.9); border-color: #f0b429; }
   .color-picker { position: absolute; top: 56px; right: 14px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 8px; display: none; gap: 6px; z-index: 10; box-shadow: 0 8px 24px var(--shadow); }
   .color-picker.active { display: flex; }
@@ -318,8 +323,26 @@
   .modal-tag { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; margin-right: 4px; margin-bottom: 4px; }
   .modal-tag.work { background: rgba(248,81,73,0.15); color: #ff7b72; border: 1px solid rgba(248,81,73,0.3); }
   .modal-tag.personal { background: rgba(63,185,80,0.15); color: #56d364; border: 1px solid rgba(63,185,80,0.3); }
+  
+  /* EDITOR */
+  .contact-editor { padding: 20px; }
+  .editor-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field.full { grid-column: 1 / -1; }
+  .field label { font-size: 11px; letter-spacing: 0.5px; text-transform: uppercase; color: var(--text-muted); font-weight: 700; }
+  .field input, .field textarea, .field select { width: 100%; background: var(--bg-input); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; color: var(--text); font: inherit; resize: vertical; min-height: 42px; }
+  .field textarea { min-height: 92px; }
+  .field input:focus, .field textarea:focus, .field select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(88,166,255,0.12); outline: none; }
+  .editor-actions { display: flex; justify-content: flex-end; gap: 10px; padding-top: 10px; }
+  .mini-action-btn { cursor: pointer; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-header); color: var(--text); padding: 8px 12px; font-weight: 600; }
+  .mini-action-btn.primary { background: var(--accent-bg); border-color: var(--accent-bg); color: #fff; }
+  .mini-action-btn.danger { color: var(--danger); border-color: rgba(255,123,114,0.5); }
+  
+  /* TOAST */
   .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--accent-bg); color: #fff; padding: 12px 20px; border-radius: 10px; font-size: 14px; font-weight: 600; z-index: 99999; box-shadow: 0 8px 24px var(--shadow); opacity: 0; transition: all 0.3s ease; pointer-events: none; max-width: 90%; text-align: center; }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  
+  /* RADUJKOVIC */
   .radujkovic-item { display: flex; gap: 12px; padding: 14px 20px; border-bottom: 1px solid var(--border-light); cursor: pointer; align-items: flex-start; }
   .radujkovic-item:hover { background: var(--bg-hover); }
   .radujkovic-item:last-child { border-bottom: none; }
@@ -330,6 +353,35 @@
   .radujkovic-name { font-size: 15px; font-weight: 700; color: var(--accent); margin-bottom: 6px; word-break: break-word; }
   .radujkovic-line { font-size: 13px; color: var(--text); margin-bottom: 4px; word-break: break-word; line-height: 1.4; }
   .radujkovic-line a { color: var(--accent); text-decoration: none; }
+  
+  /* STATISTIKA PO SLOVIMA */
+  .letter-stats {
+    margin-top: 16px; padding: 16px; background: var(--bg-card);
+    border: 1px solid var(--border); border-radius: 14px;
+  }
+  .letter-stats-title {
+    font-size: 12px; text-transform: uppercase; letter-spacing: 0.8px;
+    color: var(--text-muted); font-weight: 700; margin-bottom: 12px;
+  }
+  .letter-grid {
+    display: flex; flex-wrap: wrap; gap: 4px;
+  }
+  .letter-cell {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-width: 32px; height: 32px; border-radius: 6px;
+    background: linear-gradient(135deg, rgba(88,166,255,0.15), rgba(88,166,255,0.05));
+    color: var(--text); font-size: 11px; font-weight: 700; cursor: pointer;
+    transition: all 0.15s; padding: 0 6px;
+  }
+  .letter-cell:hover {
+    background: var(--accent-bg); color: #fff;
+    transform: translateY(-2px);
+  }
+  .letter-cell.empty { opacity: 0.3; cursor: default; }
+  .letter-cell.empty:hover { background: rgba(88,166,255,0.1); transform: none; }
+  .letter-count { font-size: 9px; opacity: 0.7; }
+  
+  /* TEXT COLOR STYLES */
   body.text-white { --text: #ffffff; --text-dim: #ffffff; --text-muted: #e6e6e6; }
   body.text-white td, body.text-white .modal-row-value { color: #ffffff; }
   body.text-red { --text: #ff7b72; --text-dim: #ff7b72; --text-muted: #ff9b94; }
@@ -344,19 +396,47 @@
   body.text-purple td, body.text-purple .modal-row-value { color: #a371f7; }
   body.text-pink { --text: #db61a2; --text-dim: #db61a2; --text-muted: #ff9bce; }
   body.text-pink td, body.text-pink .modal-row-value { color: #db61a2; }
+  
+  /* SIZE */
   body.size-small table { font-size: 11px; }
   body.size-small .modal-row-value { font-size: 12px; }
   body.size-medium table { font-size: 13px; }
   body.size-medium .modal-row-value { font-size: 14px; }
   body.size-large table { font-size: 16px; }
-  body.size-large th, body.size-large td { padding: 14px 14px; }
+  body.size-large th, body.size-large td { padding: 14px; }
   body.size-large .modal-row-value { font-size: 17px; }
   body.size-large .modal-name { font-size: 22px; }
+  
+  /* STYLE */
   body.style-bold td, body.style-bold .name-cell, body.style-bold .modal-row-value { font-weight: 700 !important; }
   body.style-bold th { font-weight: 800; }
   body.style-italic td, body.style-italic .modal-row-value { font-style: italic; }
   body.style-italic .name-cell { font-style: italic; }
   body.style-bold-italic td, body.style-bold-italic .name-cell, body.style-bold-italic .modal-row-value { font-weight: 700 !important; font-style: italic; }
+  
+  /* PRINT */
+  @media print {
+    body { padding: 0; background: #fff; color: #000; }
+    .sidebar, .workspace-toolbar, .top-bar, .top-actions, .stats-grid,
+    .action-bar, .filter-chip-row, .controls, .modal-overlay, .toast,
+    .settings-panel, .settings-overlay, .letter-stats, .pin-lock,
+    .icon-btn, .btn, .fav-star, .row-check, .no-results::before { display: none !important; }
+    .app-shell { border: none; box-shadow: none; padding: 0; }
+    .table-wrap { border: none; }
+    table { font-size: 11px; min-width: 0; }
+    thead { background: #eee; }
+    th, td { padding: 6px 8px; border-bottom: 1px solid #ccc; color: #000; }
+    .name-cell, .phone-cell a, .email-cell a { color: #000; text-decoration: none; }
+    .name-cell::after { content: ''; }
+    .fav-cell { display: none; }
+    h1 { color: #000; -webkit-text-fill-color: #000; background: none; }
+    .subtitle { color: #333; }
+    .print-header { display: block !important; text-align: center; margin-bottom: 16px; }
+    @page { margin: 12mm; }
+  }
+  .print-header { display: none; }
+  
+  /* MOBILE */
   @media (max-width: 768px) {
     body { padding: 8px; }
     .container { max-width: 100%; }
@@ -376,25 +456,16 @@
     thead { display: none; }
     tbody { display: block; }
     tbody tr {
-      display: block;
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      margin: 10px 8px;
-      padding: 12px 12px 10px;
-      background: var(--bg-card);
-      box-shadow: 0 6px 18px rgba(0,0,0,0.05);
+      display: block; border: 1px solid var(--border); border-radius: 16px;
+      margin: 10px 8px; padding: 12px 12px 10px;
+      background: var(--bg-card); box-shadow: 0 6px 18px rgba(0,0,0,0.05);
     }
     tbody tr:hover { background: var(--bg-card); }
     tbody tr td { display: block; width: 100%; border: none; padding: 5px 0; }
     tbody tr td::before {
-      content: attr(data-label);
-      display: block;
-      font-size: 10px;
-      text-transform: uppercase;
-      color: var(--text-muted);
-      letter-spacing: 0.5px;
-      margin-bottom: 2px;
-      font-weight: 700;
+      content: attr(data-label); display: block;
+      font-size: 10px; text-transform: uppercase; color: var(--text-muted);
+      letter-spacing: 0.5px; margin-bottom: 2px; font-weight: 700;
     }
     .fav-cell { padding: 0 0 12px !important; }
     .name-cell { font-size: 17px; margin-bottom: 4px; }
@@ -408,49 +479,70 @@
     .modal-name { font-size: 18px; padding-right: 130px; }
     .modal-row { padding: 12px 16px; gap: 12px; }
     .modal-row-icon { width: 28px; height: 28px; font-size: 16px; }
-    .modal-close, .modal-fav, .modal-color, .modal-edit, .modal-delete { width: 34px; height: 34px; font-size: 16px; }
+    .modal-close, .modal-fav, .modal-color, .modal-edit, .modal-delete, .modal-vcard, .modal-print { width: 34px; height: 34px; font-size: 14px; }
     .settings-panel { width: 100%; max-width: 100%; }
     .editor-grid { grid-template-columns: 1fr; }
     .action-bar { align-items: stretch; }
     .action-bar .status-pill { flex: 1 1 100%; text-align: center; }
+    .modal-header-actions { flex-wrap: wrap; max-width: 140px; justify-content: flex-end; }
   }
   body.modal-open { overflow: hidden; }
 </style>
 </head>
 <body>
+
+<!-- PIN LOCK -->
+<div class="pin-lock" id="pinLock">
+  <div class="pin-box">
+    <div class="pin-icon">🔒</div>
+    <div class="pin-title">Kontakt Lista</div>
+    <div class="pin-subtitle">Unesi PIN za pristup</div>
+    <input type="password" class="pin-input" id="pinInput" maxlength="8" inputmode="numeric" placeholder="••••">
+    <button class="pin-btn" id="pinSubmit">Otključaj</button>
+    <div class="pin-error" id="pinError"></div>
+  </div>
+</div>
+
 <div class="container workspace-layout">
   <aside class="sidebar">
     <div class="brand-block">
       <div class="brand-mark">📇</div>
       <div class="brand-copy">
-        <strong>Pro Contacts</strong>
-        <span>Directory OS</span>
+        <strong data-i18n="brand">Pro Contacts</strong>
+        <span data-i18n="brandSub">Directory OS</span>
       </div>
     </div>
     <button class="sidebar-toggle" id="sidebarToggle" type="button">← Collapse</button>
 
     <div class="nav-group">
-      <div class="nav-label">Workspace</div>
-      <div class="nav-item active"><span class="nav-icon">📞</span> Contacts</div>
-      <div class="nav-item"><span class="nav-icon">⭐</span> Favorites</div>
-      <div class="nav-item"><span class="nav-icon">👨‍👩‍👧‍👦</span> Families</div>
-      <div class="nav-item"><span class="nav-icon">⚡</span> Quick notes</div>
+      <div class="nav-label" data-i18n="navWorkspace">Workspace</div>
+      <div class="nav-item active"><span class="nav-icon">📞</span> <span data-i18n="navContacts">Contacts</span></div>
+      <div class="nav-item"><span class="nav-icon">⭐</span> <span data-i18n="navFavorites">Favorites</span></div>
+      <div class="nav-item"><span class="nav-icon">👨‍👩‍👧‍👦</span> <span data-i18n="navFamilies">Families</span></div>
+      <div class="nav-item"><span class="nav-icon">⚡</span> <span data-i18n="navNotes">Quick notes</span></div>
     </div>
 
     <div class="nav-group">
-      <div class="nav-label">Actions</div>
-      <div class="nav-item" id="sidebarAddBtn"><span class="nav-icon">＋</span> New contact</div>
-      <div class="nav-item" id="sidebarExportBtn"><span class="nav-icon">📤</span> Export CSV</div>
-      <div class="nav-item" id="importBtn"><span class="nav-icon">📥</span> Import CSV</div>
-      <div class="nav-item" id="sidebarShareBtn"><span class="nav-icon">🔗</span> Share</div>
+      <div class="nav-label" data-i18n="navActions">Actions</div>
+      <div class="nav-item" id="sidebarAddBtn"><span class="nav-icon">＋</span> <span data-i18n="actionNew">New contact</span></div>
+      <div class="nav-item" id="sidebarExportBtn"><span class="nav-icon">📤</span> <span data-i18n="actionExport">Export CSV</span></div>
+      <div class="nav-item" id="importBtn"><span class="nav-icon">📥</span> <span data-i18n="actionImport">Import CSV</span></div>
+      <div class="nav-item" id="sidebarPrintBtn"><span class="nav-icon">🖨️</span> <span data-i18n="actionPrint">Print</span></div>
+      <div class="nav-item" id="sidebarShareBtn"><span class="nav-icon">🔗</span> <span data-i18n="actionShare">Share</span></div>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-label" data-i18n="navSettings">Settings</div>
+      <div class="nav-item" id="sidebarPinBtn"><span class="nav-icon">🔒</span> <span data-i18n="actionPin">PIN lock</span></div>
+      <div class="nav-item" id="sidebarPwaBtn" style="display:none;"><span class="nav-icon">📱</span> <span data-i18n="actionInstall">Install app</span></div>
     </div>
 
     <div class="sidebar-metric">
       <div class="mini-card">
         <div class="mini-card-row">
           <div>
-            <span>Coverage</span><br>
-            <strong id="sidebarCoverage">76%</strong>
+            <span data-i18n="metricCoverage">Coverage</span><br>
+            <strong id="sidebarCoverage">0%</strong>
           </div>
           <div class="stat-icon" style="width:38px;height:38px;font-size:18px;">📈</div>
         </div>
@@ -462,107 +554,121 @@
   <main class="app-shell">
     <div class="workspace-toolbar">
       <div class="title-wrap">
-        <div class="section-badge"><strong>CRM</strong> Contact workspace</div>
-        <h1 style="margin-top:8px;">📞 Kontakt Lista</h1>
+        <div class="section-badge"><strong>CRM</strong> <span data-i18n="badge">Contact workspace</span></div>
+        <h1 style="margin-top:8px;">📞 <span data-i18n="title">Kontakt Lista</span></h1>
       </div>
       <div class="toolbar-meta">
-        <div class="command-line"><span class="live-dot"></span> Local workspace synced</div>
-        <div class="shortcut-hint">⌘ K to search</div>
+        <div class="command-line"><span class="live-dot"></span> <span data-i18n="statusSynced">Local workspace synced</span></div>
+        <div class="lang-toggle">
+          <button class="lang-btn active" data-lang="hr">🇭🇷 HR</button>
+          <button class="lang-btn" data-lang="en">🇬🇧 EN</button>
+        </div>
       </div>
       <div class="top-actions">
         <button class="icon-btn add-contact-btn" id="addContactBtn" title="Dodaj kontakt">＋</button>
-        <button class="icon-btn" id="favFilterBtn" title="Prikaži samo favorite">⭐<span class="badge" id="favBadge">0</span></button>
-        <button class="icon-btn" id="radujkovicBtn" title="Svi Radujkovići">👨‍👩‍👧‍👦</button>
-        <button class="icon-btn" id="exportBtn" title="Export u CSV">📥</button>
-        <button class="icon-btn" id="shareBtn" title="Podijeli link sa favoritima">🔗</button>
+        <button class="icon-btn" id="favFilterBtn" title="Favoriti">⭐<span class="badge" id="favBadge">0</span></button>
+        <button class="icon-btn" id="radujkovicBtn" title="Radujkovići">👨‍👩‍👧‍👦</button>
+        <button class="icon-btn" id="exportBtn" title="Export CSV">📥</button>
+        <button class="icon-btn" id="printBtn" title="Print">🖨️</button>
+        <button class="icon-btn" id="shareBtn" title="Share">🔗</button>
         <button class="icon-btn" id="settingsBtn" title="Podešavanja">⚙️</button>
-        <button class="icon-btn" id="themeBtn" title="Promijeni temu">🌙</button>
+        <button class="icon-btn" id="themeBtn" title="Tema">🌙</button>
       </div>
     </div>
 
     <div class="top-bar">
       <div class="title-wrap">
-        <div class="subtitle">Klikni na ime za detalje • ⭐ za favorite • drag & drop da reorders listu</div>
+        <div class="subtitle" data-i18n="subtitle">Klikni na ime za detalje • ⭐ za favorite • drag & drop da reorders listu</div>
       </div>
     </div>
 
     <div class="stats-grid">
       <div class="stat-card">
         <div class="stat-meta">
-          <span class="stat-label">Ukupno</span>
+          <span class="stat-label" data-i18n="statTotal">Ukupno</span>
           <span class="stat-value" id="statTotal">0</span>
         </div>
         <div class="stat-icon">👥</div>
       </div>
       <div class="stat-card">
         <div class="stat-meta">
-          <span class="stat-label">Favoriti</span>
+          <span class="stat-label" data-i18n="statFav">Favoriti</span>
           <span class="stat-value" id="statFavorites">0</span>
         </div>
         <div class="stat-icon">⭐</div>
       </div>
       <div class="stat-card">
         <div class="stat-meta">
-          <span class="stat-label">Poslovni</span>
+          <span class="stat-label" data-i18n="statWork">Poslovni</span>
           <span class="stat-value" id="statWork">0</span>
         </div>
         <div class="stat-icon">💼</div>
       </div>
     </div>
 
+    <div class="letter-stats" id="letterStats">
+      <div class="letter-stats-title">📊 <span data-i18n="lettersTitle">Kontakti po slovima</span></div>
+      <div class="letter-grid" id="letterGrid"></div>
+    </div>
+
     <div class="action-bar">
       <div class="bulk-bar">
-        <label><input type="checkbox" id="selectAllContacts"> Select all</label>
+        <label><input type="checkbox" id="selectAllContacts"> <span data-i18n="selectAll">Select all</span></label>
         <div class="bulk-actions" id="bulkActions">
           <button class="bulk-action" id="bulkFavoriteBtn" type="button">⭐ Favorite</button>
           <button class="bulk-action" id="bulkDeleteBtn" type="button">🗑 Delete</button>
         </div>
-        <div class="status-pill">Kontakti: <strong id="totalContactsPill">0</strong></div>
+        <div class="status-pill"><span data-i18n="pillContacts">Kontakti</span>: <strong id="totalContactsPill">0</strong></div>
       </div>
-      <button class="btn primary" id="quickAddBtn" type="button">＋ Dodaj kontakt</button>
+      <button class="btn primary" id="quickAddBtn" type="button">＋ <span data-i18n="addBtn">Dodaj kontakt</span></button>
     </div>
 
-    <div class="filter-chip-row" aria-label="Quick filters">
-      <button class="filter-chip active" data-filter="all" type="button">Svi</button>
-      <button class="filter-chip" data-filter="favorites" type="button">Favoriti</button>
-      <button class="filter-chip" data-filter="work" type="button">Poslovni</button>
-      <button class="filter-chip" data-filter="personal" type="button">Personalni</button>
-      <button class="filter-chip" data-filter="phone" type="button">Sa telefonom</button>
-      <button class="filter-chip" data-filter="email" type="button">Sa emailom</button>
+    <div class="filter-chip-row">
+      <button class="filter-chip active" data-filter="all" type="button" data-i18n="chipAll">Svi</button>
+      <button class="filter-chip" data-filter="favorites" type="button" data-i18n="chipFav">Favoriti</button>
+      <button class="filter-chip" data-filter="work" type="button" data-i18n="chipWork">Poslovni</button>
+      <button class="filter-chip" data-filter="personal" type="button" data-i18n="chipPersonal">Personalni</button>
+      <button class="filter-chip" data-filter="phone" type="button" data-i18n="chipPhone">Sa telefonom</button>
+      <button class="filter-chip" data-filter="email" type="button" data-i18n="chipEmail">Sa emailom</button>
       <button class="filter-chip" id="resetSortChip" type="button" title="Reset sortiranja">↕️ A-Z</button>
     </div>
 
     <div class="controls">
       <div class="search-row">
-        <input type="text" id="searchInput" placeholder="🔍 Pretraži..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
+        <input type="text" id="searchInput" placeholder="🔍 Pretraži..." autocomplete="off">
         <button class="btn search" id="searchBtn" type="button">🔍</button>
-        <button class="btn clear" id="clearBtn" type="button" title="Očisti">✖</button>
+        <button class="btn clear" id="clearBtn" type="button">✖</button>
       </div>
       <select id="filterSelect">
-        <option value="">Sve kategorije</option>
-        <option value="work">🏢 Poslovni (Bell)</option>
-        <option value="personal">👤 Personalni</option>
-        <option value="phone">📞 Samo sa telefonom</option>
-        <option value="email">✉️ Samo sa emailom</option>
-        <option value="address">📍 Samo sa adresom</option>
-        <option value="__fav__">⭐ Samo favoriti</option>
-        <option value="__radujkovic__">👨‍👩‍👧‍👦 Samo Radujkovići</option>
+        <option value="" data-i18n="filterAll">Sve kategorije</option>
+        <option value="work" data-i18n="filterWork">🏢 Poslovni (Bell)</option>
+        <option value="personal" data-i18n="filterPersonal">👤 Personalni</option>
+        <option value="phone" data-i18n="filterPhone">📞 Samo sa telefonom</option>
+        <option value="email" data-i18n="filterEmail">✉️ Samo sa emailom</option>
+        <option value="address" data-i18n="filterAddress">📍 Samo sa adresom</option>
+        <option value="__fav__" data-i18n="filterFav">⭐ Samo favoriti</option>
+        <option value="__radujkovic__" data-i18n="filterRad">👨‍👩‍👧‍👦 Samo Radujkovići</option>
       </select>
     </div>
 
     <div id="countInfo"></div>
+
+    <div class="print-header">
+      <h2>📞 Kontakt Lista</h2>
+      <p id="printDate"></p>
+    </div>
 
     <div class="table-wrap">
       <table id="contactTable">
         <thead>
           <tr>
             <th style="width:40px;">⭐</th>
-            <th data-key="name">Ime ▾</th>
-            <th data-key="phone">Telefon</th>
-            <th data-key="email">Email</th>
-            <th data-key="address">Adresa</th>
-            <th data-key="org">Organizacija</th>
-            <th data-key="notes">Notes</th>
+            <th data-key="name" data-i18n="thName">Ime ▾</th>
+            <th data-key="phone" data-i18n="thPhone">Telefon</th>
+            <th data-key="email" data-i18n="thEmail">Email</th>
+            <th data-key="address" data-i18n="thAddress">Adresa</th>
+            <th data-key="org" data-i18n="thOrg">Organizacija</th>
+            <th data-key="notes" data-i18n="thNotes">Notes</th>
           </tr>
         </thead>
         <tbody id="tableBody"></tbody>
@@ -571,14 +677,15 @@
   </main>
 </div>
 
+<!-- SETTINGS PANEL -->
 <div class="settings-overlay" id="settingsOverlay"></div>
 <div class="settings-panel" id="settingsPanel">
   <div class="settings-header">
-    <div class="settings-title">⚙️ Podešavanja</div>
+    <div class="settings-title">⚙️ <span data-i18n="settingsTitle">Podešavanja</span></div>
     <button class="settings-close" id="settingsClose" type="button">✕</button>
   </div>
   <div class="settings-group">
-    <div class="settings-label">🎨 Boja teksta</div>
+    <div class="settings-label" data-i18n="settingsColor">🎨 Boja teksta</div>
     <div class="text-color-grid">
       <button class="text-color-btn default" data-color="default">Default</button>
       <button class="text-color-btn white" data-color="white">Bijela</button>
@@ -591,7 +698,7 @@
     </div>
   </div>
   <div class="settings-group">
-    <div class="settings-label">🔠 Veličina slova</div>
+    <div class="settings-label" data-i18n="settingsSize">🔠 Veličina slova</div>
     <div class="size-grid">
       <button class="size-btn" data-size="small"><span class="size-preview" style="font-size:12px;">Aa</span><span class="size-label">Mala</span></button>
       <button class="size-btn selected" data-size="medium"><span class="size-preview" style="font-size:16px;">Aa</span><span class="size-label">Srednja</span></button>
@@ -599,7 +706,7 @@
     </div>
   </div>
   <div class="settings-group">
-    <div class="settings-label">🔤 Stil slova</div>
+    <div class="settings-label" data-i18n="settingsStyle">🔤 Stil slova</div>
     <div class="style-grid">
       <button class="style-btn selected" data-style="normal"><span>Normal</span></button>
       <button class="style-btn" data-style="bold"><span style="font-weight:900;">B</span><span class="style-label">Bold</span></button>
@@ -608,16 +715,18 @@
     </div>
   </div>
   <div class="settings-group">
-    <button class="reset-btn" id="resetSettings" type="button">↺ Resetuj</button>
+    <button class="reset-btn" id="resetSettings" type="button">↺ <span data-i18n="settingsReset">Resetuj</span></button>
   </div>
 </div>
 
+<!-- CONTACT MODAL -->
 <div class="modal-overlay" id="modalOverlay">
   <div class="modal" role="dialog" aria-modal="true">
     <div class="modal-header color-blue" id="modalHeader">
       <div class="modal-header-actions">
-        <button class="modal-edit mini-action-btn" id="modalEdit" title="Uredi">✏️</button>
-        <button class="modal-delete mini-action-btn danger" id="modalDelete" title="Obriši">🗑️</button>
+        <button class="modal-vcard" id="modalVCard" title="vCard">💾</button>
+        <button class="modal-edit" id="modalEdit" title="Uredi">✏️</button>
+        <button class="modal-delete" id="modalDelete" title="Obriši">🗑️</button>
         <button class="modal-fav" id="modalFav" title="Favorit">☆</button>
         <button class="modal-color" id="modalColor" title="Boja">🎨</button>
         <button class="modal-close" id="modalClose" title="Zatvori">✕</button>
@@ -638,13 +747,14 @@
   </div>
 </div>
 
+<!-- RADUJKOVIC MODAL -->
 <div class="modal-overlay" id="radujkovicOverlay">
   <div class="modal" style="max-width: 700px;">
     <div class="modal-header color-purple">
       <button class="modal-close" id="radujkovicClose" type="button">✕</button>
       <div class="modal-avatar" style="font-size: 28px;">👨‍👩‍👧‍👦</div>
-      <div class="modal-name">Svi Radujkovići</div>
-      <div class="modal-subtitle" id="radujkovicCount">Učitavanje...</div>
+      <div class="modal-name" data-i18n="radTitle">Svi Radujkovići</div>
+      <div class="modal-subtitle" id="radujkovicCount"></div>
     </div>
     <div class="modal-body" id="radujkovicBody"></div>
   </div>
@@ -655,21 +765,202 @@
 
 <script src="contacts-data.js"></script>
 <script>
+// ==================== TRANSLATIONS ====================
+const I18N = {
+  hr: {
+    brand: 'Pro Contacts', brandSub: 'Directory OS',
+    navWorkspace: 'Workspace', navContacts: 'Contacts', navFavorites: 'Favorites',
+    navFamilies: 'Families', navNotes: 'Quick notes', navActions: 'Actions',
+    navSettings: 'Settings',
+    actionNew: 'Novi kontakt', actionExport: 'Export CSV', actionImport: 'Import CSV',
+    actionPrint: 'Print', actionShare: 'Podijeli', actionPin: 'PIN zaštita', actionInstall: 'Instaliraj',
+    metricCoverage: 'Pokrivenost',
+    badge: 'Kontakt workspace', title: 'Kontakt Lista',
+    statusSynced: 'Lokalno sinkronizirano',
+    subtitle: 'Klikni na ime za detalje • ⭐ za favorite • drag & drop za poredak',
+    statTotal: 'Ukupno', statFav: 'Favoriti', statWork: 'Poslovni',
+    lettersTitle: 'Kontakti po slovima',
+    selectAll: 'Odaberi sve', pillContacts: 'Kontakti', addBtn: 'Dodaj kontakt',
+    chipAll: 'Svi', chipFav: 'Favoriti', chipWork: 'Poslovni', chipPersonal: 'Personalni',
+    chipPhone: 'Sa telefonom', chipEmail: 'Sa emailom',
+    filterAll: 'Sve kategorije', filterWork: '🏢 Poslovni (Bell)', filterPersonal: '👤 Personalni',
+    filterPhone: '📞 Samo sa telefonom', filterEmail: '✉️ Samo sa emailom',
+    filterAddress: '📍 Samo sa adresom', filterFav: '⭐ Samo favoriti',
+    filterRad: '👨‍👩‍👧‍👦 Samo Radujkovići',
+    thName: 'Ime', thPhone: 'Telefon', thEmail: 'Email', thAddress: 'Adresa',
+    thOrg: 'Organizacija', thNotes: 'Notes',
+    settingsTitle: 'Podešavanja', settingsColor: '🎨 Boja teksta',
+    settingsSize: '🔠 Veličina slova', settingsStyle: '🔤 Stil slova', settingsReset: 'Resetuj',
+    radTitle: 'Svi Radujkovići',
+    pinTitle: 'Kontakt Lista', pinSubtitle: 'Unesi PIN za pristup',
+    pinBtn: 'Otključaj', pinError: 'Pogrešan PIN'
+  },
+  en: {
+    brand: 'Pro Contacts', brandSub: 'Directory OS',
+    navWorkspace: 'Workspace', navContacts: 'Contacts', navFavorites: 'Favorites',
+    navFamilies: 'Families', navNotes: 'Quick notes', navActions: 'Actions',
+    navSettings: 'Settings',
+    actionNew: 'New contact', actionExport: 'Export CSV', actionImport: 'Import CSV',
+    actionPrint: 'Print', actionShare: 'Share', actionPin: 'PIN lock', actionInstall: 'Install app',
+    metricCoverage: 'Coverage',
+    badge: 'Contact workspace', title: 'Contact List',
+    statusSynced: 'Local workspace synced',
+    subtitle: 'Click name for details • ⭐ for favorites • drag & drop to reorder',
+    statTotal: 'Total', statFav: 'Favorites', statWork: 'Business',
+    lettersTitle: 'Contacts by letter',
+    selectAll: 'Select all', pillContacts: 'Contacts', addBtn: 'Add contact',
+    chipAll: 'All', chipFav: 'Favorites', chipWork: 'Business', chipPersonal: 'Personal',
+    chipPhone: 'With phone', chipEmail: 'With email',
+    filterAll: 'All categories', filterWork: '🏢 Business (Bell)', filterPersonal: '👤 Personal',
+    filterPhone: '📞 Only with phone', filterEmail: '✉️ Only with email',
+    filterAddress: '📍 Only with address', filterFav: '⭐ Only favorites',
+    filterRad: '👨‍👩‍👧‍👦 Only Radujković',
+    thName: 'Name', thPhone: 'Phone', thEmail: 'Email', thAddress: 'Address',
+    thOrg: 'Organization', thNotes: 'Notes',
+    settingsTitle: 'Settings', settingsColor: '🎨 Text color',
+    settingsSize: '🔠 Font size', settingsStyle: '🔤 Font style', settingsReset: 'Reset',
+    radTitle: 'All Radujković',
+    pinTitle: 'Contact List', pinSubtitle: 'Enter PIN to access',
+    pinBtn: 'Unlock', pinError: 'Wrong PIN'
+  }
+};
+
+let currentLang = 'hr';
+try { currentLang = localStorage.getItem('contacts_lang') || 'hr'; } catch(e) {}
+
+function applyLanguage(lang) {
+  currentLang = lang;
+  const t = I18N[lang] || I18N.hr;
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.dataset.i18n;
+    if (t[key]) el.textContent = t[key];
+  });
+  document.documentElement.lang = lang;
+  document.querySelectorAll('.lang-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.lang === lang);
+  });
+  try { localStorage.setItem('contacts_lang', lang); } catch(e) {}
+}
+
+document.querySelectorAll('.lang-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    applyLanguage(btn.dataset.lang);
+    showToast(currentLang === 'hr' ? '🇭🇷 Hrvatski' : '🇬🇧 English');
+  });
+});
+
+// ==================== PIN LOCK ====================
+const PIN_STORAGE_KEY = 'contacts_pin_hash';
+const PIN_SESSION_KEY = 'contacts_pin_session';
+let pinEnabled = false;
+let pinHash = null;
+try {
+  pinHash = localStorage.getItem(PIN_STORAGE_KEY);
+  pinEnabled = !!pinHash;
+  if (pinEnabled && sessionStorage.getItem(PIN_SESSION_KEY) === 'ok') pinEnabled = false;
+} catch(e) {}
+
+function simpleHash(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) {
+    h = ((h << 5) - h) + str.charCodeAt(i);
+    h |= 0;
+  }
+  return 'h' + Math.abs(h).toString(36);
+}
+
+const pinLock = document.getElementById('pinLock');
+const pinInput = document.getElementById('pinInput');
+const pinSubmit = document.getElementById('pinSubmit');
+const pinError = document.getElementById('pinError');
+
+if (pinEnabled) pinLock.classList.add('active');
+
+function tryUnlock() {
+  const value = pinInput.value.trim();
+  if (!value) { pinError.textContent = I18N[currentLang].pinError; return; }
+  if (simpleHash(value) === pinHash) {
+    try { sessionStorage.setItem(PIN_SESSION_KEY, 'ok'); } catch(e) {}
+    pinLock.classList.remove('active');
+    pinError.textContent = '';
+    showToast('🔓 Otključano');
+  } else {
+    pinError.textContent = I18N[currentLang].pinError;
+    pinInput.value = '';
+    pinInput.focus();
+  }
+}
+
+pinSubmit.addEventListener('click', tryUnlock);
+pinInput.addEventListener('keyup', e => { if (e.key === 'Enter') tryUnlock(); });
+if (pinEnabled) setTimeout(() => pinInput.focus(), 100);
+
+document.getElementById('sidebarPinBtn').addEventListener('click', () => {
+  if (pinEnabled) {
+    const current = prompt('Unesi trenutni PIN da ga ukloniš:');
+    if (current && simpleHash(current) === pinHash) {
+      try { localStorage.removeItem(PIN_STORAGE_KEY); } catch(e) {}
+      pinEnabled = false; pinHash = null;
+      showToast('🔓 PIN uklonjen');
+    } else if (current) {
+      showToast('❌ Pogrešan PIN');
+    }
+  } else {
+    const newPin = prompt('Postavi novi PIN (4-8 znamenki):');
+    if (newPin && newPin.length >= 4 && newPin.length <= 8) {
+      pinHash = simpleHash(newPin);
+      pinEnabled = true;
+      try { localStorage.setItem(PIN_STORAGE_KEY, pinHash); } catch(e) {}
+      showToast('🔒 PIN postavljen');
+    } else if (newPin) {
+      showToast('⚠️ PIN mora imati 4-8 znakova');
+    }
+  }
+});
+
+// ==================== PWA ====================
+let deferredPrompt = null;
+const sidebarPwaBtn = document.getElementById('sidebarPwaBtn');
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  if (sidebarPwaBtn) sidebarPwaBtn.style.display = 'flex';
+});
+
+if (sidebarPwaBtn) {
+  sidebarPwaBtn.addEventListener('click', async () => {
+    if (!deferredPrompt) {
+      showToast('ℹ️ Aplikacija već instalirana ili nije podržana');
+      return;
+    }
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') showToast('📱 Aplikacija instalirana');
+    deferredPrompt = null;
+    sidebarPwaBtn.style.display = 'none';
+  });
+}
+
+// ==================== STORAGE ====================
 const UrlStorage = {
   getFavorites() {
     try {
       const saved = localStorage.getItem('contacts_favorites');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return parsed.filter(name => typeof name === 'string' && name.length > 0);
+        if (Array.isArray(parsed)) return parsed.filter(n => typeof n === 'string' && n.length > 0);
       }
     } catch(e) {}
     try {
       const hash = window.location.hash;
       const match = hash.match(/fav=([^&]*)/);
       if (!match) return [];
-      const decoded = decodeURIComponent(match[1]);
-      return decoded.split('|').filter(x => x.length > 0);
+      return decodeURIComponent(match[1]).split('|').filter(x => x.length > 0);
     } catch(e) { return []; }
   },
   setFavorites(arr) {
@@ -685,13 +976,23 @@ const UrlStorage = {
 
 let contacts = window.CONTACTS;
 let contactsDataMissing = !Array.isArray(contacts) || contacts.length === 0;
-if (contactsDataMissing) {
-  console.warn('contacts-data.js nije učitan ili je prazan. Koristim praznu listu.');
-  contacts = [];
-}
+if (contactsDataMissing) { contacts = []; }
 
 const STORAGE_KEY = 'contacts-address-book-v1';
+const DELETED_STORAGE_KEY = 'contacts-deleted-v1';
 let favorites = new Set(UrlStorage.getFavorites());
+
+function loadDeletedNames() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(DELETED_STORAGE_KEY) || '[]');
+    return new Set(Array.isArray(saved) ? saved.filter(name => typeof name === 'string') : []);
+  } catch (e) { return new Set(); }
+}
+function persistDeletedNames(names) {
+  try { localStorage.setItem(DELETED_STORAGE_KEY, JSON.stringify([...names])); } catch(e) {}
+}
+const deletedNames = loadDeletedNames();
+const builtInContactNames = new Set(contacts.map(c => c.name));
 
 function loadSavedContacts() {
   try {
@@ -699,103 +1000,64 @@ function loadSavedContacts() {
     if (!saved) return;
     const parsed = JSON.parse(saved);
     if (Array.isArray(parsed) && parsed.length) {
-      const savedByName = new Map(parsed.filter(contact => contact && contact.name).map(contact => [contact.name, contact]));
-      const builtInNames = new Set(contacts.map(contact => contact.name));
-      const merged = contacts.map(contact => savedByName.get(contact.name) || contact);
-      parsed.forEach(contact => {
-        if (contact && contact.name && !builtInNames.has(contact.name)) merged.push(contact);
-      });
+      const savedByName = new Map(parsed.filter(c => c && c.name).map(c => [c.name, c]));
+      const builtInNames = new Set(contacts.map(c => c.name));
+      const merged = contacts
+        .filter(c => !deletedNames.has(c.name))
+        .map(c => savedByName.get(c.name) || c);
+      parsed.forEach(c => { if (c && c.name && !builtInNames.has(c.name)) merged.push(c); });
       contacts.splice(0, contacts.length, ...merged);
     }
-  } catch (error) {
-    console.warn('Could not load saved contacts', error);
-  }
+  } catch (e) {}
 }
 function persistContacts() {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(contacts));
-  } catch (error) {
-    console.warn('Could not save contacts', error);
-  }
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(contacts)); } catch(e) {}
 }
 loadSavedContacts();
-let currentTheme = 'dark';
-let headerColor = 'blue';
-let textColor = 'default';
-let textSize = 'medium';
-let textStyle = 'normal';
-let showFavOnly = false;
-let sortKey = 'name';
-let sortAsc = true;
-try {
-  const savedSortKey = localStorage.getItem('contacts_sort_key');
-  if (savedSortKey) sortKey = savedSortKey;
-} catch(e) {}
-let currentModalContactId = null;
+
+let currentTheme = 'dark', headerColor = 'blue', textColor = 'default',
+    textSize = 'medium', textStyle = 'normal', showFavOnly = false,
+    sortKey = 'name', sortAsc = true, currentModalContactId = null,
+    draggedIndex = null;
 const selectedContacts = new Set();
+try { const s = localStorage.getItem('contacts_sort_key'); if (s) sortKey = s; } catch(e) {}
 
-const tbody = document.getElementById('tableBody');
-const searchInput = document.getElementById('searchInput');
-const searchBtn = document.getElementById('searchBtn');
-const clearBtn = document.getElementById('clearBtn');
-const filterSelect = document.getElementById('filterSelect');
-const countInfo = document.getElementById('countInfo');
-const favFilterBtn = document.getElementById('favFilterBtn');
-const favBadge = document.getElementById('favBadge');
-const exportBtn = document.getElementById('exportBtn');
-const shareBtn = document.getElementById('shareBtn');
-const themeBtn = document.getElementById('themeBtn');
-const settingsBtn = document.getElementById('settingsBtn');
-const settingsPanel = document.getElementById('settingsPanel');
-const settingsOverlay = document.getElementById('settingsOverlay');
-const settingsClose = document.getElementById('settingsClose');
-const resetSettings = document.getElementById('resetSettings');
-const toast = document.getElementById('toast');
-const modalOverlay = document.getElementById('modalOverlay');
-const modalHeader = document.getElementById('modalHeader');
-const modalClose = document.getElementById('modalClose');
-const modalFav = document.getElementById('modalFav');
-const modalColor = document.getElementById('modalColor');
-const modalAvatar = document.getElementById('modalAvatar');
-const modalName = document.getElementById('modalName');
-const modalSubtitle = document.getElementById('modalSubtitle');
-const modalBody = document.getElementById('modalBody');
-const colorPicker = document.getElementById('colorPicker');
-const radujkovicOverlay = document.getElementById('radujkovicOverlay');
-const radujkovicClose = document.getElementById('radujkovicClose');
-const radujkovicBody = document.getElementById('radujkovicBody');
-const radujkovicCount = document.getElementById('radujkovicCount');
-const radujkovicBtn = document.getElementById('radujkovicBtn');
-const addContactBtn = document.getElementById('addContactBtn');
-const quickAddBtn = document.getElementById('quickAddBtn');
-const totalContactsPill = document.getElementById('totalContactsPill');
-const statTotal = document.getElementById('statTotal');
-const statFavorites = document.getElementById('statFavorites');
-const statWork = document.getElementById('statWork');
-const modalEdit = document.getElementById('modalEdit');
-const modalDelete = document.getElementById('modalDelete');
-const sidebarToggle = document.getElementById('sidebarToggle');
-const workspaceLayout = document.querySelector('.workspace-layout');
-const selectAllContacts = document.getElementById('selectAllContacts');
-const bulkActions = document.getElementById('bulkActions');
-const bulkFavoriteBtn = document.getElementById('bulkFavoriteBtn');
-const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
-const sidebarAddBtn = document.getElementById('sidebarAddBtn');
-const sidebarExportBtn = document.getElementById('sidebarExportBtn');
-const importBtn = document.getElementById('importBtn');
-const importCsvInput = document.getElementById('importCsvInput');
-const sidebarShareBtn = document.getElementById('sidebarShareBtn');
-const sidebarCoverage = document.getElementById('sidebarCoverage');
+// ==================== ELEMENTS ====================
+const $ = id => document.getElementById(id);
+const tbody = $('tableBody'), searchInput = $('searchInput'), searchBtn = $('searchBtn'),
+  clearBtn = $('clearBtn'), filterSelect = $('filterSelect'), countInfo = $('countInfo'),
+  favFilterBtn = $('favFilterBtn'), favBadge = $('favBadge'), exportBtn = $('exportBtn'),
+  shareBtn = $('shareBtn'), themeBtn = $('themeBtn'), settingsBtn = $('settingsBtn'),
+  settingsPanel = $('settingsPanel'), settingsOverlay = $('settingsOverlay'),
+  settingsClose = $('settingsClose'), resetSettings = $('resetSettings'), toast = $('toast'),
+  modalOverlay = $('modalOverlay'), modalHeader = $('modalHeader'), modalClose = $('modalClose'),
+  modalFav = $('modalFav'), modalColor = $('modalColor'), modalAvatar = $('modalAvatar'),
+  modalName = $('modalName'), modalSubtitle = $('modalSubtitle'), modalBody = $('modalBody'),
+  colorPicker = $('colorPicker'), radujkovicOverlay = $('radujkovicOverlay'),
+  radujkovicClose = $('radujkovicClose'), radujkovicBody = $('radujkovicBody'),
+  radujkovicCount = $('radujkovicCount'), radujkovicBtn = $('radujkovicBtn'),
+  addContactBtn = $('addContactBtn'), quickAddBtn = $('quickAddBtn'),
+  totalContactsPill = $('totalContactsPill'), statTotal = $('statTotal'),
+  statFavorites = $('statFavorites'), statWork = $('statWork'), modalEdit = $('modalEdit'),
+  modalDelete = $('modalDelete'), modalVCard = $('modalVCard'),
+  sidebarToggle = $('sidebarToggle'), workspaceLayout = document.querySelector('.workspace-layout'),
+  selectAllContacts = $('selectAllContacts'), bulkActions = $('bulkActions'),
+  bulkFavoriteBtn = $('bulkFavoriteBtn'), bulkDeleteBtn = $('bulkDeleteBtn'),
+  sidebarAddBtn = $('sidebarAddBtn'), sidebarExportBtn = $('sidebarExportBtn'),
+  importBtn = $('importBtn'), importCsvInput = $('importCsvInput'),
+  sidebarShareBtn = $('sidebarShareBtn'), sidebarCoverage = $('sidebarCoverage'),
+  sidebarPrintBtn = $('sidebarPrintBtn'), printBtn = $('printBtn'),
+  letterGrid = $('letterGrid');
 
-let draggedIndex = null;
-
+// ==================== BULK ====================
 function updateBulkControls(visibleContacts = getFilteredContacts()) {
-  const visibleNames = visibleContacts.map(contact => contact.name);
-  const selectedVisible = visibleNames.filter(name => selectedContacts.has(name));
+  const visibleNames = visibleContacts.map(c => c.name);
+  const selectedVisible = visibleNames.filter(n => selectedContacts.has(n));
   selectAllContacts.checked = visibleNames.length > 0 && selectedVisible.length === visibleNames.length;
   selectAllContacts.indeterminate = selectedVisible.length > 0 && selectedVisible.length < visibleNames.length;
   bulkActions.classList.toggle('active', selectedContacts.size > 0);
-  bulkFavoriteBtn.textContent = selectedContacts.size > 0 && [...selectedContacts].every(name => favorites.has(name)) ? '☆ Unfavorite' : '⭐ Favorite';
+  bulkFavoriteBtn.textContent = selectedContacts.size > 0 && [...selectedContacts].every(n => favorites.has(n))
+    ? '☆ Unfavorite' : '⭐ Favorite';
 }
 
 sidebarToggle.addEventListener('click', () => {
@@ -804,235 +1066,211 @@ sidebarToggle.addEventListener('click', () => {
 });
 
 selectAllContacts.addEventListener('change', () => {
-  getFilteredContacts().forEach(contact => {
-    if (selectAllContacts.checked) selectedContacts.add(contact.name);
-    else selectedContacts.delete(contact.name);
+  getFilteredContacts().forEach(c => {
+    if (selectAllContacts.checked) selectedContacts.add(c.name);
+    else selectedContacts.delete(c.name);
   });
   applyFilters();
 });
 
 bulkFavoriteBtn.addEventListener('click', () => {
-  const makeFavorite = ![...selectedContacts].every(name => favorites.has(name));
-  selectedContacts.forEach(name => {
-    if (makeFavorite) favorites.add(name);
-    else favorites.delete(name);
-  });
-  saveFavorites();
-  applyFilters();
-  showToast(makeFavorite ? '⭐ Kontakti dodani u favorite' : '☆ Favoriti uklonjeni');
+  const make = ![...selectedContacts].every(n => favorites.has(n));
+  selectedContacts.forEach(n => { if (make) favorites.add(n); else favorites.delete(n); });
+  saveFavorites(); applyFilters();
+  showToast(make ? '⭐ Dodani u favorite' : '☆ Uklonjeni');
 });
 
 bulkDeleteBtn.addEventListener('click', () => {
-  if (!selectedContacts.size || !confirm(`Obrisati ${selectedContacts.size} odabranih kontakata?`)) return;
-  for (let index = contacts.length - 1; index >= 0; index--) {
-    if (selectedContacts.has(contacts[index].name)) contacts.splice(index, 1);
+  if (!selectedContacts.size || !confirm(`Obrisati ${selectedContacts.size}?`)) return;
+  for (let i = contacts.length - 1; i >= 0; i--) {
+    if (selectedContacts.has(contacts[i].name)) {
+      if (builtInContactNames.has(contacts[i].name)) deletedNames.add(contacts[i].name);
+      contacts.splice(i, 1);
+    }
   }
   selectedContacts.clear();
-  persistContacts();
-  saveFavorites();
-  applyFilters();
-  showToast('🗑 Kontakti obrisani');
+  persistContacts(); persistDeletedNames(deletedNames); saveFavorites(); applyFilters();
+  showToast('🗑 Obrisano');
 });
 
-document.addEventListener('keydown', event => {
-  if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
-    event.preventDefault();
-    searchInput.focus();
-    searchInput.select();
+// ==================== KEYBOARD ====================
+document.addEventListener('keydown', e => {
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+    e.preventDefault(); searchInput.focus(); searchInput.select();
   }
 });
 
-function applyTheme(theme) {
-  if (theme === 'light') { document.body.classList.add('light'); themeBtn.textContent = '☀️'; }
+// ==================== THEME ====================
+function applyTheme(t) {
+  if (t === 'light') { document.body.classList.add('light'); themeBtn.textContent = '☀️'; }
   else { document.body.classList.remove('light'); themeBtn.textContent = '🌙'; }
-  currentTheme = theme;
+  currentTheme = t;
 }
 themeBtn.addEventListener('click', () => {
   applyTheme(currentTheme === 'dark' ? 'light' : 'dark');
-  showToast(currentTheme === 'dark' ? '🌙 Tamna tema' : '☀️ Svijetla tema');
+  showToast(currentTheme === 'dark' ? '🌙 Tamna' : '☀️ Svijetla');
 });
 
-function applyTextColor(color) {
-  document.body.classList.remove('text-white', 'text-red', 'text-green', 'text-yellow', 'text-blue', 'text-purple', 'text-pink');
-  if (color !== 'default') document.body.classList.add('text-' + color);
-  textColor = color;
-  document.querySelectorAll('.text-color-btn').forEach(btn => btn.classList.toggle('selected', btn.dataset.color === color));
+// ==================== TEXT COLOR/SIZE/STYLE ====================
+function applyTextColor(c) {
+  document.body.classList.remove('text-white','text-red','text-green','text-yellow','text-blue','text-purple','text-pink');
+  if (c !== 'default') document.body.classList.add('text-' + c);
+  textColor = c;
+  document.querySelectorAll('.text-color-btn').forEach(b => b.classList.toggle('selected', b.dataset.color === c));
 }
 document.querySelectorAll('.text-color-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    applyTextColor(btn.dataset.color);
-    const names = { default: 'Default', white: '⚪ Bijela', red: '🔴 Crvena', green: '🟢 Zelena', yellow: '🟡 Žuta', blue: '🔵 Plava', purple: '🟣 Ljubičasta', pink: '🩷 Roza' };
-    showToast('🎨 Boja: ' + names[btn.dataset.color]);
-  });
+  btn.addEventListener('click', () => { applyTextColor(btn.dataset.color); showToast('🎨 ' + btn.dataset.color); });
 });
 
-function applyTextSize(size) {
-  document.body.classList.remove('size-small', 'size-medium', 'size-large');
-  document.body.classList.add('size-' + size);
-  textSize = size;
-  document.querySelectorAll('.size-btn').forEach(btn => btn.classList.toggle('selected', btn.dataset.size === size));
+function applyTextSize(s) {
+  document.body.classList.remove('size-small','size-medium','size-large');
+  document.body.classList.add('size-' + s);
+  textSize = s;
+  document.querySelectorAll('.size-btn').forEach(b => b.classList.toggle('selected', b.dataset.size === s));
 }
 document.querySelectorAll('.size-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    applyTextSize(btn.dataset.size);
-    const names = { small: '🔠 Mala', medium: '🔠 Srednja', large: '🔠 Velika' };
-    showToast(names[btn.dataset.size] + ' slova');
-  });
+  btn.addEventListener('click', () => { applyTextSize(btn.dataset.size); showToast('🔠 ' + btn.dataset.size); });
 });
 
-function applyTextStyle(style) {
-  document.body.classList.remove('style-bold', 'style-italic', 'style-bold-italic');
-  if (style !== 'normal') document.body.classList.add('style-' + style);
-  textStyle = style;
-  document.querySelectorAll('.style-btn').forEach(btn => btn.classList.toggle('selected', btn.dataset.style === style));
+function applyTextStyle(s) {
+  document.body.classList.remove('style-bold','style-italic','style-bold-italic');
+  if (s !== 'normal') document.body.classList.add('style-' + s);
+  textStyle = s;
+  document.querySelectorAll('.style-btn').forEach(b => b.classList.toggle('selected', b.dataset.style === s));
 }
 document.querySelectorAll('.style-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    applyTextStyle(btn.dataset.style);
-    const names = { normal: 'Normal', bold: '🅱️ Bold', italic: 'ℹ️ Italic', 'bold-italic': '🅱️ Bold+Italic' };
-    showToast('🔤 ' + names[btn.dataset.style]);
-  });
+  btn.addEventListener('click', () => { applyTextStyle(btn.dataset.style); showToast('🔤 ' + btn.dataset.style); });
 });
 
+// ==================== SETTINGS ====================
 settingsBtn.addEventListener('click', () => { settingsPanel.classList.add('open'); settingsOverlay.classList.add('active'); });
 function closeSettings() { settingsPanel.classList.remove('open'); settingsOverlay.classList.remove('active'); }
 settingsClose.addEventListener('click', closeSettings);
 settingsOverlay.addEventListener('click', closeSettings);
 resetSettings.addEventListener('click', () => {
-  if (confirm('Resetovati?')) { applyTextColor('default'); applyTextSize('medium'); applyTextStyle('normal'); showToast('↺ Resetovano'); }
+  if (confirm('Resetovati?')) {
+    applyTextColor('default'); applyTextSize('medium'); applyTextStyle('normal');
+    showToast('↺ Resetovano');
+  }
 });
 
-function applyHeaderColor(color) {
-  modalHeader.className = 'modal-header color-' + color;
-  headerColor = color;
-  document.querySelectorAll('.color-swatch').forEach(s => s.classList.toggle('selected', s.dataset.color === color));
+// ==================== HEADER COLOR ====================
+function applyHeaderColor(c) {
+  modalHeader.className = 'modal-header color-' + c;
+  headerColor = c;
+  document.querySelectorAll('.color-swatch').forEach(s => s.classList.toggle('selected', s.dataset.color === c));
 }
-modalColor.addEventListener('click', (e) => { e.stopPropagation(); colorPicker.classList.toggle('active'); });
-document.querySelectorAll('.color-swatch').forEach(swatch => {
-  swatch.addEventListener('click', (e) => {
-    e.stopPropagation();
-    applyHeaderColor(swatch.dataset.color);
-    colorPicker.classList.remove('active');
-    showToast('🎨 Boja promijenjena');
+modalColor.addEventListener('click', e => { e.stopPropagation(); colorPicker.classList.toggle('active'); });
+document.querySelectorAll('.color-swatch').forEach(s => {
+  s.addEventListener('click', e => {
+    e.stopPropagation(); applyHeaderColor(s.dataset.color);
+    colorPicker.classList.remove('active'); showToast('🎨 Promijenjeno');
   });
 });
-document.addEventListener('click', (e) => {
+document.addEventListener('click', e => {
   if (!colorPicker.contains(e.target) && e.target !== modalColor) colorPicker.classList.remove('active');
 });
 
-function saveFavorites() {
-  UrlStorage.setFavorites([...favorites]);
-  updateFavBadge();
-}
+// ==================== FAVORITES ====================
+function saveFavorites() { UrlStorage.setFavorites([...favorites]); updateFavBadge(); }
 function updateFavBadge() {
   favBadge.textContent = favorites.size;
   favBadge.style.display = favorites.size === 0 ? 'none' : 'block';
 }
 function toggleFavorite(name) {
-  if (favorites.has(name)) { favorites.delete(name); showToast('☆ Uklonjeno'); }
-  else { favorites.add(name); showToast('⭐ Dodano u favorite'); }
-  saveFavorites();
-  applyFilters();
+  if (favorites.has(name)) { favorites.delete(name); showToast('☆'); }
+  else { favorites.add(name); showToast('⭐'); }
+  saveFavorites(); applyFilters();
 }
 favFilterBtn.addEventListener('click', () => {
   showFavOnly = !showFavOnly;
   favFilterBtn.classList.toggle('active', showFavOnly);
   applyFilters();
-  showToast(showFavOnly ? '⭐ Samo favoriti' : '📋 Svi kontakti');
+  showToast(showFavOnly ? '⭐ Samo favoriti' : '📋 Svi');
 });
 
+// ==================== SHARE ====================
 shareBtn.addEventListener('click', async () => {
   const url = window.location.href;
   try {
-    if (navigator.share) {
-      await navigator.share({ title: 'Kontakt Lista', url: url });
-    } else {
-      await navigator.clipboard.writeText(url);
-      showToast('🔗 Link kopiran!');
-    }
-  } catch(e) {
-    prompt('Kopiraj link:', url);
-  }
+    if (navigator.share) await navigator.share({ title: 'Kontakt Lista', url });
+    else { await navigator.clipboard.writeText(url); showToast('🔗 Kopiran!'); }
+  } catch(e) { prompt('Kopiraj:', url); }
 });
 sidebarShareBtn.addEventListener('click', () => shareBtn.click());
 sidebarExportBtn.addEventListener('click', () => exportBtn.click());
 sidebarAddBtn.addEventListener('click', () => openEditor());
+
+// ==================== PRINT ====================
+function doPrint() {
+  document.getElementById('printDate').textContent = new Date().toLocaleDateString();
+  window.print();
+}
+printBtn.addEventListener('click', doPrint);
+sidebarPrintBtn.addEventListener('click', doPrint);
+
+// ==================== IMPORT CSV ====================
 importBtn.addEventListener('click', () => importCsvInput.click());
 
 function parseCsvLine(line) {
-  const values = [];
-  let value = '';
-  let quoted = false;
-  for (let index = 0; index < line.length; index++) {
-    const character = line[index];
-    if (character === '"' && line[index + 1] === '"') {
-      value += '"';
-      index++;
-    } else if (character === '"') {
-      quoted = !quoted;
-    } else if (character === ',' && !quoted) {
-      values.push(value.trim());
-      value = '';
-    } else {
-      value += character;
-    }
+  const values = []; let value = '', quoted = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"' && line[i+1] === '"') { value += '"'; i++; }
+    else if (c === '"') quoted = !quoted;
+    else if (c === ',' && !quoted) { values.push(value.trim()); value = ''; }
+    else value += c;
   }
   values.push(value.trim());
   return values;
 }
 
 importCsvInput.addEventListener('change', event => {
-  const file = event.target.files[0];
-  if (!file) return;
+  const file = event.target.files[0]; if (!file) return;
   const reader = new FileReader();
-  reader.onload = loadEvent => {
-    const lines = String(loadEvent.target.result).split(/\r?\n/).filter(line => line.trim());
-    if (lines.length < 2) {
-      showToast('⚠️ CSV nema kontakata');
-      return;
-    }
-    const headers = parseCsvLine(lines[0]).map(header => header.toLowerCase().replace(/^\uFEFF/, ''));
+  reader.onload = e => {
+    const lines = String(e.target.result).split(/\r?\n/).filter(l => l.trim());
+    if (lines.length < 2) { showToast('⚠️ Prazan CSV'); return; }
+    const headers = parseCsvLine(lines[0]).map(h => h.toLowerCase().replace(/^\uFEFF/, ''));
     const imported = lines.slice(1).map(line => {
       const values = parseCsvLine(line);
-      const row = Object.fromEntries(headers.map((header, index) => [header, values[index] || '']));
+      const row = Object.fromEntries(headers.map((h, i) => [h, values[i] || '']));
       return {
         name: row.ime || row.name || '',
         phone: row.telefon || row.phone || '',
-        email: row.email || '',
-        address: row.adresa || row.address || '',
-        org: row.organizacija || row.org || '',
-        notes: row.notes || '',
+        email: row.email || '', address: row.adresa || row.address || '',
+        org: row.organizacija || row.org || '', notes: row.notes || '',
         category: (row.kategorija || row.category || '').toLowerCase().includes('posl') ? 'work' : 'personal'
       };
-    }).filter(contact => contact.name);
-    const existingNames = new Set(contacts.map(contact => contact.name.toLowerCase()));
-    const additions = imported.filter(contact => {
-      const key = contact.name.toLowerCase();
-      if (existingNames.has(key)) return false;
-      existingNames.add(key);
-      return true;
+    }).filter(c => c.name);
+    const existing = new Set(contacts.map(c => c.name.toLowerCase()));
+    const additions = imported.filter(c => {
+      const k = c.name.toLowerCase();
+      if (existing.has(k)) return false;
+      existing.add(k); return true;
     });
     contactsDataMissing = false;
     contacts.push(...additions);
-    persistContacts();
-    applyFilters();
-    showToast(`📥 Dodano ${additions.length} kontakata`);
+    persistContacts(); applyFilters();
+    showToast(`📥 Dodano ${additions.length}`);
     importCsvInput.value = '';
   };
   reader.readAsText(file, 'UTF-8');
 });
 
+// ==================== RADUJKOVIC ====================
 function isRadujkovic(name) {
   if (!name) return false;
   const n = name.toLowerCase().replace(/ć/g,'c').replace(/č/g,'c').replace(/š/g,'s').replace(/ž/g,'z').replace(/đ/g,'d');
   return n.includes('radujkovic') || n.includes('radukjovic');
 }
 function getRadujkovicContacts() { return contacts.filter(c => isRadujkovic(c.name)); }
+
 function openRadujkovicModal() {
   const list = getRadujkovicContacts();
-  radujkovicCount.textContent = `Ukupno: ${list.length} kontakata`;
+  radujkovicCount.textContent = `Ukupno: ${list.length}`;
   if (!list.length) {
-    radujkovicBody.innerHTML = '<div style="padding:40px 20px;text-align:center;color:var(--text-muted);">Nema.</div>';
+    radujkovicBody.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-muted);">Nema.</div>';
   } else {
     radujkovicBody.innerHTML = list.map(c => {
       const isFav = favorites.has(c.name);
@@ -1048,21 +1286,18 @@ function openRadujkovicModal() {
         </div>
       </div>`;
     }).join('');
-
-    radujkovicBody.querySelectorAll('.radujkovic-star').forEach(star => {
-      star.addEventListener('click', (e) => {
-        e.stopPropagation();
-        toggleFavorite(star.dataset.name);
-        const isFav = favorites.has(star.dataset.name);
-        star.textContent = isFav ? '★' : '☆';
-        star.classList.toggle('active', isFav);
+    radujkovicBody.querySelectorAll('.radujkovic-star').forEach(s => {
+      s.addEventListener('click', e => {
+        e.stopPropagation(); toggleFavorite(s.dataset.name);
+        const f = favorites.has(s.dataset.name);
+        s.textContent = f ? '★' : '☆'; s.classList.toggle('active', f);
       });
     });
     radujkovicBody.querySelectorAll('.radujkovic-item').forEach(item => {
-      item.addEventListener('click', (e) => {
+      item.addEventListener('click', e => {
         if (e.target.classList.contains('radujkovic-star')) return;
-        const contact = contacts.find(c => c.name === item.dataset.name);
-        if (contact) { closeRadujkovicModal(); setTimeout(() => openModal(contact), 150); }
+        const c = contacts.find(x => x.name === item.dataset.name);
+        if (c) { closeRadujkovicModal(); setTimeout(() => openModal(c), 150); }
       });
     });
   }
@@ -1075,67 +1310,123 @@ function closeRadujkovicModal() {
 }
 radujkovicBtn.addEventListener('click', openRadujkovicModal);
 radujkovicClose.addEventListener('click', closeRadujkovicModal);
-radujkovicOverlay.addEventListener('click', (e) => { if (e.target === radujkovicOverlay) closeRadujkovicModal(); });
+radujkovicOverlay.addEventListener('click', e => { if (e.target === radujkovicOverlay) closeRadujkovicModal(); });
 
+// ==================== VCARD ====================
+function downloadVCard(contact) {
+  const clean = s => (s || '').replace(/[;\n\r]/g, ' ').trim();
+  const lines = ['BEGIN:VCARD', 'VERSION:3.0', `FN:${clean(contact.name)}`];
+  if (contact.org) lines.push(`ORG:${clean(contact.org)}`);
+  if (contact.phone) contact.phone.split('/').forEach(p => lines.push(`TEL;TYPE=CELL:${p.trim()}`));
+  if (contact.email) contact.email.split('/').forEach(e => lines.push(`EMAIL:${e.trim()}`));
+  if (contact.address) lines.push(`ADR;TYPE=HOME:;;${clean(contact.address)};;;;`);
+  if (contact.notes) lines.push(`NOTE:${clean(contact.notes)}`);
+  lines.push('END:VCARD');
+  const blob = new Blob([lines.join('\r\n')], { type: 'text/vcard;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = contact.name.replace(/[^a-z0-9]/gi, '_') + '.vcf';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('💾 Sačuvano');
+}
+modalVCard.addEventListener('click', e => {
+  e.stopPropagation();
+  if (currentModalContactId) {
+    const c = contacts.find(x => x.name === currentModalContactId);
+    if (c) downloadVCard(c);
+  }
+});
+
+// ==================== EXPORT CSV ====================
 exportBtn.addEventListener('click', () => {
   const data = getFilteredContacts();
   if (!data.length) { showToast('⚠️ Nema podataka'); return; }
   const headers = ['Ime','Telefon','Email','Adresa','Organizacija','Notes','Kategorija','Favorit'];
-  const rows = data.map(c => [c.name||'', c.phone||'', c.email||'', c.address||'', c.org||'', c.notes||'', c.category==='work'?'Poslovni':'Personalni', favorites.has(c.name)?'DA':'NE']);
+  const rows = data.map(c => [c.name||'', c.phone||'', c.email||'', c.address||'',
+    c.org||'', c.notes||'', c.category==='work'?'Poslovni':'Personalni',
+    favorites.has(c.name)?'DA':'NE']);
   let csv = '\uFEFF';
   csv += headers.map(escapeCsv).join(',') + '\n';
-  rows.forEach(row => { csv += row.map(escapeCsv).join(',') + '\n'; });
+  rows.forEach(r => { csv += r.map(escapeCsv).join(',') + '\n'; });
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   const date = new Date().toISOString().slice(0,10);
-  a.href = url;
-  a.download = `kontakti_${date}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+  a.href = url; a.download = `kontakti_${date}.csv`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
   URL.revokeObjectURL(url);
-  showToast(`📥 Exportovano ${data.length} kontakata`);
+  showToast(`📥 ${data.length} kontakata`);
 });
-function escapeCsv(val) {
-  if (val == null) return '""';
-  const s = String(val);
-  if (s.includes(',') || s.includes('"') || s.includes('\n')) return '"' + s.replace(/"/g, '""') + '"';
+function escapeCsv(v) {
+  if (v == null) return '""';
+  const s = String(v);
+  if (s.includes(',') || s.includes('"') || s.includes('\n')) return '"' + s.replace(/"/g,'""') + '"';
   return s;
 }
 
+// ==================== TOAST ====================
 let toastTimeout;
 function showToast(msg) {
   toast.textContent = msg;
   toast.classList.add('show');
   clearTimeout(toastTimeout);
-  toastTimeout = setTimeout(() => { toast.classList.remove('show'); }, 2200);
+  toastTimeout = setTimeout(() => toast.classList.remove('show'), 2200);
 }
 
+// ==================== LETTER STATS ====================
+function renderLetterStats() {
+  const counts = {};
+  contacts.forEach(c => {
+    if (!c.name) return;
+    const first = c.name.trim().charAt(0).toUpperCase();
+    const key = /[A-ZŠĐČĆŽ]/.test(first) ? first : '#';
+    counts[key] = (counts[key] || 0) + 1;
+  });
+  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZŠĐČĆŽ#'.split('');
+  letterGrid.innerHTML = letters.map(l => {
+    const count = counts[l] || 0;
+    const empty = count === 0 ? 'empty' : '';
+    return `<div class="letter-cell ${empty}" data-letter="${l}" title="${l}: ${count}">
+      <div>${l}</div><div class="letter-count">${count || ''}</div>
+    </div>`;
+  }).join('');
+  letterGrid.querySelectorAll('.letter-cell:not(.empty)').forEach(cell => {
+    cell.addEventListener('click', () => {
+      searchInput.value = cell.dataset.letter;
+      applyFilters();
+      showToast(`🔍 ${cell.dataset.letter}`);
+    });
+  });
+}
+
+// ==================== RENDER ====================
 function render(data) {
   contactsDataMissing = !Array.isArray(contacts) || contacts.length === 0;
   statTotal.textContent = contacts.length;
   statFavorites.textContent = favorites.size;
-  statWork.textContent = contacts.filter(item => item.category === 'work').length;
+  statWork.textContent = contacts.filter(c => c.category === 'work').length;
   totalContactsPill.textContent = contacts.length;
   const coverage = Math.min(100, Math.round((data.length / Math.max(contacts.length, 1)) * 100 || 0));
   if (sidebarCoverage) sidebarCoverage.textContent = coverage + '%';
-  const progressBar = document.querySelector('.mini-progress > i');
-  if (progressBar) progressBar.style.width = coverage + '%';
+  const pb = document.querySelector('.mini-progress > i');
+  if (pb) pb.style.width = coverage + '%';
+  renderLetterStats();
+  
   if (!data.length) {
     tbody.innerHTML = contactsDataMissing
-      ? '<tr><td colspan="7" class="no-results"><strong>Nema kontakata</strong><br><small>Provjeri da li je contacts-data.js učitan pored HTML fajla ili dodaj kontakt ručno.</small></td></tr>'
+      ? '<tr><td colspan="7" class="no-results"><strong>Nema kontakata</strong><br><small>Provjeri contacts-data.js.</small></td></tr>'
       : '<tr><td colspan="7" class="no-results">Nema rezultata.</td></tr>';
-    countInfo.innerHTML = 'Prikazano: <b>0</b> kontakata';
-    updateBulkControls(data);
-    return;
+    countInfo.innerHTML = 'Prikazano: <b>0</b>';
+    updateBulkControls(data); return;
   }
   tbody.innerHTML = data.map(c => {
     const isFav = favorites.has(c.name);
-    const orderIndex = contacts.indexOf(c);
-    const isSelected = selectedContacts.has(c.name);
-    return `<tr class="contact-row" data-order="${orderIndex}" draggable="true">
-      <td class="fav-cell" data-label="Select"><input class="row-check" type="checkbox" data-name="${escapeAttr(c.name)}" ${isSelected ? 'checked' : ''}><span class="fav-star ${isFav ? 'active' : ''}" data-name="${escapeAttr(c.name)}">${isFav ? '★' : '☆'}</span></td>
+    const oi = contacts.indexOf(c);
+    const sel = selectedContacts.has(c.name);
+    return `<tr class="contact-row" data-order="${oi}" draggable="true">
+      <td class="fav-cell" data-label="⭐"><input class="row-check" type="checkbox" data-name="${escapeAttr(c.name)}" ${sel ? 'checked' : ''}><span class="fav-star ${isFav ? 'active' : ''}" data-name="${escapeAttr(c.name)}">${isFav ? '★' : '☆'}</span></td>
       <td class="name-cell" data-name="${escapeAttr(c.name)}" data-label="Ime">${escapeHtml(c.name)}</td>
       <td class="phone-cell" data-label="Telefon">${formatPhones(c.phone)}</td>
       <td class="email-cell" data-label="Email">${formatEmails(c.email)}</td>
@@ -1145,86 +1436,75 @@ function render(data) {
     </tr>`;
   }).join('');
 
-  document.querySelectorAll('.fav-star').forEach(star => {
-    star.addEventListener('click', (e) => {
-      e.stopPropagation();
-      toggleFavorite(star.dataset.name);
-    });
-  });
-  document.querySelectorAll('.row-check').forEach(check => {
-    check.addEventListener('click', event => event.stopPropagation());
-    check.addEventListener('change', () => {
-      if (check.checked) selectedContacts.add(check.dataset.name);
-      else selectedContacts.delete(check.dataset.name);
+  document.querySelectorAll('.fav-star').forEach(s => s.addEventListener('click', e => {
+    e.stopPropagation(); toggleFavorite(s.dataset.name);
+  }));
+  document.querySelectorAll('.row-check').forEach(ch => {
+    ch.addEventListener('click', e => e.stopPropagation());
+    ch.addEventListener('change', () => {
+      if (ch.checked) selectedContacts.add(ch.dataset.name);
+      else selectedContacts.delete(ch.dataset.name);
       updateBulkControls(data);
     });
   });
   document.querySelectorAll('.name-cell').forEach(cell => {
     cell.addEventListener('click', () => {
-      const contact = contacts.find(c => c.name === cell.dataset.name);
-      if (contact) openModal(contact);
+      const c = contacts.find(x => x.name === cell.dataset.name);
+      if (c) openModal(c);
     });
   });
   document.querySelectorAll('.contact-row').forEach(row => {
     row.addEventListener('dragstart', () => {
-      draggedIndex = Number(row.dataset.order);
-      row.classList.add('dragging');
+      draggedIndex = Number(row.dataset.order); row.classList.add('dragging');
     });
-    row.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      row.classList.add('drag-over');
-    });
+    row.addEventListener('dragover', e => { e.preventDefault(); row.classList.add('drag-over'); });
     row.addEventListener('dragleave', () => row.classList.remove('drag-over'));
-    row.addEventListener('drop', (e) => {
-      e.preventDefault();
-      row.classList.remove('drag-over');
-      const targetIndex = Number(row.dataset.order);
-      reorderContacts(draggedIndex, targetIndex);
+    row.addEventListener('drop', e => {
+      e.preventDefault(); row.classList.remove('drag-over');
+      reorderContacts(draggedIndex, Number(row.dataset.order));
     });
     row.addEventListener('dragend', () => {
-      row.classList.remove('dragging');
-      row.classList.remove('drag-over');
-      draggedIndex = null;
+      row.classList.remove('dragging', 'drag-over'); draggedIndex = null;
     });
   });
-  countInfo.innerHTML = `Prikazano: <b>${data.length}</b> kontakata${favorites.size ? ` • ⭐ ${favorites.size} favorita` : ''}`;
+  countInfo.innerHTML = `Prikazano: <b>${data.length}</b>${favorites.size ? ` • ⭐ ${favorites.size}` : ''}`;
   updateBulkControls(data);
 }
-function reorderContacts(fromIndex, toIndex) {
-  if (fromIndex === null || fromIndex === undefined || fromIndex < 0 || toIndex === null || toIndex === undefined || toIndex < 0 || fromIndex === toIndex) return;
-  const [moved] = contacts.splice(fromIndex, 1);
-  contacts.splice(toIndex, 0, moved);
-  persistContacts();
-  sortKey = 'manual';
-  applyFilters();
-  showToast('↕️ Poredak promijenjen');
+
+function reorderContacts(from, to) {
+  if (from == null || to == null || from < 0 || to < 0 || from === to) return;
+  const [m] = contacts.splice(from, 1);
+  contacts.splice(to, 0, m);
+  persistContacts(); sortKey = 'manual'; applyFilters();
+  showToast('↕️ Poredak');
 }
-function escapeHtml(str) {
-  if (!str) return '';
-  return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+
+function escapeHtml(s) {
+  if (!s) return '';
+  return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 }
-function escapeAttr(str) { return escapeHtml(str); }
-function formatPhones(phone) {
-  if (!phone) return '—';
-  return phone.split('/').map(p => {
-    p = p.trim();
-    const clean = p.replace(/[^\d+]/g, '');
-    return `<a href="tel:${clean}">${escapeHtml(p)}</a>`;
+function escapeAttr(s) { return escapeHtml(s); }
+function formatPhones(p) {
+  if (!p) return '—';
+  return p.split('/').map(x => {
+    x = x.trim(); const c = x.replace(/[^\d+]/g, '');
+    return `<a href="tel:${c}">${escapeHtml(x)}</a>`;
   }).join('<br>');
 }
-function formatEmails(email) {
-  if (!email) return '—';
-  return email.split('/').map(e => {
-    e = e.trim();
-    return `<a href="mailto:${e}">${escapeHtml(e)}</a>`;
+function formatEmails(e) {
+  if (!e) return '—';
+  return e.split('/').map(x => {
+    x = x.trim();
+    return `<a href="mailto:${encodeURIComponent(x)}">${escapeHtml(x)}</a>`;
   }).join('<br>');
 }
 
+// ==================== MODAL ====================
 function getInitials(name) {
   if (!name) return '?';
-  const parts = name.trim().split(/\s+/);
-  if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  const p = name.trim().split(/\s+/);
+  if (p.length === 1) return p[0].substring(0, 2).toUpperCase();
+  return (p[0][0] + p[p.length-1][0]).toUpperCase();
 }
 function openModal(contact) {
   currentModalContactId = contact.name;
@@ -1234,93 +1514,77 @@ function openModal(contact) {
   const isFav = favorites.has(contact.name);
   modalFav.textContent = isFav ? '★' : '☆';
   modalFav.classList.toggle('active', isFav);
-  modalDelete.dataset.name = contact.name;
-  modalEdit.dataset.name = contact.name;
   applyHeaderColor(headerColor);
 
-  let rowsHtml = '';
+  let html = '';
   if (contact.phone) {
-    const phones = contact.phone.split('/').map(p => {
-      p = p.trim();
-      const clean = p.replace(/[^\d+]/g, '');
-      return `<a href="tel:${clean}" class="phone-link">📞 ${escapeHtml(p)}</a>`;
+    const ps = contact.phone.split('/').map(p => {
+      p = p.trim(); const c = p.replace(/[^\d+]/g, '');
+      return `<a href="tel:${c}" class="phone-link">📞 ${escapeHtml(p)}</a>`;
     }).join('');
-    rowsHtml += buildRow('📱', 'Telefon', phones);
+    html += buildRow('📱', 'Telefon', ps);
   }
   if (contact.email) {
-    const emails = contact.email.split('/').map(e => {
+    const es = contact.email.split('/').map(e => {
       e = e.trim();
-      return `<a href="mailto:${e}" class="email-link">✉️ ${escapeHtml(e)}</a>`;
+      return `<a href="mailto:${encodeURIComponent(e)}" class="email-link">✉️ ${escapeHtml(e)}</a>`;
     }).join('');
-    rowsHtml += buildRow('✉️', 'Email', emails);
+    html += buildRow('✉️', 'Email', es);
   }
   if (contact.address) {
-    const mapLink = `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(contact.address)}" target="_blank" rel="noopener">🗺️ Otvori u Google Maps</a>`;
-    rowsHtml += buildRow('📍', 'Adresa', escapeHtml(contact.address) + '<br><br>' + mapLink);
+    const m = `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(contact.address)}" target="_blank" rel="noopener">🗺️ Google Maps</a>`;
+    html += buildRow('📍', 'Adresa', escapeHtml(contact.address) + '<br><br>' + m);
   }
-  if (contact.org) rowsHtml += buildRow('🏢', 'Organizacija', escapeHtml(contact.org));
-  if (contact.notes) rowsHtml += buildRow('📝', 'Notes', escapeHtml(contact.notes));
-  const catLabel = contact.category === 'work' ? 'Poslovni' : 'Personalni';
-  const catClass = contact.category === 'work' ? 'work' : 'personal';
-  rowsHtml += buildRow('🏷️', 'Kategorija', `<span class="modal-tag ${catClass}">${catLabel}</span>`);
-  if (!rowsHtml) rowsHtml = '<div class="modal-row"><div class="modal-row-content" style="text-align:center;color:var(--text-muted);">Nema podataka.</div></div>';
-  modalBody.innerHTML = rowsHtml;
+  if (contact.org) html += buildRow('🏢', 'Organizacija', escapeHtml(contact.org));
+  if (contact.notes) html += buildRow('📝', 'Notes', escapeHtml(contact.notes));
+  const cl = contact.category === 'work' ? 'Poslovni' : 'Personalni';
+  const cc = contact.category === 'work' ? 'work' : 'personal';
+  html += buildRow('🏷️', 'Kategorija', `<span class="modal-tag ${cc}">${cl}</span>`);
+  if (!html) html = '<div class="modal-row"><div class="modal-row-content" style="text-align:center;color:var(--text-muted);">Nema podataka.</div></div>';
+  modalBody.innerHTML = html;
   modalOverlay.classList.add('active');
   document.body.classList.add('modal-open');
 }
 function buildRow(icon, label, value) {
   return `<div class="modal-row"><div class="modal-row-icon">${icon}</div><div class="modal-row-content"><div class="modal-row-label">${label}</div><div class="modal-row-value">${value}</div></div></div>`;
 }
+
+// ==================== EDITOR ====================
 function openEditor(contact = null) {
-  const originalName = contact ? contact.name : currentModalContactId;
-  const formData = contact ? { ...contact } : { name: '', phone: '', email: '', address: '', org: '', notes: '', category: 'personal' };
-  modalAvatar.textContent = getInitials(formData.name || 'N');
+  const orig = contact ? contact.name : currentModalContactId;
+  const fd = contact ? { ...contact } : { name: '', phone: '', email: '', address: '', org: '', notes: '', category: 'personal' };
+  modalAvatar.textContent = getInitials(fd.name || 'N');
   modalName.textContent = contact ? 'Uredi kontakt' : 'Novi kontakt';
   modalSubtitle.textContent = contact ? 'Promijeni detalje' : 'Dodaj novi zapis';
   modalBody.innerHTML = `
     <form class="contact-editor" id="contactEditorForm">
       <div class="editor-grid">
-        <div class="field full">
-          <label for="editName">Ime i prezime</label>
-          <input id="editName" name="name" value="${escapeAttr(formData.name || '')}" required>
-        </div>
-        <div class="field">
-          <label for="editPhone">Telefon</label>
-          <input id="editPhone" name="phone" value="${escapeAttr(formData.phone || '')}">
-        </div>
-        <div class="field">
-          <label for="editEmail">Email</label>
-          <input id="editEmail" name="email" value="${escapeAttr(formData.email || '')}">
-        </div>
-        <div class="field full">
-          <label for="editAddress">Adresa</label>
-          <input id="editAddress" name="address" value="${escapeAttr(formData.address || '')}">
-        </div>
-        <div class="field">
-          <label for="editOrg">Organizacija</label>
-          <input id="editOrg" name="org" value="${escapeAttr(formData.org || '')}">
-        </div>
-        <div class="field">
-          <label for="editCategory">Kategorija</label>
+        <div class="field full"><label for="editName">Ime</label>
+          <input id="editName" name="name" value="${escapeAttr(fd.name || '')}" required></div>
+        <div class="field"><label for="editPhone">Telefon</label>
+          <input id="editPhone" name="phone" value="${escapeAttr(fd.phone || '')}"></div>
+        <div class="field"><label for="editEmail">Email</label>
+          <input id="editEmail" name="email" value="${escapeAttr(fd.email || '')}"></div>
+        <div class="field full"><label for="editAddress">Adresa</label>
+          <input id="editAddress" name="address" value="${escapeAttr(fd.address || '')}"></div>
+        <div class="field"><label for="editOrg">Organizacija</label>
+          <input id="editOrg" name="org" value="${escapeAttr(fd.org || '')}"></div>
+        <div class="field"><label for="editCategory">Kategorija</label>
           <select id="editCategory" name="category">
-            <option value="personal" ${formData.category === 'personal' ? 'selected' : ''}>Personalni</option>
-            <option value="work" ${formData.category === 'work' ? 'selected' : ''}>Poslovni</option>
-          </select>
-        </div>
-        <div class="field full">
-          <label for="editNotes">Notes</label>
-          <textarea id="editNotes" name="notes">${escapeHtml(formData.notes || '')}</textarea>
-        </div>
+            <option value="personal" ${fd.category === 'personal' ? 'selected' : ''}>Personalni</option>
+            <option value="work" ${fd.category === 'work' ? 'selected' : ''}>Poslovni</option>
+          </select></div>
+        <div class="field full"><label for="editNotes">Notes</label>
+          <textarea id="editNotes" name="notes">${escapeHtml(fd.notes || '')}</textarea></div>
       </div>
       <div class="editor-actions">
         <button type="button" class="mini-action-btn" id="cancelEditBtn">Otkaži</button>
         <button type="submit" class="mini-action-btn primary">${contact ? 'Spremi' : 'Dodaj'}</button>
       </div>
     </form>`;
-
   const form = document.getElementById('contactEditorForm');
-  form.addEventListener('submit', (event) => {
-    event.preventDefault();
+  form.addEventListener('submit', e => {
+    e.preventDefault();
     const next = {
       name: form.elements.name.value.trim(),
       phone: form.elements.phone.value.trim(),
@@ -1330,42 +1594,32 @@ function openEditor(contact = null) {
       notes: form.elements.notes.value.trim(),
       category: form.elements.category.value
     };
-    if (!next.name) {
-      showToast('⚠️ Ime je obavezno');
-      return;
-    }
+    if (!next.name) { showToast('⚠️ Ime obavezno'); return; }
     if (contact) {
-      const idx = contacts.findIndex(item => item.name === originalName);
-      if (idx >= 0) {
-        const oldName = contacts[idx].name;
-        contacts[idx] = next;
-        if (oldName !== next.name && favorites.has(oldName)) {
-          favorites.delete(oldName);
-          favorites.add(next.name);
+      const i = contacts.findIndex(x => x.name === orig);
+      if (i >= 0) {
+        const oldN = contacts[i].name;
+        contacts[i] = next;
+        if (oldN !== next.name && deletedNames.has(next.name)) deletedNames.delete(next.name);
+        if (oldN !== next.name && builtInContactNames.has(oldN)) deletedNames.add(oldN);
+        if (oldN !== next.name && favorites.has(oldN)) {
+          favorites.delete(oldN); favorites.add(next.name);
         }
-        persistContacts();
-        saveFavorites();
-        applyFilters();
-        showToast('✅ Kontakt ažuriran');
+        persistContacts(); persistDeletedNames(deletedNames); saveFavorites(); applyFilters();
+        showToast('✅ Ažurirano');
       }
     } else {
-      const existing = contacts.some(item => item.name.toLowerCase() === next.name.toLowerCase());
-      if (existing) {
-        showToast('⚠️ Kontakt već postoji');
-        return;
+      if (contacts.some(x => x.name.toLowerCase() === next.name.toLowerCase())) {
+        showToast('⚠️ Postoji'); return;
       }
       contactsDataMissing = false;
-      contacts.push(next);
-      persistContacts();
-      applyFilters();
-      showToast('✅ Kontakt dodan');
+      contacts.push(next); persistContacts(); applyFilters();
+      showToast('✅ Dodano');
     }
     closeModal();
   });
-
   document.getElementById('cancelEditBtn').addEventListener('click', () => {
-    if (contact) openModal(contact);
-    else closeModal();
+    if (contact) openModal(contact); else closeModal();
   });
   modalOverlay.classList.add('active');
   document.body.classList.add('modal-open');
@@ -1377,8 +1631,8 @@ function closeModal() {
   currentModalContactId = null;
 }
 modalClose.addEventListener('click', closeModal);
-modalOverlay.addEventListener('click', (e) => { if (e.target === modalOverlay) closeModal(); });
-document.addEventListener('keydown', (e) => {
+modalOverlay.addEventListener('click', e => { if (e.target === modalOverlay) closeModal(); });
+document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
     if (colorPicker.classList.contains('active')) colorPicker.classList.remove('active');
     else if (modalOverlay.classList.contains('active')) closeModal();
@@ -1386,61 +1640,54 @@ document.addEventListener('keydown', (e) => {
     else if (settingsPanel.classList.contains('open')) closeSettings();
   }
 });
-modalFav.addEventListener('click', (e) => {
+modalFav.addEventListener('click', e => {
   e.stopPropagation();
   if (currentModalContactId) {
     toggleFavorite(currentModalContactId);
-    const isFav = favorites.has(currentModalContactId);
-    modalFav.textContent = isFav ? '★' : '☆';
-    modalFav.classList.toggle('active', isFav);
+    const f = favorites.has(currentModalContactId);
+    modalFav.textContent = f ? '★' : '☆';
+    modalFav.classList.toggle('active', f);
   }
 });
-modalEdit.addEventListener('click', (e) => {
+modalEdit.addEventListener('click', e => {
   e.stopPropagation();
   if (currentModalContactId) {
-    const contact = contacts.find(item => item.name === currentModalContactId);
-    if (contact) openEditor(contact);
+    const c = contacts.find(x => x.name === currentModalContactId);
+    if (c) openEditor(c);
   }
 });
-modalDelete.addEventListener('click', (e) => {
+modalDelete.addEventListener('click', e => {
   e.stopPropagation();
   if (!currentModalContactId) return;
-  if (!confirm(`Obrisati kontakt "${currentModalContactId}"?`)) return;
-  const index = contacts.findIndex(item => item.name === currentModalContactId);
-  if (index >= 0) {
-    const [removed] = contacts.splice(index, 1);
-    if (removed && favorites.has(removed.name)) favorites.delete(removed.name);
-    persistContacts();
-    saveFavorites();
-    applyFilters();
-    closeModal();
-    showToast('🗑️ Kontakt obrisan');
+  if (!confirm(`Obrisati "${currentModalContactId}"?`)) return;
+  const i = contacts.findIndex(x => x.name === currentModalContactId);
+  if (i >= 0) {
+    const [r] = contacts.splice(i, 1);
+    if (r && favorites.has(r.name)) favorites.delete(r.name);
+    if (r && builtInContactNames.has(r.name)) deletedNames.add(r.name);
+    persistContacts(); persistDeletedNames(deletedNames); saveFavorites(); applyFilters(); closeModal();
+    showToast('🗑️ Obrisano');
   }
 });
-addContactBtn.addEventListener('click', () => {
-  currentModalContactId = null;
-  openEditor();
-});
-quickAddBtn.addEventListener('click', () => {
-  currentModalContactId = null;
-  openEditor();
-});
+addContactBtn.addEventListener('click', () => { currentModalContactId = null; openEditor(); });
+quickAddBtn.addEventListener('click', () => { currentModalContactId = null; openEditor(); });
 
+// ==================== FILTERS ====================
 function getFilteredContacts() {
   const q = searchInput.value.toLowerCase().trim();
-  const filter = filterSelect.value;
+  const f = filterSelect.value;
   let filtered = contacts.filter(c => {
     if (showFavOnly && !favorites.has(c.name)) return false;
-    if (filter === '__fav__' && !favorites.has(c.name)) return false;
-    if (filter === '__radujkovic__' && !isRadujkovic(c.name)) return false;
-    if (filter === 'phone' && !c.phone) return false;
-    if (filter === 'email' && !c.email) return false;
-    if (filter === 'address' && !c.address) return false;
-    if (filter === 'work' && c.category !== 'work') return false;
-    if (filter === 'personal' && c.category !== 'personal') return false;
+    if (f === '__fav__' && !favorites.has(c.name)) return false;
+    if (f === '__radujkovic__' && !isRadujkovic(c.name)) return false;
+    if (f === 'phone' && !c.phone) return false;
+    if (f === 'email' && !c.email) return false;
+    if (f === 'address' && !c.address) return false;
+    if (f === 'work' && c.category !== 'work') return false;
+    if (f === 'personal' && c.category !== 'personal') return false;
     if (q) {
-      const haystack = [c.name, c.phone, c.email, c.address, c.org, c.notes].join(' ').toLowerCase();
-      if (!haystack.includes(q)) return false;
+      const h = [c.name, c.phone, c.email, c.address, c.org, c.notes].join(' ').toLowerCase();
+      if (!h.includes(q)) return false;
     }
     return true;
   });
@@ -1458,11 +1705,11 @@ function applyFilters() { render(getFilteredContacts()); }
 
 document.querySelectorAll('th[data-key]').forEach(th => {
   th.addEventListener('click', () => {
-    const key = th.dataset.key;
-    if (sortKey === key) sortAsc = !sortAsc;
-    else { sortKey = key; sortAsc = true; }
-    localStorage.setItem('contacts_sort_key', sortKey);
-    document.querySelectorAll('th').forEach(t => { t.textContent = t.textContent.replace(/[▾▴]/g, '').trim(); });
+    const k = th.dataset.key;
+    if (sortKey === k) sortAsc = !sortAsc;
+    else { sortKey = k; sortAsc = true; }
+    try { localStorage.setItem('contacts_sort_key', sortKey); } catch(e) {}
+    document.querySelectorAll('th').forEach(t => t.textContent = t.textContent.replace(/[▾▴]/g, '').trim());
     th.textContent = th.textContent.trim() + (sortAsc ? ' ▾' : ' ▴');
     applyFilters();
   });
@@ -1470,61 +1717,42 @@ document.querySelectorAll('th[data-key]').forEach(th => {
 
 document.querySelectorAll('.filter-chip[data-filter]').forEach(chip => {
   chip.addEventListener('click', () => {
-    const value = chip.dataset.filter;
-    document.querySelectorAll('.filter-chip').forEach(btn => btn.classList.toggle('active', btn === chip));
-    if (value === 'all') {
-      searchInput.value = '';
-      filterSelect.value = '';
-      showFavOnly = false;
-      favFilterBtn.classList.remove('active');
-    } else if (value === 'favorites') {
-      filterSelect.value = '__fav__';
-      showFavOnly = true;
-      favFilterBtn.classList.add('active');
-    } else {
-      filterSelect.value = value;
-      showFavOnly = false;
-      favFilterBtn.classList.remove('active');
-    }
+    const v = chip.dataset.filter;
+    document.querySelectorAll('.filter-chip').forEach(b => b.classList.toggle('active', b === chip));
+    if (v === 'all') { searchInput.value = ''; filterSelect.value = ''; showFavOnly = false; favFilterBtn.classList.remove('active'); }
+    else if (v === 'favorites') { filterSelect.value = '__fav__'; showFavOnly = true; favFilterBtn.classList.add('active'); }
+    else { filterSelect.value = v; showFavOnly = false; favFilterBtn.classList.remove('active'); }
     applyFilters();
   });
 });
 
 document.getElementById('resetSortChip').addEventListener('click', () => {
-  sortKey = 'name';
-  sortAsc = true;
-  localStorage.setItem('contacts_sort_key', 'name');
-  document.querySelectorAll('th').forEach(header => {
-    header.textContent = header.textContent.replace(/[▾▴]/g, '').trim();
-  });
+  sortKey = 'name'; sortAsc = true;
+  try { localStorage.setItem('contacts_sort_key', 'name'); } catch(e) {}
+  document.querySelectorAll('th').forEach(h => h.textContent = h.textContent.replace(/[▾▴]/g, '').trim());
   applyFilters();
-  showToast('↕️ Sortirano A-Z');
+  showToast('↕️ A-Z');
 });
 
 searchInput.addEventListener('input', applyFilters);
-searchInput.addEventListener('keyup', (e) => { if (e.key === 'Enter' || e.keyCode === 13) { searchInput.blur(); applyFilters(); } });
+searchInput.addEventListener('keyup', e => { if (e.key === 'Enter') { searchInput.blur(); applyFilters(); } });
 searchBtn.addEventListener('click', () => { searchInput.blur(); applyFilters(); });
 clearBtn.addEventListener('click', () => {
-  searchInput.value = '';
-  filterSelect.value = '';
-  showFavOnly = false;
+  searchInput.value = ''; filterSelect.value = ''; showFavOnly = false;
   favFilterBtn.classList.remove('active');
-  document.querySelectorAll('.filter-chip').forEach(chip => chip.classList.toggle('active', chip.dataset.filter === 'all'));
-  applyFilters();
-  searchInput.focus();
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.toggle('active', c.dataset.filter === 'all'));
+  applyFilters(); searchInput.focus();
 });
 filterSelect.addEventListener('change', () => {
-  const activeValue = filterSelect.value;
-  document.querySelectorAll('.filter-chip').forEach(chip => chip.classList.toggle('active', chip.dataset.filter === 'all' && activeValue === ''));
-  if (activeValue === '__fav__') {
-    document.querySelectorAll('.filter-chip').forEach(chip => chip.classList.toggle('active', chip.dataset.filter === 'favorites'));
-  } else if (activeValue === 'work' || activeValue === 'personal' || activeValue === 'phone' || activeValue === 'email') {
-    document.querySelectorAll('.filter-chip').forEach(chip => chip.classList.toggle('active', chip.dataset.filter === activeValue));
-  }
+  const v = filterSelect.value;
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.toggle('active', c.dataset.filter === 'all' && v === ''));
+  if (v === '__fav__') document.querySelectorAll('.filter-chip').forEach(c => c.classList.toggle('active', c.dataset.filter === 'favorites'));
+  else if (['work','personal','phone','email'].includes(v)) document.querySelectorAll('.filter-chip').forEach(c => c.classList.toggle('active', c.dataset.filter === v));
   applyFilters();
 });
-searchInput.addEventListener('touchend', () => { setTimeout(applyFilters, 100); });
 
+// ==================== INIT ====================
+applyLanguage(currentLang);
 applyTheme('dark');
 applyHeaderColor('blue');
 applyTextColor('default');
@@ -1534,10 +1762,8 @@ updateFavBadge();
 applyFilters();
 
 window.addEventListener('hashchange', () => {
-  const newFav = UrlStorage.getFavorites();
-  favorites = new Set(newFav);
-  updateFavBadge();
-  applyFilters();
+  favorites = new Set(UrlStorage.getFavorites());
+  updateFavBadge(); applyFilters();
 });
 </script>
 </body>
