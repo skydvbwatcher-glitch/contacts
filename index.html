@@ -441,6 +441,7 @@
       <div class="nav-label">Actions</div>
       <div class="nav-item" id="sidebarAddBtn"><span class="nav-icon">＋</span> New contact</div>
       <div class="nav-item" id="sidebarExportBtn"><span class="nav-icon">📤</span> Export CSV</div>
+      <div class="nav-item" id="importBtn"><span class="nav-icon">📥</span> Import CSV</div>
       <div class="nav-item" id="sidebarShareBtn"><span class="nav-icon">🔗</span> Share</div>
     </div>
 
@@ -649,6 +650,7 @@
 </div>
 
 <div class="toast" id="toast"></div>
+<input id="importCsvInput" type="file" accept=".csv,text/csv" hidden>
 
 <script src="contacts-data.js"></script>
 <script>
@@ -779,6 +781,8 @@ const bulkFavoriteBtn = document.getElementById('bulkFavoriteBtn');
 const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
 const sidebarAddBtn = document.getElementById('sidebarAddBtn');
 const sidebarExportBtn = document.getElementById('sidebarExportBtn');
+const importBtn = document.getElementById('importBtn');
+const importCsvInput = document.getElementById('importCsvInput');
 const sidebarShareBtn = document.getElementById('sidebarShareBtn');
 const sidebarCoverage = document.getElementById('sidebarCoverage');
 
@@ -952,6 +956,70 @@ shareBtn.addEventListener('click', async () => {
 sidebarShareBtn.addEventListener('click', () => shareBtn.click());
 sidebarExportBtn.addEventListener('click', () => exportBtn.click());
 sidebarAddBtn.addEventListener('click', () => openEditor());
+importBtn.addEventListener('click', () => importCsvInput.click());
+
+function parseCsvLine(line) {
+  const values = [];
+  let value = '';
+  let quoted = false;
+  for (let index = 0; index < line.length; index++) {
+    const character = line[index];
+    if (character === '"' && line[index + 1] === '"') {
+      value += '"';
+      index++;
+    } else if (character === '"') {
+      quoted = !quoted;
+    } else if (character === ',' && !quoted) {
+      values.push(value.trim());
+      value = '';
+    } else {
+      value += character;
+    }
+  }
+  values.push(value.trim());
+  return values;
+}
+
+importCsvInput.addEventListener('change', event => {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = loadEvent => {
+    const lines = String(loadEvent.target.result).split(/\r?\n/).filter(line => line.trim());
+    if (lines.length < 2) {
+      showToast('⚠️ CSV nema kontakata');
+      return;
+    }
+    const headers = parseCsvLine(lines[0]).map(header => header.toLowerCase().replace(/^\uFEFF/, ''));
+    const imported = lines.slice(1).map(line => {
+      const values = parseCsvLine(line);
+      const row = Object.fromEntries(headers.map((header, index) => [header, values[index] || '']));
+      return {
+        name: row.ime || row.name || '',
+        phone: row.telefon || row.phone || '',
+        email: row.email || '',
+        address: row.adresa || row.address || '',
+        org: row.organizacija || row.org || '',
+        notes: row.notes || '',
+        category: (row.kategorija || row.category || '').toLowerCase().includes('posl') ? 'work' : 'personal'
+      };
+    }).filter(contact => contact.name);
+    const existingNames = new Set(contacts.map(contact => contact.name.toLowerCase()));
+    const additions = imported.filter(contact => {
+      const key = contact.name.toLowerCase();
+      if (existingNames.has(key)) return false;
+      existingNames.add(key);
+      return true;
+    });
+    contactsDataMissing = false;
+    contacts.push(...additions);
+    persistContacts();
+    applyFilters();
+    showToast(`📥 Dodano ${additions.length} kontakata`);
+    importCsvInput.value = '';
+  };
+  reader.readAsText(file, 'UTF-8');
+});
 
 function isRadujkovic(name) {
   if (!name) return false;
