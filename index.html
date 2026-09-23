@@ -724,6 +724,10 @@ let textStyle = 'normal';
 let showFavOnly = false;
 let sortKey = 'name';
 let sortAsc = true;
+try {
+  const savedSortKey = localStorage.getItem('contacts_sort_key');
+  if (savedSortKey) sortKey = savedSortKey;
+} catch(e) {}
 let currentModalContactId = null;
 const selectedContacts = new Set();
 
@@ -829,6 +833,7 @@ document.addEventListener('keydown', event => {
   if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
     event.preventDefault();
     searchInput.focus();
+    searchInput.select();
   }
 });
 
@@ -1039,6 +1044,7 @@ function showToast(msg) {
 }
 
 function render(data) {
+  contactsDataMissing = !Array.isArray(contacts) || contacts.length === 0;
   statTotal.textContent = contacts.length;
   statFavorites.textContent = favorites.size;
   statWork.textContent = contacts.filter(item => item.category === 'work').length;
@@ -1386,6 +1392,7 @@ document.querySelectorAll('th[data-key]').forEach(th => {
     const key = th.dataset.key;
     if (sortKey === key) sortAsc = !sortAsc;
     else { sortKey = key; sortAsc = true; }
+    localStorage.setItem('contacts_sort_key', sortKey);
     document.querySelectorAll('th').forEach(t => { t.textContent = t.textContent.replace(/[▾▴]/g, '').trim(); });
     th.textContent = th.textContent.trim() + (sortAsc ? ' ▾' : ' ▴');
     applyFilters();
