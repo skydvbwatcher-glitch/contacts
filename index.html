@@ -899,6 +899,7 @@
 <input id="importCsvInput" type="file" accept=".csv,text/csv" hidden>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" crossorigin="anonymous"></script>
 <script src="contacts-data.js"></script>
 <script src="events-data.js"></script>
 <script>
@@ -1392,7 +1393,17 @@ function doPrint() {
 }
 printBtn.addEventListener('click', doPrint);
 sidebarPrintBtn.addEventListener('click', doPrint);
-pdfExportBtn.addEventListener('click', doPrint);
+pdfExportBtn.addEventListener('click', () => {
+  const element = document.querySelector('.table-wrap');
+  if (!window.html2pdf || !element) { doPrint(); return; }
+  window.html2pdf().from(element).set({
+    margin: 10,
+    filename: `kontakti_${new Date().toISOString().slice(0, 10)}.pdf`,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2 },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+  }).save();
+});
 
 function renderDashboard() {
   const workCount = contacts.filter(contact => contact.category === 'work').length;
@@ -1473,7 +1484,16 @@ emailTemplateForm.addEventListener('submit', event => {
   const contact = contacts.find(item => item.name === emailTemplateContact.value);
   if (!contact || !contact.email) { showToast('⚠️ Kontakt nema email'); return; }
   const recipient = contact.email.split('/')[0].trim();
-  window.location.href = `mailto:${encodeURIComponent(recipient)}?subject=${encodeURIComponent(emailTemplateSubject.value)}&body=${encodeURIComponent(emailTemplateBody.value)}`;
+  const subject = emailTemplateSubject.value;
+  const body = emailTemplateBody.value;
+  const mailtoUrl = `mailto:${encodeURIComponent(recipient)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  if (mailtoUrl.length <= 1800) {
+    window.location.href = mailtoUrl;
+    return;
+  }
+  navigator.clipboard?.writeText(body).catch(() => {});
+  showToast('⚠️ Poruka je dugačka; tekst je kopiran u clipboard');
+  window.location.href = `mailto:${encodeURIComponent(recipient)}?subject=${encodeURIComponent(subject)}`;
 });
 
 // ==================== IMPORT CSV ====================
@@ -1622,6 +1642,7 @@ async function openMap() {
       marker.bindPopup(`<strong>${escapeHtml(contact.name)}</strong><br>${escapeHtml(contact.address)}`);
       bounds.push([point.lat, point.lon]);
     } catch(e) {}
+    if (i < addressContacts.length - 1) await new Promise(resolve => setTimeout(resolve, 1100));
   }
   mapStatus.textContent = `${bounds.length} adresa prikazano na mapi.`;
   if (bounds.length) mapInstance.fitBounds(bounds, { padding: [24, 24] });
