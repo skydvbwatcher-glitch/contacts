@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+<meta name="format-detection" content="telephone=no">
 <title>Kontakt Lista</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#1f6feb">
@@ -309,11 +310,10 @@
   td { color: var(--text-dim); }
   .name-cell { font-weight: 600; color: var(--accent); cursor: pointer; }
   .name-cell:hover { color: var(--accent-hover); text-decoration: underline; }
-  .contact-avatar { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; vertical-align: middle; margin-right: 8px; border: 1px solid var(--border); }
   .name-main { display: flex; align-items: center; gap: 8px; }
   .contact-quick-actions { display: inline-flex; align-items: center; gap: 5px; margin-left: 6px; vertical-align: middle; }
   .contact-quick-actions a { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 999px; font-size: 11px; font-weight: 800; text-decoration: none; white-space: nowrap; }
-  .contact-quick-actions .quick-call { background: linear-gradient(135deg, var(--accent-bg), var(--accent-bg-hover)); color: #fff; box-shadow: 0 4px 9px rgba(31,111,235,0.2); }
+  .contact-quick-actions .quick-call { background: transparent !important; border: 0; color: inherit; box-shadow: none; padding: 0; font-weight: inherit; }
   .contact-quick-actions .quick-whatsapp { background: linear-gradient(135deg, #25d366, #128c7e); color: #fff; box-shadow: 0 4px 9px rgba(37,211,102,0.2); }
   .contact-quick-actions a:hover { transform: translateY(-1px); filter: brightness(1.08); }
   .name-social-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 7px; margin-left: 38px; }
@@ -341,7 +341,6 @@
   .table-social-icon[data-platform="website"] { background: linear-gradient(135deg, #8b5cf6, #6366f1); color: #fff; }
   .phone-cell a, .email-cell a { color: var(--accent); text-decoration: none; word-break: break-all; }
   .phone-cell a:hover, .email-cell a:hover { color: var(--accent-hover); text-decoration: underline; }
-  .phone-number { color: var(--text-dim); margin-right: 6px; }
   .fav-cell { width: 40px; text-align: center; padding: 10px 4px !important; }
   .fav-star { font-size: 20px; cursor: pointer; user-select: none; display: inline-block; line-height: 1; filter: grayscale(1) opacity(0.4); transition: all 0.15s; }
   .fav-star:hover { transform: scale(1.2); filter: grayscale(0) opacity(1); }
@@ -408,6 +407,7 @@
     z-index: 0;
   }
   .modal-avatar img { width: 100%; height: 100%; border-radius: inherit; object-fit: cover; position: relative; z-index: 1; }
+  #modalAvatar { display: none; }
   #contactMap { height: 62vh; min-height: 360px; width: 100%; }
   .map-status { padding: 10px 20px; color: var(--text-muted); font-size: 13px; }
   .modal-name { font-size: 20px; font-weight: 700; color: #fff; line-height: 1.3; word-break: break-word; padding-right: 100px; }
@@ -455,7 +455,7 @@
   .modal-row-value a { color: var(--accent); text-decoration: none; }
   .modal-row-value a:hover { color: var(--accent-hover); text-decoration: underline; }
   .modal-row-value .phone-link, .modal-row-value .email-link { display: inline-block; margin-right: 8px; margin-bottom: 4px; padding: 4px 10px; background: var(--bg-header); border: 1px solid var(--border); border-radius: 6px; font-size: 14px; }
-  .modal-row-value .call-link, .phone-cell .call-link { background: linear-gradient(135deg, var(--accent-bg), var(--accent-bg-hover)); border-color: transparent; color: #fff; font-weight: 700; box-shadow: 0 4px 10px rgba(31,111,235,0.22); }
+  .modal-row-value .call-link, .phone-cell .call-link { background: transparent !important; border: 0; color: inherit; font-weight: inherit; box-shadow: none; padding: 0; }
   .modal-row-value .whatsapp-link { display: inline-flex; align-items: center; justify-content: center; gap: 6px; margin-right: 8px; margin-bottom: 4px; padding: 4px 10px; background: linear-gradient(135deg, #25d366, #128c7e); border: 1px solid rgba(18,140,126,0.5); border-radius: 999px; font-size: 12px; font-weight: 700; color: #fff; box-shadow: 0 4px 10px rgba(37,211,102,0.25); }
   .modal-row-value .phone-link:hover, .modal-row-value .email-link:hover { background: var(--accent-bg); border-color: var(--accent-bg); color: #fff; text-decoration: none; }
   .modal-row-value .whatsapp-link:hover { background: linear-gradient(135deg, #1fbf5a, #0f7d69); color: #fff; text-decoration: none; transform: translateY(-1px); }
@@ -503,8 +503,6 @@
   
   /* EDITOR */
   .contact-editor { padding: 20px; }
-  .avatar-upload { display: flex; align-items: center; gap: 12px; }
-  .avatar-preview { width: 52px; height: 52px; border-radius: 50%; object-fit: cover; background: var(--bg-header); border: 1px solid var(--border); }
   .editor-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
   .field { display: flex; flex-direction: column; gap: 6px; }
   .field.full { grid-column: 1 / -1; }
@@ -2161,14 +2159,11 @@ function render(data) {
     const isFav = favorites.has(c.name);
     const oi = contacts.indexOf(c);
     const sel = selectedContacts.has(c.name);
-    const countryFlag = getCountryFlag(c);
-    const countryLabel = getCountryLabel(c);
-    const avatarSrc = getContactAvatar(c);
     const primaryPhone = c.phone ? String(c.phone).split('/')[0].trim() : '';
     const primaryPhoneHref = primaryPhone.replace(/[^\d+]/g, '');
     const primaryWhatsApp = cleanPhoneForWhatsApp(primaryPhoneHref);
     const quickActions = primaryPhoneHref ? `<span class="contact-quick-actions">
-      <a href="tel:${escapeAttr(primaryPhoneHref)}" data-phone="${escapeAttr(primaryPhoneHref)}" class="quick-call" title="Call">📞 Call</a>
+      <a href="tel:${escapeAttr(primaryPhoneHref)}" data-phone="${escapeAttr(primaryPhoneHref)}" class="quick-call" title="Call">Call</a>
       ${primaryWhatsApp ? `<a href="https://wa.me/${encodeURIComponent(primaryWhatsApp)}" data-whatsapp="${escapeAttr(primaryWhatsApp)}" target="_blank" rel="noopener" class="quick-whatsapp" title="WhatsApp">💬 WA</a>` : ''}
     </span>` : '';
     const socialLinks = getSocialEntries(c).slice(0, 4).map(([platform, url]) => {
@@ -2177,8 +2172,8 @@ function render(data) {
     }).join('');
     return `<tr class="contact-row" data-order="${oi}" draggable="true">
       <td class="fav-cell" data-label="⭐"><input class="row-check" type="checkbox" data-name="${escapeAttr(c.name)}" ${sel ? 'checked' : ''}><span class="fav-star ${isFav ? 'active' : ''}" data-name="${escapeAttr(c.name)}">${isFav ? '★' : '☆'}</span></td>
-      <td class="name-cell" data-name="${escapeAttr(c.name)}" data-label="Ime" title="${escapeAttr(countryLabel)}">
-        <div class="name-main">${avatarSrc ? `<img class="contact-avatar" src="${escapeAttr(avatarSrc)}" alt="">` : ''}${countryFlag} ${escapeHtml(c.name)}${quickActions}</div>
+      <td class="name-cell" data-name="${escapeAttr(c.name)}" data-label="Ime">
+        <div class="name-main">${escapeHtml(c.name)}${quickActions}</div>
         ${socialLinks ? `<div class="name-social-row">${socialLinks}</div>` : ''}
       </td>
       <td class="phone-cell" data-label="Telefon">${formatPhones(c.phone)}</td>
@@ -2343,7 +2338,7 @@ function formatPhones(p) {
     const wa = cleanPhoneForWhatsApp(c);
     return `
       <div>
-        <span class="phone-number">${escapeHtml(x)}</span><a href="tel:${c}" data-phone="${escapeAttr(c)}" class="phone-link call-link" title="Call">📞 Call</a>
+        <span>${escapeHtml(x)}</span><a href="tel:${c}" data-phone="${escapeAttr(c)}" class="phone-link call-link" title="Call">Call</a>
         ${wa ? `<a href="https://wa.me/${encodeURIComponent(wa)}" data-whatsapp="${escapeAttr(wa)}" target="_blank" rel="noopener" class="whatsapp-link" title="WhatsApp">💬 WA</a>` : ''}
       </div>
     `;
@@ -2436,14 +2431,9 @@ function getInitials(name) {
 }
 function openModal(contact) {
   currentModalContactId = contact.name;
-  const avatarSrc = getContactAvatar(contact);
-  modalAvatar.innerHTML = avatarSrc
-    ? `<img src="${escapeAttr(avatarSrc)}" alt="">`
-    : escapeHtml(getInitials(contact.name));
-  const countryFlag = getCountryFlag(contact);
-  const countryLabel = getCountryLabel(contact);
-  modalName.innerHTML = `${countryFlag} ${escapeHtml(contact.name || '—')}`;
-  modalSubtitle.textContent = contact.org || countryLabel || '';
+  modalAvatar.textContent = '';
+  modalName.textContent = contact.name || '—';
+  modalSubtitle.textContent = contact.org || '';
   modal.classList.add('glass-profile');
   modal.setAttribute('data-glass', 'true');
   const isFav = favorites.has(contact.name);
@@ -2456,7 +2446,7 @@ function openModal(contact) {
     const ps = contact.phone.split('/').map(p => {
       p = p.trim(); const c = p.replace(/[^\d+]/g, '');
       const wa = cleanPhoneForWhatsApp(c);
-      const actions = [`<span class="phone-number">${escapeHtml(p)}</span><a href="tel:${c}" data-phone="${escapeAttr(c)}" class="phone-link call-link" title="Call">📞 Call</a>`];
+      const actions = [`<span>${escapeHtml(p)}</span><a href="tel:${c}" data-phone="${escapeAttr(c)}" class="phone-link call-link" title="Call">Call</a>`];
       if (wa) actions.push(`<a href="https://wa.me/${encodeURIComponent(wa)}" data-whatsapp="${escapeAttr(wa)}" target="_blank" rel="noopener" class="whatsapp-link" title="WhatsApp">💬 WA</a>`);
       return actions.join('');
     }).join('');
@@ -2477,7 +2467,6 @@ function openModal(contact) {
     const m = `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(contact.address)}" target="_blank" rel="noopener">🗺️ Google Maps</a>`;
     html += buildRow('📍', 'Adresa', escapeHtml(contact.address) + '<br><br>' + m);
   }
-  if (countryLabel) html += buildRow('🌍', 'Država', `${countryFlag} ${escapeHtml(countryLabel)}`);
   if (contact.org) html += buildRow('🏢', 'Organizacija', escapeHtml(contact.org));
   if (contact.notes) html += buildRow('📝', 'Notes', escapeHtml(contact.notes));
   if (Array.isArray(contact.customFields) && contact.customFields.length) {
@@ -2517,11 +2506,8 @@ function buildRow(icon, label, value) {
 // ==================== EDITOR ====================
 function openEditor(contact = null) {
   const orig = contact ? contact.name : currentModalContactId;
-  const fd = contact ? { ...contact } : { name: '', phone: '', email: '', address: '', org: '', notes: '', country: 'Canada', category: 'personal' };
-  const editorAvatar = getContactAvatar(fd);
-  modalAvatar.innerHTML = editorAvatar
-    ? `<img src="${escapeAttr(editorAvatar)}" alt="">`
-    : escapeHtml(getInitials(fd.name || 'N'));
+  const fd = contact ? { ...contact } : { name: '', phone: '', email: '', address: '', org: '', notes: '', category: 'personal' };
+  modalAvatar.textContent = '';
   modalName.textContent = contact ? 'Uredi kontakt' : 'Novi kontakt';
   modalSubtitle.textContent = contact ? 'Promijeni detalje' : 'Dodaj novi zapis';
   modalBody.innerHTML = `
@@ -2529,13 +2515,6 @@ function openEditor(contact = null) {
       <div class="editor-grid">
         <div class="field full"><label for="editName">Ime</label>
           <input id="editName" name="name" value="${escapeAttr(fd.name || '')}" required></div>
-        <div class="field"><label for="editCountry">Država</label>
-          <input id="editCountry" name="country" value="${escapeAttr(fd.country || getCountryLabel(fd))}" placeholder="npr. Canada"></div>
-        <div class="field full"><label for="editAvatar">Slika kontakta</label>
-          <div class="avatar-upload">
-            <img class="avatar-preview" id="avatarPreview" src="${fd.avatar ? escapeAttr(fd.avatar) : ''}" alt="">
-            <input id="editAvatar" type="file" accept="image/*">
-          </div></div>
         <div class="field"><label for="editBirthday">Rođendan</label>
           <input id="editBirthday" name="birthday" type="date" value="${escapeAttr(fd.birthday || '')}"></div>
         <div class="field"><label for="editGroup">Grupa</label>
@@ -2578,11 +2557,8 @@ function openEditor(contact = null) {
       </div>
     </form>`;
   const form = document.getElementById('contactEditorForm');
-  const avatarInput = document.getElementById('editAvatar');
-  const avatarPreview = document.getElementById('avatarPreview');
   const attachmentInput = document.getElementById('editAttachments');
   const attachmentList = document.getElementById('attachmentList');
-  let avatar = fd.avatar || '';
   let attachments = Array.isArray(fd.attachments) ? [...fd.attachments] : [];
   let socialLinks = getSocialEntries(fd).map(([platform, url]) => ({ platform, url }));
   if (!socialLinks.length) socialLinks = [{ platform: 'instagram', url: '' }];
@@ -2626,21 +2602,6 @@ function openEditor(contact = null) {
   renderSocialLinksEditor();
   addCustomFieldBtn.addEventListener('click', () => { customFields.push({ key: '', value: '' }); renderCustomFieldsEditor(); });
   addSocialLinkBtn.addEventListener('click', () => { socialLinks.push({ platform: 'instagram', url: '' }); renderSocialLinksEditor(); });
-  avatarInput.addEventListener('change', () => {
-    const file = avatarInput.files[0];
-    if (!file) return;
-    if (!file.type.startsWith('image/') || file.size > 512 * 1024) {
-      avatarInput.value = '';
-      showToast('⚠️ Slika mora biti do 512 KB');
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = event => {
-      avatar = String(event.target.result);
-      avatarPreview.src = avatar;
-    };
-    reader.readAsDataURL(file);
-  });
   attachmentInput.addEventListener('change', () => {
     const files = [...attachmentInput.files];
     const validFiles = files.filter(file => file.size <= 1024 * 1024);
@@ -2671,20 +2632,11 @@ function openEditor(contact = null) {
     });
     const next = {
       name: form.elements.name.value.trim(),
-      country: form.elements.country.value.trim() || getCountryLabel({
-        country: form.elements.country.value.trim(),
-        address: form.elements.address.value.trim(),
-        org: form.elements.org.value.trim(),
-        notes: form.elements.notes.value.trim(),
-        email: form.elements.email.value.trim(),
-        phone: form.elements.phone.value.trim()
-      }),
       phone: form.elements.phone.value.trim(),
       email: form.elements.email.value.trim(),
       address: form.elements.address.value.trim(),
       org: form.elements.org.value.trim(),
       notes: form.elements.notes.value.trim(),
-      avatar,
       attachments,
       social,
       birthday: form.elements.birthday.value,
