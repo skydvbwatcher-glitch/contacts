@@ -244,6 +244,18 @@
   .city-stats { margin-top: 16px; padding: 16px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; }
   .city-stats-grid { display: flex; flex-wrap: wrap; gap: 8px; }
   .city-stat { padding: 7px 10px; border: 1px solid var(--border); border-radius: 8px; color: var(--text-dim); font-size: 12px; }
+  .calendar-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 20px; border-bottom: 1px solid var(--border-light); }
+  .calendar-toolbar strong { font-size: 17px; }
+  .calendar-nav { width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-header); color: var(--text); cursor: pointer; font-size: 18px; }
+  .calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; padding: 16px 20px 20px; }
+  .calendar-weekday { color: var(--text-muted); font-size: 11px; font-weight: 700; text-align: center; text-transform: uppercase; }
+  .calendar-day { min-height: 72px; padding: 7px; border: 1px solid var(--border-light); border-radius: 8px; background: var(--bg-input); color: var(--text-dim); }
+  .calendar-day.empty { background: transparent; border-color: transparent; }
+  .calendar-day.today { border-color: var(--accent); }
+  .calendar-date { font-size: 12px; font-weight: 700; }
+  .calendar-birthday { display: block; margin-top: 5px; color: var(--accent); font-size: 11px; line-height: 1.25; word-break: break-word; }
+  .calendar-event { display: block; margin-top: 5px; color: var(--warning); font-size: 11px; line-height: 1.25; word-break: break-word; }
+  @media (max-width: 768px) { .calendar-grid { padding: 12px; gap: 4px; } .calendar-day { min-height: 58px; padding: 5px; } .calendar-birthday { font-size: 10px; } }
   .btn { padding: 12px 16px; border: 1px solid var(--border); border-radius: 8px; font-size: 15px; font-weight: 600; background: var(--bg-header); color: var(--text); cursor: pointer; white-space: nowrap; font-family: inherit; }
   .btn:hover { background: var(--bg-hover); border-color: var(--accent); }
   .btn.search { background: var(--accent-bg); border-color: var(--accent-bg); color: #fff; min-width: 60px; }
@@ -587,6 +599,7 @@
         <button class="icon-btn" id="favFilterBtn" title="Favoriti">⭐<span class="badge" id="favBadge">0</span></button>
         <button class="icon-btn" id="radujkovicBtn" title="Radujkovići">👨‍👩‍👧‍👦</button>
         <button class="icon-btn" id="mapBtn" title="Mapa adresa">🗺️</button>
+        <button class="icon-btn" id="calendarBtn" title="Kalendar rođendana">🗓️</button>
         <button class="icon-btn" id="exportBtn" title="Export CSV">📥</button>
         <button class="icon-btn" id="printBtn" title="Print">🖨️</button>
         <button class="icon-btn" id="shareBtn" title="Share">🔗</button>
@@ -813,11 +826,29 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="calendarOverlay">
+  <div class="modal" style="max-width: 760px;">
+    <div class="modal-header color-purple">
+      <button class="modal-close" id="calendarClose" type="button">✕</button>
+      <div class="modal-avatar">🎂</div>
+      <div class="modal-name">Kalendar rođendana</div>
+      <div class="modal-subtitle" id="calendarSubtitle"></div>
+    </div>
+    <div class="calendar-toolbar">
+      <button class="calendar-nav" id="calendarPrev" type="button" aria-label="Prethodni mjesec">‹</button>
+      <strong id="calendarMonth"></strong>
+      <button class="calendar-nav" id="calendarNext" type="button" aria-label="Sljedeći mjesec">›</button>
+    </div>
+    <div class="calendar-grid" id="calendarGrid"></div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 <input id="importCsvInput" type="file" accept=".csv,text/csv" hidden>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 <script src="contacts-data.js"></script>
+<script src="events-data.js"></script>
 <script>
 // ==================== TRANSLATIONS ====================
 const I18N = {
@@ -1119,6 +1150,9 @@ const tbody = $('tableBody'), searchInput = $('searchInput'), searchBtn = $('sea
   radujkovicCount = $('radujkovicCount'), radujkovicBtn = $('radujkovicBtn'),
   mapBtn = $('mapBtn'), mapOverlay = $('mapOverlay'), mapClose = $('mapClose'),
   contactMap = $('contactMap'), mapStatus = $('mapStatus'), mapCount = $('mapCount'),
+  calendarBtn = $('calendarBtn'), calendarOverlay = $('calendarOverlay'), calendarClose = $('calendarClose'),
+  calendarPrev = $('calendarPrev'), calendarNext = $('calendarNext'), calendarMonth = $('calendarMonth'),
+  calendarSubtitle = $('calendarSubtitle'), calendarGrid = $('calendarGrid'),
   addContactBtn = $('addContactBtn'), quickAddBtn = $('quickAddBtn'),
   totalContactsPill = $('totalContactsPill'), statTotal = $('statTotal'),
   statFavorites = $('statFavorites'), statWork = $('statWork'), modalEdit = $('modalEdit'),
@@ -1456,6 +1490,113 @@ function closeMap() {
 mapBtn.addEventListener('click', openMap);
 mapClose.addEventListener('click', closeMap);
 mapOverlay.addEventListener('click', e => { if (e.target === mapOverlay) closeMap(); });
+
+let calendarCursor = new Date();
+calendarCursor.setDate(1);
+const GOOGLE_CALENDAR_URL = 'https://docs.google.com/spreadsheets/d/1H-dRd5b795j9h6zVSxxTbhumLZhUWcx8kSfqX1bZbOk/export?format=csv&gid=0';
+const GOOGLE_CALENDAR_CACHE_KEY = 'contacts-google-calendar-cache-v1';
+const GOOGLE_CALENDAR_SYNC_KEY = 'contacts-google-calendar-sync-v1';
+
+function parseSheetDate(value) {
+  const match = String(value || '').trim().match(/^([A-Za-z]{3})\s+(\d{1,2})(?:,\s*(\d{4}))?$/);
+  if (!match) return null;
+  const months = { Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5, Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11 };
+  const month = months[match[1]];
+  if (month == null) return null;
+  const year = Number(match[3]) || (month >= 7 ? 2026 : 2027);
+  return `${year}-${String(month + 1).padStart(2, '0')}-${String(Number(match[2])).padStart(2, '0')}`;
+}
+
+function applyGoogleCalendarEvents(events) {
+  const localEvents = (window.CALENDAR_EVENTS || []).filter(event => event.source !== 'google');
+  window.CALENDAR_EVENTS = localEvents.concat(events.map(event => ({ ...event, source: 'google' })));
+  if (calendarOverlay.classList.contains('active')) renderCalendar();
+}
+
+async function syncGoogleCalendar(force = false) {
+  const now = Date.now();
+  try {
+    const cachedAt = Number(localStorage.getItem(GOOGLE_CALENDAR_SYNC_KEY) || 0);
+    const cached = JSON.parse(localStorage.getItem(GOOGLE_CALENDAR_CACHE_KEY) || 'null');
+    if (!force && cachedAt && now - cachedAt < 24 * 60 * 60 * 1000 && Array.isArray(cached)) {
+      applyGoogleCalendarEvents(cached);
+      return;
+    }
+    const response = await fetch(GOOGLE_CALENDAR_URL, { cache: 'no-store' });
+    if (!response.ok) throw new Error('Google Sheet unavailable');
+    const lines = (await response.text()).split(/\r?\n/).filter(line => line.trim());
+    if (lines.length < 2) throw new Error('Google Sheet is empty');
+    const headers = parseCsvLine(lines[0]).map(header => header.toLowerCase().replace(/^\uFEFF/, '').trim());
+    const events = lines.slice(1).map(line => {
+      const values = parseCsvLine(line);
+      const row = Object.fromEntries(headers.map((header, index) => [header, values[index] || '']));
+      const date = parseSheetDate(row.date);
+      const name = String(row.event || '').trim();
+      if (!date || !name) return null;
+      const description = [row.time && `Vrijeme: ${row.time}`, row.details].filter(Boolean).join(' · ');
+      return { date, name, city: 'Vipers Elite', category: 'team', description };
+    }).filter(Boolean);
+    localStorage.setItem(GOOGLE_CALENDAR_CACHE_KEY, JSON.stringify(events));
+    localStorage.setItem(GOOGLE_CALENDAR_SYNC_KEY, String(now));
+    applyGoogleCalendarEvents(events);
+  } catch (error) {
+    const cached = JSON.parse(localStorage.getItem(GOOGLE_CALENDAR_CACHE_KEY) || 'null');
+    if (Array.isArray(cached)) applyGoogleCalendarEvents(cached);
+  }
+}
+function renderCalendar() {
+  const year = calendarCursor.getFullYear();
+  const month = calendarCursor.getMonth();
+  const monthName = new Intl.DateTimeFormat(currentLang === 'hr' ? 'hr-HR' : 'en-US', { month: 'long', year: 'numeric' }).format(calendarCursor);
+  calendarMonth.textContent = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+  const birthdays = {};
+  const events = {};
+  contacts.forEach(contact => {
+    if (!contact.birthday) return;
+    const birthday = contact.birthday.split('-');
+    if (Number(birthday[1]) !== month + 1) return;
+    const day = Number(birthday[2]);
+    birthdays[day] = birthdays[day] || [];
+    birthdays[day].push(contact.name);
+  });
+  (window.CALENDAR_EVENTS || []).forEach(event => {
+    const parts = String(event.date || '').split('-');
+    if (Number(parts[0]) !== year || Number(parts[1]) !== month + 1) return;
+    const day = Number(parts[2]);
+    events[day] = events[day] || [];
+    events[day].push(event);
+  });
+  const today = new Date();
+  const firstDay = (new Date(year, month, 1).getDay() + 6) % 7;
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const weekdays = currentLang === 'hr' ? ['Pon', 'Uto', 'Sri', 'Čet', 'Pet', 'Sub', 'Ned'] : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  let html = weekdays.map(day => `<div class="calendar-weekday">${day}</div>`).join('');
+  for (let i = 0; i < firstDay; i++) html += '<div class="calendar-day empty"></div>';
+  for (let day = 1; day <= daysInMonth; day++) {
+    const isToday = today.getFullYear() === year && today.getMonth() === month && today.getDate() === day;
+    const names = birthdays[day] || [];
+    const dayEvents = events[day] || [];
+    html += `<div class="calendar-day ${isToday ? 'today' : ''}"><span class="calendar-date">${day}</span>${names.map(name => `<span class="calendar-birthday">🎂 ${escapeHtml(name)}</span>`).join('')}${dayEvents.map(event => `<span class="calendar-event">📅 ${escapeHtml(event.name)}<br><small>${escapeHtml(event.city)}</small></span>`).join('')}</div>`;
+  }
+  calendarGrid.innerHTML = html;
+  const birthdayCount = Object.values(birthdays).flat().length;
+  const eventCount = Object.values(events).flat().length;
+  calendarSubtitle.textContent = `${birthdayCount} rođendana · ${eventCount} događaja`;
+}
+function openCalendar() {
+  renderCalendar();
+  calendarOverlay.classList.add('active');
+  document.body.classList.add('modal-open');
+}
+function closeCalendar() {
+  calendarOverlay.classList.remove('active');
+  document.body.classList.remove('modal-open');
+}
+calendarBtn.addEventListener('click', openCalendar);
+calendarClose.addEventListener('click', closeCalendar);
+calendarPrev.addEventListener('click', () => { calendarCursor.setMonth(calendarCursor.getMonth() - 1); renderCalendar(); });
+calendarNext.addEventListener('click', () => { calendarCursor.setMonth(calendarCursor.getMonth() + 1); renderCalendar(); });
+calendarOverlay.addEventListener('click', e => { if (e.target === calendarOverlay) closeCalendar(); });
 
 // ==================== VCARD ====================
 function downloadVCard(contact) {
@@ -1823,7 +1964,13 @@ function openEditor(contact = null) {
       reader.onload = event => resolve({ name: file.name, type: file.type, data: String(event.target.result) });
       reader.readAsDataURL(file);
     }))).then(newAttachments => {
-      attachments = attachments.concat(newAttachments);
+      const nextAttachments = attachments.concat(newAttachments);
+      const totalSize = nextAttachments.reduce((sum, file) => sum + file.data.length, 0);
+      if (totalSize > 3 * 1024 * 1024) {
+        showToast('⚠️ Ukupna veličina privitaka premašuje 3 MB');
+        return;
+      }
+      attachments = nextAttachments;
       attachmentList.textContent = attachments.map(file => file.name).join(', ');
     });
     attachmentInput.value = '';
@@ -1888,6 +2035,7 @@ document.addEventListener('keydown', e => {
     else if (modalOverlay.classList.contains('active')) closeModal();
     else if (radujkovicOverlay.classList.contains('active')) closeRadujkovicModal();
     else if (mapOverlay.classList.contains('active')) closeMap();
+    else if (calendarOverlay.classList.contains('active')) closeCalendar();
     else if (settingsPanel.classList.contains('open')) closeSettings();
   }
 });
@@ -2048,6 +2196,9 @@ applyTextStyle('normal');
 updateFavBadge();
 applyFilters();
 checkBirthdayNotifications();
+setInterval(checkBirthdayNotifications, 60 * 60 * 1000);
+syncGoogleCalendar();
+setInterval(syncGoogleCalendar, 24 * 60 * 60 * 1000);
 
 window.addEventListener('hashchange', () => {
   favorites = new Set(UrlStorage.getFavorites());
