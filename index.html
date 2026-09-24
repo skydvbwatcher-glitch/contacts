@@ -256,6 +256,9 @@
   .template-form select, .template-form input, .template-form textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-input); color: var(--text); font: inherit; }
   .template-form textarea { min-height: 150px; resize: vertical; }
   .template-actions { display: flex; justify-content: flex-end; gap: 8px; }
+  .saved-filter-select { max-width: 220px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 999px; background: var(--bg-card); color: var(--text); font: inherit; }
+  .custom-fields { display: grid; gap: 8px; }
+  .custom-field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   @media (max-width: 600px) { .dashboard-grid { grid-template-columns: 1fr; padding: 14px; } }
   .calendar-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 20px; border-bottom: 1px solid var(--border-light); }
   .calendar-toolbar strong { font-size: 17px; }
@@ -559,6 +562,7 @@
 
     <div class="nav-group">
       <div class="nav-label" data-i18n="navWorkspace">Workspace</div>
+      <select id="listSelect" class="saved-filter-select" aria-label="Lokalna lista"><option value="default">Glavna lista</option></select>
       <div class="nav-item" id="dashboardBtn"><span class="nav-icon">📊</span> <span>Dashboard</span></div>
       <div class="nav-item active"><span class="nav-icon">📞</span> <span data-i18n="navContacts">Contacts</span></div>
       <div class="nav-item"><span class="nav-icon">⭐</span> <span data-i18n="navFavorites">Favorites</span></div>
@@ -571,6 +575,7 @@
       <div class="nav-item" id="sidebarAddBtn"><span class="nav-icon">＋</span> <span data-i18n="actionNew">New contact</span></div>
       <div class="nav-item" id="sidebarExportBtn"><span class="nav-icon">📤</span> <span data-i18n="actionExport">Export CSV</span></div>
       <div class="nav-item" id="importBtn"><span class="nav-icon">📥</span> <span data-i18n="actionImport">Import CSV</span></div>
+      <div class="nav-item" id="batchAvatarBtn"><span class="nav-icon">🖼️</span> <span>Batch avatars</span></div>
       <div class="nav-item" id="sidebarPrintBtn"><span class="nav-icon">🖨️</span> <span data-i18n="actionPrint">Print</span></div>
       <div class="nav-item" id="sidebarShareBtn"><span class="nav-icon">🔗</span> <span data-i18n="actionShare">Share</span></div>
     </div>
@@ -684,6 +689,8 @@
       <button class="filter-chip" data-filter="phone" type="button" data-i18n="chipPhone">Sa telefonom</button>
       <button class="filter-chip" data-filter="email" type="button" data-i18n="chipEmail">Sa emailom</button>
       <button class="filter-chip" id="resetSortChip" type="button" title="Reset sortiranja">↕️ A-Z</button>
+      <button class="filter-chip" id="saveFilterChip" type="button" title="Sačuvaj filter">💾 Filter</button>
+      <select class="saved-filter-select" id="savedFilterSelect" aria-label="Sačuvani filteri"><option value="">Sačuvani filteri</option></select>
     </div>
 
     <div class="controls">
@@ -897,9 +904,11 @@
 
 <div class="toast" id="toast"></div>
 <input id="importCsvInput" type="file" accept=".csv,text/csv" hidden>
+<input id="batchAvatarInput" type="file" accept="image/*" multiple hidden>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" crossorigin="anonymous"></script>
 <script src="contacts-data.js"></script>
 <script src="events-data.js"></script>
 <script>
@@ -1005,6 +1014,7 @@ document.querySelectorAll('.lang-btn').forEach(btn => {
 // ==================== PIN LOCK ====================
 const PIN_STORAGE_KEY = 'contacts_pin_hash';
 const PIN_SESSION_KEY = 'contacts_pin_session';
+const PIN_SALT_KEY = 'contacts_pin_salt';
 let pinEnabled = false;
 let pinHash = null;
 try {
@@ -1029,10 +1039,17 @@ const pinError = document.getElementById('pinError');
 
 if (pinEnabled) pinLock.classList.add('active');
 
-function tryUnlock() {
+async function secureHash(value, salt) {
+  const data = new TextEncoder().encode(value + ':' + salt);
+  const digest = await crypto.subtle.digest('SHA-256', data);
+  return [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, '0')).join('');
+}
+async function tryUnlock() {
   const value = pinInput.value.trim();
   if (!value) { pinError.textContent = I18N[currentLang].pinError; return; }
-  if (simpleHash(value) === pinHash) {
+  const salt = localStorage.getItem(PIN_SALT_KEY);
+  const matches = salt ? await secureHash(value, salt) === pinHash : simpleHash(value) === pinHash;
+  if (matches) {
     try { sessionStorage.setItem(PIN_SESSION_KEY, 'ok'); } catch(e) {}
     pinLock.classList.remove('active');
     pinError.textContent = '';
@@ -1044,15 +1061,18 @@ function tryUnlock() {
   }
 }
 
-pinSubmit.addEventListener('click', tryUnlock);
+pinSubmit.addEventListener('click', () => tryUnlock());
 pinInput.addEventListener('keyup', e => { if (e.key === 'Enter') tryUnlock(); });
 if (pinEnabled) setTimeout(() => pinInput.focus(), 100);
 
-document.getElementById('sidebarPinBtn').addEventListener('click', () => {
+document.getElementById('sidebarPinBtn').addEventListener('click', async () => {
   if (pinEnabled) {
     const current = prompt('Unesi trenutni PIN da ga ukloniš:');
-    if (current && simpleHash(current) === pinHash) {
+    const salt = localStorage.getItem(PIN_SALT_KEY);
+    const matches = current && (salt ? await secureHash(current, salt) === pinHash : simpleHash(current) === pinHash);
+    if (matches) {
       try { localStorage.removeItem(PIN_STORAGE_KEY); } catch(e) {}
+      try { localStorage.removeItem(PIN_SALT_KEY); } catch(e) {}
       pinEnabled = false; pinHash = null;
       showToast('🔓 PIN uklonjen');
     } else if (current) {
@@ -1061,9 +1081,10 @@ document.getElementById('sidebarPinBtn').addEventListener('click', () => {
   } else {
     const newPin = prompt('Postavi novi PIN (4-8 znamenki):');
     if (newPin && newPin.length >= 4 && newPin.length <= 8) {
-      pinHash = simpleHash(newPin);
+      const salt = crypto.randomUUID();
+      pinHash = await secureHash(newPin, salt);
       pinEnabled = true;
-      try { localStorage.setItem(PIN_STORAGE_KEY, pinHash); } catch(e) {}
+      try { localStorage.setItem(PIN_STORAGE_KEY, pinHash); localStorage.setItem(PIN_SALT_KEY, salt); } catch(e) {}
       showToast('🔒 PIN postavljen');
     } else if (newPin) {
       showToast('⚠️ PIN mora imati 4-8 znakova');
@@ -1133,7 +1154,20 @@ if (contactsDataMissing) { contacts = []; }
 
 const STORAGE_KEY = 'contacts-address-book-v1';
 const DELETED_STORAGE_KEY = 'contacts-deleted-v1';
+const QUICK_FILTERS_KEY = 'contacts-quick-filters-v1';
+const ANALYTICS_KEY = 'contacts-local-analytics-v1';
 let favorites = new Set(UrlStorage.getFavorites());
+
+function recordAnalytics(event) {
+  try {
+    const events = JSON.parse(localStorage.getItem(ANALYTICS_KEY) || '[]');
+    events.push({ event, at: new Date().toISOString() });
+    localStorage.setItem(ANALYTICS_KEY, JSON.stringify(events.slice(-500)));
+  } catch(e) {}
+}
+function readAnalyticsCount() {
+  try { return JSON.parse(localStorage.getItem(ANALYTICS_KEY) || '[]').length; } catch(e) { return 0; }
+}
 
 function loadDeletedNames() {
   try {
@@ -1225,7 +1259,66 @@ const tbody = $('tableBody'), searchInput = $('searchInput'), searchBtn = $('sea
   importBtn = $('importBtn'), importCsvInput = $('importCsvInput'),
   sidebarShareBtn = $('sidebarShareBtn'), sidebarCoverage = $('sidebarCoverage'),
   sidebarPrintBtn = $('sidebarPrintBtn'), printBtn = $('printBtn'),
-  letterGrid = $('letterGrid'), cityStatsGrid = $('cityStatsGrid');
+  letterGrid = $('letterGrid'), cityStatsGrid = $('cityStatsGrid'), saveFilterChip = $('saveFilterChip'),
+  savedFilterSelect = $('savedFilterSelect'), listSelect = $('listSelect'), batchAvatarBtn = $('batchAvatarBtn'),
+  batchAvatarInput = $('batchAvatarInput');
+
+const LOCAL_LISTS_KEY = 'contacts-local-lists-v1';
+function loadLocalLists() {
+  try { return JSON.parse(localStorage.getItem(LOCAL_LISTS_KEY) || '{"default": "Glavna lista"}'); } catch(e) { return { default: 'Glavna lista' }; }
+}
+function persistLocalList() {
+  try { localStorage.setItem(`contacts-list-${listSelect.value}`, JSON.stringify(contacts)); } catch(e) {}
+}
+function renderLocalLists() {
+  const lists = loadLocalLists();
+  listSelect.innerHTML = Object.entries(lists).map(([id, name]) => `<option value="${escapeAttr(id)}">${escapeHtml(name)}</option>`).join('') + '<option value="__new__">＋ Nova lista</option>';
+}
+function switchLocalList(listId) {
+  if (listId === '__new__') {
+    const name = prompt('Naziv nove liste:');
+    if (!name?.trim()) { listSelect.value = 'default'; return; }
+    const id = 'list-' + Date.now();
+    const lists = loadLocalLists(); lists[id] = name.trim();
+    localStorage.setItem(LOCAL_LISTS_KEY, JSON.stringify(lists));
+    localStorage.setItem(`contacts-list-${id}`, '[]');
+    listSelect.value = id;
+  }
+  persistLocalList();
+  const saved = JSON.parse(localStorage.getItem(`contacts-list-${listSelect.value}`) || 'null');
+  if (Array.isArray(saved)) contacts.splice(0, contacts.length, ...saved);
+  else localStorage.setItem(`contacts-list-${listSelect.value}`, JSON.stringify(contacts));
+  favorites = new Set(); selectedContacts.clear(); applyFilters();
+  recordAnalytics('list_switched');
+}
+renderLocalLists();
+listSelect.addEventListener('change', () => switchLocalList(listSelect.value));
+
+function resizeAvatar(file) {
+  return new Promise(resolve => {
+    const image = new Image();
+    image.onload = () => {
+      const scale = Math.min(1, 512 / Math.max(image.width, image.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(image.width * scale));
+      canvas.height = Math.max(1, Math.round(image.height * scale));
+      canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL('image/jpeg', 0.82));
+    };
+    image.src = URL.createObjectURL(file);
+  });
+}
+batchAvatarBtn.addEventListener('click', () => batchAvatarInput.click());
+batchAvatarInput.addEventListener('change', async () => {
+  for (const file of batchAvatarInput.files) {
+    const baseName = file.name.replace(/\.[^.]+$/, '').toLowerCase().trim();
+    const contact = contacts.find(item => item.name.toLowerCase().trim() === baseName);
+    if (contact) contact.avatar = await resizeAvatar(file);
+  }
+  persistContacts(); persistLocalList(); applyFilters(); batchAvatarInput.value = '';
+  recordAnalytics('batch_avatars_uploaded');
+  showToast('🖼️ Avatari obrađeni');
+});
 
 // ==================== BULK ====================
 function updateBulkControls(visibleContacts = getFilteredContacts()) {
@@ -1394,6 +1487,33 @@ function doPrint() {
 printBtn.addEventListener('click', doPrint);
 sidebarPrintBtn.addEventListener('click', doPrint);
 pdfExportBtn.addEventListener('click', () => {
+  if (window.jspdf?.jsPDF) {
+    const pdf = new window.jspdf.jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const rows = getFilteredContacts();
+    pdf.setFontSize(16);
+    pdf.text('Kontakt Lista', 10, 12);
+    pdf.setFontSize(9);
+    const headers = ['Ime', 'Telefon', 'Email', 'Adresa', 'Organizacija', 'Notes'];
+    const widths = [45, 42, 55, 55, 40, 40];
+    let y = 20;
+    const drawRow = (values, bold = false) => {
+      let x = 10;
+      pdf.setFont('helvetica', bold ? 'bold' : 'normal');
+      values.forEach((value, index) => {
+        const lines = pdf.splitTextToSize(String(value || ''), widths[index] - 2);
+        pdf.text(lines.slice(0, 2), x, y);
+        x += widths[index];
+      });
+      y += 8;
+    };
+    drawRow(headers, true);
+    rows.forEach(contact => {
+      if (y > 195) { pdf.addPage('a4', 'landscape'); y = 12; drawRow(headers, true); }
+      drawRow([contact.name, contact.phone, contact.email, contact.address, contact.org, contact.notes]);
+    });
+    pdf.save(`kontakti_${new Date().toISOString().slice(0, 10)}.pdf`);
+    return;
+  }
   const element = document.querySelector('.table-wrap');
   if (!window.html2pdf || !element) { doPrint(); return; }
   window.html2pdf().from(element).set({
@@ -1421,6 +1541,7 @@ function renderDashboard() {
   dashboardGrid.innerHTML = `
     <div class="dashboard-card"><h3>Kontakti</h3><div class="dashboard-value">${contacts.length}</div></div>
     <div class="dashboard-card"><h3>Favoriti</h3><div class="dashboard-value">${favorites.size}</div></div>
+    <div class="dashboard-card"><h3>Lokalna aktivnost</h3><div class="dashboard-value">${readAnalyticsCount()}</div></div>
     <div class="dashboard-card"><h3>Kategorije</h3><div class="dashboard-list"><div class="dashboard-list-row"><span>Poslovni</span><strong>${workCount}</strong></div><div class="dashboard-list-row"><span>Personalni</span><strong>${personalCount}</strong></div></div></div>
     <div class="dashboard-card"><h3>Dostupnost</h3><div class="dashboard-list"><div class="dashboard-list-row"><span>Telefon</span><strong>${phoneCount}</strong></div><div class="dashboard-list-row"><span>Email</span><strong>${emailCount}</strong></div></div></div>
     <div class="dashboard-card"><h3>Najčešći gradovi</h3><div class="dashboard-list">${topCities.length ? topCities.map(([city, count]) => `<div class="dashboard-list-row"><span>${escapeHtml(city)}</span><strong>${count}</strong></div>`).join('') : '<div class="dashboard-list-row"><span>Nema podataka</span></div>'}</div></div>
@@ -2017,6 +2138,9 @@ function openModal(contact) {
   }
   if (contact.org) html += buildRow('🏢', 'Organizacija', escapeHtml(contact.org));
   if (contact.notes) html += buildRow('📝', 'Notes', escapeHtml(contact.notes));
+  if (Array.isArray(contact.customFields) && contact.customFields.length) {
+    contact.customFields.forEach(field => { html += buildRow('🔖', escapeHtml(field.key), escapeHtml(field.value)); });
+  }
   if (contact.birthday) html += buildRow('🎂', 'Rođendan', escapeHtml(contact.birthday));
   if (contact.group) html += buildRow('👥', 'Grupa', escapeHtml(contact.group));
   if (contact.tags && contact.tags.length) {
@@ -2040,6 +2164,7 @@ function openModal(contact) {
   modalBody.innerHTML = html;
   modalOverlay.classList.add('active');
   document.body.classList.add('modal-open');
+  recordAnalytics('contact_opened');
 }
 function buildRow(icon, label, value) {
   return `<div class="modal-row"><div class="modal-row-icon">${icon}</div><div class="modal-row-content"><div class="modal-row-label">${label}</div><div class="modal-row-value">${value}</div></div></div>`;
@@ -2093,6 +2218,9 @@ function openEditor(contact = null) {
           </select></div>
         <div class="field full"><label for="editNotes">Notes</label>
           <textarea id="editNotes" name="notes">${escapeHtml(fd.notes || '')}</textarea></div>
+        <div class="field full"><label>Custom polja</label>
+          <div class="custom-fields" id="customFieldsEditor"></div>
+          <button type="button" class="mini-action-btn" id="addCustomFieldBtn">＋ Dodaj polje</button></div>
       </div>
       <div class="editor-actions">
         <button type="button" class="mini-action-btn" id="cancelEditBtn">Otkaži</button>
@@ -2106,6 +2234,14 @@ function openEditor(contact = null) {
   const attachmentList = document.getElementById('attachmentList');
   let avatar = fd.avatar || '';
   let attachments = Array.isArray(fd.attachments) ? [...fd.attachments] : [];
+  let customFields = Array.isArray(fd.customFields) ? fd.customFields.map(field => ({ ...field })) : [];
+  const customFieldsEditor = document.getElementById('customFieldsEditor');
+  const addCustomFieldBtn = document.getElementById('addCustomFieldBtn');
+  const renderCustomFieldsEditor = () => {
+    customFieldsEditor.innerHTML = customFields.map((field, index) => `<div class="custom-field-row"><input data-field-key="${index}" value="${escapeAttr(field.key || '')}" placeholder="Naziv"><input data-field-value="${index}" value="${escapeAttr(field.value || '')}" placeholder="Vrijednost"></div>`).join('');
+  };
+  renderCustomFieldsEditor();
+  addCustomFieldBtn.addEventListener('click', () => { customFields.push({ key: '', value: '' }); renderCustomFieldsEditor(); });
   avatarInput.addEventListener('change', () => {
     const file = avatarInput.files[0];
     if (!file) return;
@@ -2155,7 +2291,11 @@ function openEditor(contact = null) {
       birthday: form.elements.birthday.value,
       tags: form.elements.tags.value.split(',').map(tag => tag.trim()).filter(Boolean),
       group: form.elements.group.value,
-      category: form.elements.category.value
+      category: form.elements.category.value,
+      customFields: [...customFieldsEditor.querySelectorAll('[data-field-key]')].map(row => ({
+        key: row.value.trim(),
+        value: customFieldsEditor.querySelector(`[data-field-value="${row.dataset.fieldKey}"]`).value.trim()
+      })).filter(field => field.key && field.value)
     };
     if (!next.name) { showToast('⚠️ Ime obavezno'); return; }
     if (contact) {
@@ -2280,6 +2420,49 @@ function getFilteredContacts() {
   return filtered;
 }
 function applyFilters() { render(getFilteredContacts()); }
+
+function getFilterState() {
+  return {
+    query: searchInput.value,
+    filter: filterSelect.value,
+    showFavOnly,
+    advanced: [searchName, searchPhone, searchEmail, searchAddress, searchOrg, searchNotes].map(input => input.value),
+    sortKey,
+    sortAsc
+  };
+}
+function applyFilterState(state) {
+  searchInput.value = state.query || '';
+  filterSelect.value = state.filter || '';
+  showFavOnly = !!state.showFavOnly;
+  [searchName, searchPhone, searchEmail, searchAddress, searchOrg, searchNotes].forEach((input, index) => { input.value = state.advanced?.[index] || ''; });
+  sortKey = state.sortKey || 'name';
+  sortAsc = state.sortAsc !== false;
+  favFilterBtn.classList.toggle('active', showFavOnly);
+  applyFilters();
+}
+function loadQuickFilters() {
+  try { return JSON.parse(localStorage.getItem(QUICK_FILTERS_KEY) || '{}'); } catch(e) { return {}; }
+}
+function renderQuickFilters() {
+  const filters = loadQuickFilters();
+  savedFilterSelect.innerHTML = '<option value="">Sačuvani filteri</option>' + Object.keys(filters).map(name => `<option value="${escapeAttr(name)}">${escapeHtml(name)}</option>`).join('');
+}
+saveFilterChip.addEventListener('click', () => {
+  const name = prompt('Naziv filtera:');
+  if (!name?.trim()) return;
+  const filters = loadQuickFilters();
+  filters[name.trim()] = getFilterState();
+  try { localStorage.setItem(QUICK_FILTERS_KEY, JSON.stringify(filters)); } catch(e) {}
+  renderQuickFilters();
+  savedFilterSelect.value = name.trim();
+  recordAnalytics('filter_saved');
+});
+savedFilterSelect.addEventListener('change', () => {
+  const state = loadQuickFilters()[savedFilterSelect.value];
+  if (state) { applyFilterState(state); recordAnalytics('filter_used'); }
+});
+renderQuickFilters();
 
 document.querySelectorAll('th[data-key]').forEach(th => {
   th.addEventListener('click', () => {
