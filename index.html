@@ -310,6 +310,35 @@
   .name-cell { font-weight: 600; color: var(--accent); cursor: pointer; }
   .name-cell:hover { color: var(--accent-hover); text-decoration: underline; }
   .contact-avatar { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; vertical-align: middle; margin-right: 8px; border: 1px solid var(--border); }
+  .name-main { display: flex; align-items: center; gap: 8px; }
+  .contact-quick-actions { display: inline-flex; align-items: center; gap: 5px; margin-left: 6px; vertical-align: middle; }
+  .contact-quick-actions a { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 999px; font-size: 11px; font-weight: 800; text-decoration: none; white-space: nowrap; }
+  .contact-quick-actions .quick-call { background: linear-gradient(135deg, var(--accent-bg), var(--accent-bg-hover)); color: #fff; box-shadow: 0 4px 9px rgba(31,111,235,0.2); }
+  .contact-quick-actions .quick-whatsapp { background: linear-gradient(135deg, #25d366, #128c7e); color: #fff; box-shadow: 0 4px 9px rgba(37,211,102,0.2); }
+  .contact-quick-actions a:hover { transform: translateY(-1px); filter: brightness(1.08); }
+  .name-social-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 7px; margin-left: 38px; }
+  .table-social-icon {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 30px; height: 30px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.2);
+    background: linear-gradient(135deg, rgba(255,255,255,0.2), rgba(255,255,255,0.08));
+    color: var(--text); text-decoration: none; font-size: 13px; transition: all 0.18s ease;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.18); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  }
+  .table-social-icon:hover {
+    transform: translateY(-2px) scale(1.08);
+    border-color: rgba(255,255,255,0.5);
+    box-shadow: 0 12px 20px rgba(0,0,0,0.22);
+  }
+  .table-social-icon[data-platform="instagram"] { background: linear-gradient(135deg, #feda75, #fa7e1e, #d62976, #962fbf, #4f5bd5); color: #fff; }
+  .table-social-icon[data-platform="facebook"] { background: linear-gradient(135deg, #1877f2, #1d5fe2); color: #fff; }
+  .table-social-icon[data-platform="snapchat"] { background: linear-gradient(135deg, #fffc00, #ffef3d); color: #111; }
+  .table-social-icon[data-platform="tiktok"] { background: linear-gradient(135deg, #00f2ea, #ff0050); color: #fff; }
+  .table-social-icon[data-platform="x"] { background: linear-gradient(135deg, #111111, #2b2b2b); color: #fff; }
+  .table-social-icon[data-platform="linkedin"] { background: linear-gradient(135deg, #0a66c2, #004182); color: #fff; }
+  .table-social-icon[data-platform="youtube"] { background: linear-gradient(135deg, #ff0000, #cc0000); color: #fff; }
+  .table-social-icon[data-platform="telegram"] { background: linear-gradient(135deg, #29a9eb, #1a78b9); color: #fff; }
+  .table-social-icon[data-platform="spotify"] { background: linear-gradient(135deg, #1db954, #118a3e); color: #fff; }
+  .table-social-icon[data-platform="website"] { background: linear-gradient(135deg, #8b5cf6, #6366f1); color: #fff; }
   .phone-cell a, .email-cell a { color: var(--accent); text-decoration: none; word-break: break-all; }
   .phone-cell a:hover, .email-cell a:hover { color: var(--accent-hover); text-decoration: underline; }
   .fav-cell { width: 40px; text-align: center; padding: 10px 4px !important; }
@@ -326,14 +355,58 @@
   @keyframes slideUp { from { opacity: 0; transform: translateY(30px) scale(0.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
   .modal { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; max-width: 560px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px var(--shadow); animation: slideUp 0.25s ease; position: relative; -webkit-overflow-scrolling: touch; }
   .modal-header { padding: 20px 20px 18px; border-radius: 16px 16px 0 0; position: sticky; top: 0; z-index: 2; }
+  .modal-header::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 88% 8%, rgba(255,255,255,0.24) 0%, rgba(255,255,255,0.08) 24%, transparent 54%),
+      radial-gradient(ellipse at 10% 118%, rgba(120,220,255,0.24) 0%, rgba(120,220,255,0.07) 28%, transparent 58%);
+    filter: blur(18px) saturate(1.2);
+    opacity: 0.95;
+    pointer-events: none;
+  }
+  .modal-header::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(120deg, transparent 8%, rgba(255,255,255,0.12) 42%, transparent 70%),
+      radial-gradient(ellipse at 58% 108%, rgba(255,120,210,0.20) 0%, transparent 46%);
+    mix-blend-mode: screen;
+    filter: blur(12px) saturate(1.25);
+    opacity: 0.9;
+    pointer-events: none;
+  }
   .modal-header.color-blue { background: linear-gradient(135deg, #1f6feb, #388bfd); }
   .modal-header.color-purple { background: linear-gradient(135deg, #8250df, #a371f7); }
   .modal-header.color-green { background: linear-gradient(135deg, #1a7f37, #2ea043); }
   .modal-header.color-red { background: linear-gradient(135deg, #cf222e, #f85149); }
   .modal-header.color-orange { background: linear-gradient(135deg, #bc4c00, #fb8500); }
   .modal-header.color-pink { background: linear-gradient(135deg, #bf3989, #db61a2); }
-  .modal-avatar { width: 60px; height: 60px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 700; color: #fff; margin-bottom: 12px; border: 2px solid rgba(255,255,255,0.3); }
-  .modal-avatar img { width: 100%; height: 100%; border-radius: inherit; object-fit: cover; }
+  .modal-avatar {
+    width: 60px; height: 60px; border-radius: 50%;
+    background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center;
+    font-size: 24px; font-weight: 700; color: #fff; margin-bottom: 12px;
+    border: 3px solid rgba(255,255,255,0.28);
+    position: relative; overflow: hidden; z-index: 1;
+    box-shadow:
+      0 0 0 4px rgba(255,255,255,0.15),
+      0 0 0 8px rgba(255,255,255,0.07),
+      0 0 26px 6px rgba(255,255,255,0.24),
+      0 16px 30px rgba(15,23,42,0.24);
+  }
+  .modal-avatar::before {
+    content: "";
+    position: absolute;
+    inset: -8px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(255,255,255,0.48), rgba(255,255,255,0.08), rgba(255,255,255,0.30));
+    filter: blur(8px) saturate(1.3);
+    opacity: 0.95;
+    z-index: 0;
+  }
+  .modal-avatar img { width: 100%; height: 100%; border-radius: inherit; object-fit: cover; position: relative; z-index: 1; }
   #contactMap { height: 62vh; min-height: 360px; width: 100%; }
   .map-status { padding: 10px 20px; color: var(--text-muted); font-size: 13px; }
   .modal-name { font-size: 20px; font-weight: 700; color: #fff; line-height: 1.3; word-break: break-word; padding-right: 100px; }
@@ -359,13 +432,69 @@
   .modal-row-content { flex: 1; min-width: 0; }
   .modal-row-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-muted); font-weight: 600; margin-bottom: 4px; }
   .modal-row-value { font-size: 14px; color: var(--text); word-break: break-word; line-height: 1.5; }
+  .modal[data-glass="true"] .modal-header {
+    background:
+      linear-gradient(135deg, rgba(255,255,255,0.22), rgba(255,255,255,0.07) 48%, rgba(255,255,255,0.14)),
+      linear-gradient(120deg, rgba(82,145,255,0.16), transparent 58%);
+    border-bottom: 1px solid rgba(255,255,255,0.20);
+    backdrop-filter: blur(18px) saturate(1.35); -webkit-backdrop-filter: blur(18px) saturate(1.35);
+  }
+  .modal[data-glass="true"] {
+    background:
+      linear-gradient(145deg, rgba(255,255,255,0.11), rgba(255,255,255,0.025) 46%, rgba(86,145,255,0.08)),
+      rgba(17, 24, 39, 0.58);
+    border: 1px solid rgba(255,255,255,0.18);
+    backdrop-filter: blur(24px) saturate(1.3); -webkit-backdrop-filter: blur(24px) saturate(1.3);
+    box-shadow: 0 24px 70px rgba(15, 23, 42, 0.38), 0 0 0 1px rgba(255,255,255,0.04) inset, 0 1px 0 rgba(255,255,255,0.16) inset;
+  }
+  .modal[data-glass="true"] .modal-body {
+    background: linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.012));
+    box-shadow: 0 1px 0 rgba(255,255,255,0.05) inset;
+  }
   .modal-row-value a { color: var(--accent); text-decoration: none; }
   .modal-row-value a:hover { color: var(--accent-hover); text-decoration: underline; }
   .modal-row-value .phone-link, .modal-row-value .email-link { display: inline-block; margin-right: 8px; margin-bottom: 4px; padding: 4px 10px; background: var(--bg-header); border: 1px solid var(--border); border-radius: 6px; font-size: 14px; }
+  .modal-row-value .call-link, .phone-cell .call-link { background: linear-gradient(135deg, var(--accent-bg), var(--accent-bg-hover)); border-color: transparent; color: #fff; font-weight: 700; box-shadow: 0 4px 10px rgba(31,111,235,0.22); }
+  .modal-row-value .whatsapp-link { display: inline-flex; align-items: center; justify-content: center; gap: 6px; margin-right: 8px; margin-bottom: 4px; padding: 4px 10px; background: linear-gradient(135deg, #25d366, #128c7e); border: 1px solid rgba(18,140,126,0.5); border-radius: 999px; font-size: 12px; font-weight: 700; color: #fff; box-shadow: 0 4px 10px rgba(37,211,102,0.25); }
   .modal-row-value .phone-link:hover, .modal-row-value .email-link:hover { background: var(--accent-bg); border-color: var(--accent-bg); color: #fff; text-decoration: none; }
+  .modal-row-value .whatsapp-link:hover { background: linear-gradient(135deg, #1fbf5a, #0f7d69); color: #fff; text-decoration: none; transform: translateY(-1px); }
   .modal-tag { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; margin-right: 4px; margin-bottom: 4px; }
   .modal-tag.work { background: rgba(248,81,73,0.15); color: #ff7b72; border: 1px solid rgba(248,81,73,0.3); }
   .modal-tag.personal { background: rgba(63,185,80,0.15); color: #56d364; border: 1px solid rgba(63,185,80,0.3); }
+  .social-panel {
+    display: flex; flex-wrap: wrap; gap: 10px; padding: 12px; border-radius: 22px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(88,166,255,0.04));
+    border: 1px solid rgba(255,255,255,0.08); box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  .social-link-item {
+    display: flex; align-items: center; gap: 9px; min-width: 0; flex: 1 1 180px;
+    padding: 5px 7px 5px 5px; border-radius: 15px; background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    box-shadow: 0 8px 16px rgba(15,23,42,0.10);
+  }
+  .social-link {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 10px 12px; border-radius: 12px; font-size: 12px; font-weight: 800; letter-spacing: 0.2px;
+    text-decoration: none; flex: 1 1 auto; min-width: 0;
+    color: #fff; background: linear-gradient(135deg, #111827, #1f2937);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 10px 18px rgba(17,24,39,0.22);
+  }
+  .social-link[data-platform="instagram"] { background: linear-gradient(135deg, #ffd166, #ff7a18, #ff3d81, #8b5cf6, #2a7fff); box-shadow: 0 12px 22px rgba(255, 108, 146, 0.35); }
+  .social-link[data-platform="facebook"] { background: linear-gradient(135deg, #2f7cf6, #175dcb, #0b4fb0); box-shadow: 0 12px 22px rgba(47, 124, 246, 0.32); }
+  .social-link[data-platform="snapchat"] { background: linear-gradient(135deg, #fff200, #ffea00, #ffd000); color: #101010; box-shadow: 0 12px 22px rgba(255, 215, 0, 0.28); }
+  .social-link[data-platform="tiktok"] { background: linear-gradient(135deg, #1ef2ff, #00b7ff, #ff2a6d, #ff5f8d); box-shadow: 0 12px 22px rgba(255, 42, 109, 0.28); }
+  .social-link[data-platform="x"] { background: linear-gradient(135deg, #1d1d1d, #3b3b3b, #000000); box-shadow: 0 12px 22px rgba(17, 17, 17, 0.28); }
+  .social-link[data-platform="linkedin"] { background: linear-gradient(135deg, #1c9bff, #0a66c2, #004182); box-shadow: 0 12px 22px rgba(10, 102, 194, 0.28); }
+  .social-link[data-platform="youtube"] { background: linear-gradient(135deg, #ff3d3d, #ff1e1e, #d30000); box-shadow: 0 12px 22px rgba(255, 30, 30, 0.3); }
+  .social-link[data-platform="telegram"] { background: linear-gradient(135deg, #41d0ff, #2ea5ff, #0f7ad9); box-shadow: 0 12px 22px rgba(46, 165, 255, 0.28); }
+  .social-link[data-platform="spotify"] { background: linear-gradient(135deg, #1ed760, #17b857, #0d7a40); box-shadow: 0 12px 22px rgba(30, 215, 96, 0.3); }
+  .social-link[data-platform="website"] { background: linear-gradient(135deg, #9d5cff, #5b6cff, #5d81ff); box-shadow: 0 12px 22px rgba(93, 129, 255, 0.28); }
+  .copy-social-btn {
+    width: 34px; height: 34px; border: 1px solid rgba(255,255,255,0.12); border-radius: 12px;
+    background: rgba(255,255,255,0.06); color: var(--text); cursor: pointer;
+    font-size: 12px; font-weight: 700; transition: all 0.15s ease;
+  }
+  .copy-social-btn:hover { border-color: rgba(255,255,255,0.24); background: rgba(255,255,255,0.12); transform: translateY(-1px); }
   
   /* EDITOR */
   .contact-editor { padding: 20px; }
@@ -382,6 +511,9 @@
   .mini-action-btn { cursor: pointer; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-header); color: var(--text); padding: 8px 12px; font-weight: 600; }
   .mini-action-btn.primary { background: var(--accent-bg); border-color: var(--accent-bg); color: #fff; }
   .mini-action-btn.danger { color: var(--danger); border-color: rgba(255,123,114,0.5); }
+  .social-links-editor { display: flex; flex-direction: column; gap: 10px; }
+  .social-link-row { display: grid; grid-template-columns: 150px 1fr 38px; gap: 8px; align-items: center; }
+  .social-link-row select, .social-link-row input { min-height: 38px; }
   
   /* TOAST */
   .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--accent-bg); color: #fff; padding: 12px 20px; border-radius: 10px; font-size: 14px; font-weight: 600; z-index: 99999; box-shadow: 0 8px 24px var(--shadow); opacity: 0; transition: all 0.3s ease; pointer-events: none; max-width: 90%; text-align: center; }
@@ -1231,7 +1363,7 @@ const tbody = $('tableBody'), searchInput = $('searchInput'), searchBtn = $('sea
   shareBtn = $('shareBtn'), themeBtn = $('themeBtn'), settingsBtn = $('settingsBtn'),
   settingsPanel = $('settingsPanel'), settingsOverlay = $('settingsOverlay'),
   settingsClose = $('settingsClose'), resetSettings = $('resetSettings'), toast = $('toast'),
-  modalOverlay = $('modalOverlay'), modalHeader = $('modalHeader'), modalClose = $('modalClose'),
+  modalOverlay = $('modalOverlay'), modal = modalOverlay.querySelector('.modal'), modalHeader = $('modalHeader'), modalClose = $('modalClose'),
   modalFav = $('modalFav'), modalColor = $('modalColor'), modalAvatar = $('modalAvatar'),
   modalName = $('modalName'), modalSubtitle = $('modalSubtitle'), modalBody = $('modalBody'),
   colorPicker = $('colorPicker'), radujkovicOverlay = $('radujkovicOverlay'),
@@ -2024,9 +2156,26 @@ function render(data) {
     const isFav = favorites.has(c.name);
     const oi = contacts.indexOf(c);
     const sel = selectedContacts.has(c.name);
+    const countryFlag = getCountryFlag(c);
+    const countryLabel = getCountryLabel(c);
+    const avatarSrc = getContactAvatar(c);
+    const primaryPhone = c.phone ? String(c.phone).split('/')[0].trim() : '';
+    const primaryPhoneHref = primaryPhone.replace(/[^\d+]/g, '');
+    const primaryWhatsApp = cleanPhoneForWhatsApp(primaryPhoneHref);
+    const quickActions = primaryPhoneHref ? `<span class="contact-quick-actions">
+      <a href="tel:${escapeAttr(primaryPhoneHref)}" data-phone="${escapeAttr(primaryPhoneHref)}" class="quick-call" title="Call">📞 Call</a>
+      ${primaryWhatsApp ? `<a href="https://wa.me/${encodeURIComponent(primaryWhatsApp)}" data-whatsapp="${escapeAttr(primaryWhatsApp)}" target="_blank" rel="noopener" class="quick-whatsapp" title="WhatsApp">💬 WA</a>` : ''}
+    </span>` : '';
+    const socialLinks = getSocialEntries(c).slice(0, 4).map(([platform, url]) => {
+      const meta = getSocialMeta(platform);
+      return `<a href="${escapeAttr(url)}" target="_blank" rel="noopener" class="table-social-icon" title="${escapeAttr(meta.label)}">${meta.icon}</a>`;
+    }).join('');
     return `<tr class="contact-row" data-order="${oi}" draggable="true">
       <td class="fav-cell" data-label="⭐"><input class="row-check" type="checkbox" data-name="${escapeAttr(c.name)}" ${sel ? 'checked' : ''}><span class="fav-star ${isFav ? 'active' : ''}" data-name="${escapeAttr(c.name)}">${isFav ? '★' : '☆'}</span></td>
-      <td class="name-cell" data-name="${escapeAttr(c.name)}" data-label="Ime">${c.avatar ? `<img class="contact-avatar" src="${escapeAttr(c.avatar)}" alt="">` : ''}${escapeHtml(c.name)}</td>
+      <td class="name-cell" data-name="${escapeAttr(c.name)}" data-label="Ime" title="${escapeAttr(countryLabel)}">
+        <div class="name-main">${avatarSrc ? `<img class="contact-avatar" src="${escapeAttr(avatarSrc)}" alt="">` : ''}${countryFlag} ${escapeHtml(c.name)}${quickActions}</div>
+        ${socialLinks ? `<div class="name-social-row">${socialLinks}</div>` : ''}
+      </td>
       <td class="phone-cell" data-label="Telefon">${formatPhones(c.phone)}</td>
       <td class="email-cell" data-label="Email">${formatEmails(c.email)}</td>
       <td data-label="Adresa">${escapeHtml(c.address) || '—'}</td>
@@ -2047,7 +2196,8 @@ function render(data) {
     });
   });
   document.querySelectorAll('.name-cell').forEach(cell => {
-    cell.addEventListener('click', () => {
+    cell.addEventListener('click', event => {
+      if (event.target.closest('a')) return;
       const c = contacts.find(x => x.name === cell.dataset.name);
       if (c) openModal(c);
     });
@@ -2083,12 +2233,116 @@ function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 }
 function escapeAttr(s) { return escapeHtml(s); }
+function getCountryLabel(contact = {}) {
+  const explicit = String(contact.country || '').trim();
+  if (explicit) return explicit;
+  const source = [contact.address, contact.org, contact.notes, contact.email, contact.phone].filter(Boolean).join(' ');
+  const text = String(source || '').toLowerCase();
+  if (!text) return 'Canada';
+  if (/(canada|ontario|british columbia|alberta|manitoba|new brunswick|newfoundland|nova scotia|pei|quebec|saskatchewan|hamilton|toronto|ottawa|montreal|vancouver|calgary|winnipeg|edmonton)/i.test(text)) return 'Canada';
+  if (/(united states|usa|us\b|california|new york|texas|florida|washington|illinois|arizona|michigan)/i.test(text)) return 'United States';
+  if (/(united kingdom|uk\b|england|scotland|wales|london|manchester|glasgow|birmingham|liverpool)/i.test(text)) return 'United Kingdom';
+  if (/(australia|nsw|victoria|queensland|south australia|western australia|tasmania|act|sydney|melbourne|brisbane|perth)/i.test(text)) return 'Australia';
+  return 'Canada';
+}
+function getCountryFlag(contact = {}) {
+  const country = getCountryLabel(contact);
+  const flags = {
+    Canada: '🇨🇦',
+    'United States': '🇺🇸',
+    'United Kingdom': '🇬🇧',
+    Australia: '🇦🇺'
+  };
+  const normalized = String(country).trim().toLowerCase();
+  const countryMap = {
+    ca: '🇨🇦',
+    canada: '🇨🇦',
+    us: '🇺🇸',
+    usa: '🇺🇸',
+    'united states': '🇺🇸',
+    uk: '🇬🇧',
+    gb: '🇬🇧',
+    england: '🇬🇧',
+    'united kingdom': '🇬🇧',
+    au: '🇦🇺',
+    australia: '🇦🇺'
+  };
+  return countryMap[normalized] || flags[country] || '🇨🇦';
+}
+function normalizePhoneKey(raw) {
+  if (!raw) return '';
+  const digits = String(raw).replace(/\D/g, '');
+  if (!digits) return '';
+  return digits.startsWith('00') ? digits.slice(2) : digits;
+}
+function hashString(value) {
+  let hash = 2166136261;
+  for (let i = 0; i < value.length; i++) {
+    hash ^= value.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+}
+function getPhoneAvatarDataUrl(contact = {}) {
+  const seed = normalizePhoneKey(contact.phone) || String(contact.name || '').trim() || 'contact';
+  const hash = hashString(seed);
+  const initials = (getInitials(contact.name || 'Contact') || 'C').slice(0, 2).toUpperCase();
+  const hue = hash % 360;
+  const start = `hsl(${hue} 82% 62%)`;
+  const end = `hsl(${(hue + 26) % 360} 75% 48%)`;
+  const accent = `hsl(${(hue + 120) % 360} 95% 82%)`;
+  const ring = `hsla(${(hue + 75) % 360} 90% 92% / 0.45)`;
+  const dot = `hsla(${(hue + 170) % 360} 100% 92% / 0.72)`;
+  const svg = `
+    <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120' role='img' aria-label='Contact avatar'>
+      <defs>
+        <linearGradient id='avatarGrad' x1='0' x2='1' y1='0' y2='1'>
+          <stop offset='0%' stop-color='${start}'/>
+          <stop offset='100%' stop-color='${end}'/>
+        </linearGradient>
+        <radialGradient id='avatarGlow' cx='35%' cy='24%' r='75%'>
+          <stop offset='0%' stop-color='rgba(255,255,255,0.9)'/>
+          <stop offset='100%' stop-color='rgba(255,255,255,0)'/>
+        </radialGradient>
+      </defs>
+      <circle cx='60' cy='60' r='58' fill='url(#avatarGrad)'/>
+      <circle cx='60' cy='60' r='48' fill='rgba(255,255,255,0.08)' stroke='${ring}' stroke-width='2.5'/>
+      <circle cx='34' cy='28' r='20' fill='url(#avatarGlow)'/>
+      <circle cx='90' cy='28' r='5' fill='${dot}'/>
+      <circle cx='62' cy='43' r='16' fill='rgba(255,255,255,0.22)'/>
+      <path d='M31 93c8-18 18-27 29-27s21 9 29 27' fill='rgba(255,255,255,0.28)'/>
+      <path d='M38 82c6-10 15-15 22-15 9 0 18 5 24 15' fill='rgba(255,255,255,0.12)' stroke='rgba(255,255,255,0.2)' stroke-width='2' fill-rule='evenodd'/>
+      <circle cx='14' cy='16' r='7' fill='rgba(255,255,255,0.18)'/>
+      <path d='M98 90l4.5-10 9.5 4-7.5 6 2.5 10-8.5-4-8.5 4 2.5-10-7.5-6 9.5-4z' fill='rgba(255,255,255,0.18)'/>
+      <text x='60' y='69.5' text-anchor='middle' font-size='30' font-family='Arial, sans-serif' font-weight='800' fill='${accent}'>${escapeHtml(initials)}</text>
+    </svg>
+  `;
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+}
+function getContactAvatar(contact = {}) {
+  if (contact.avatar) return contact.avatar;
+  const fallback = getPhoneAvatarDataUrl(contact);
+  if (!contact.name && !contact.phone) return fallback;
+  return fallback;
+}
+function cleanPhoneForWhatsApp(raw) {
+  if (!raw) return '';
+  const digits = String(raw).replace(/\D/g, '');
+  if (!digits) return '';
+  return digits.startsWith('00') ? digits.slice(2) : digits;
+}
 function formatPhones(p) {
   if (!p) return '—';
   return p.split('/').map(x => {
     x = x.trim(); const c = x.replace(/[^\d+]/g, '');
-    return `<a href="tel:${c}" data-phone="${escapeAttr(c)}">${escapeHtml(x)}</a>`;
-  }).join('<br>');
+    const wa = cleanPhoneForWhatsApp(c);
+    return `
+      <div>
+        <a href="tel:${c}" data-phone="${escapeAttr(c)}" class="phone-link call-link" title="Call">📞 Call ${escapeHtml(x)}</a>
+        ${wa ? `<a href="https://wa.me/${encodeURIComponent(wa)}" data-whatsapp="${escapeAttr(wa)}" target="_blank" rel="noopener" class="whatsapp-link" title="WhatsApp">💬 WA</a>` : ''}
+      </div>
+    `;
+  }).join('');
 }
 function formatEmails(e) {
   if (!e) return '—';
@@ -2096,6 +2350,76 @@ function formatEmails(e) {
     x = x.trim();
     return `<a href="mailto:${encodeURIComponent(x)}">${escapeHtml(x)}</a>`;
   }).join('<br>');
+}
+function normalizeSocialObject(value) {
+  if (!value) return {};
+  if (typeof value === 'string') {
+    return { website: value.trim() };
+  }
+  if (typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value).filter(([_, url]) => typeof url === 'string' && url.trim()).map(([key, url]) => [String(key).toLowerCase(), url.trim()]))
+  }
+  return {};
+}
+function sanitizeSocialUrl(raw) {
+  if (!raw) return '';
+  let url = String(raw).trim();
+  if (!url) return '';
+  if (/^(https?:)?\/\//i.test(url)) return url;
+  if (url.startsWith('www.')) return `https://${url}`;
+  if (url.startsWith('@')) return `https://instagram.com/${url}`;
+  if (url.includes('.')) return `https://${url}`;
+  return url;
+}
+function getSocialEntries(contact = {}) {
+  const social = normalizeSocialObject(contact.social);
+  return Object.entries(social).filter(([_, url]) => !!url).map(([platform, url]) => {
+    const cleaned = sanitizeSocialUrl(url);
+    return [String(platform).toLowerCase(), cleaned];
+  });
+}
+function getSocialMeta(platform) {
+  const labels = {
+    instagram: 'Instagram',
+    facebook: 'Facebook',
+    snapchat: 'Snapchat',
+    tiktok: 'TikTok',
+    x: 'X / Twitter',
+    twitter: 'X / Twitter',
+    linkedin: 'LinkedIn',
+    youtube: 'YouTube',
+    telegram: 'Telegram',
+    spotify: 'Spotify',
+    website: 'Website'
+  };
+  const icons = {
+    instagram: '📷',
+    facebook: '👍',
+    snapchat: '👻',
+    tiktok: '🎵',
+    x: '𝕏',
+    twitter: '𝕏',
+    linkedin: '💼',
+    youtube: '▶️',
+    telegram: '✈️',
+    spotify: '🎧',
+    website: '🔗'
+  };
+  const safe = String(platform || '').toLowerCase();
+  return {
+    label: labels[safe] || (safe ? safe.charAt(0).toUpperCase() + safe.slice(1) : 'Link'),
+    icon: icons[safe] || '🔗'
+  };
+}
+function renderSocialLink(platform, url) {
+  const meta = getSocialMeta(platform);
+  return `
+    <div class="social-link-item">
+      <a href="${escapeAttr(url)}" target="_blank" rel="noopener" class="social-link" data-platform="${escapeAttr(platform)}">${meta.icon} ${escapeHtml(meta.label)}</a>
+      <button type="button" class="copy-social-btn" data-copy-social="${escapeAttr(url)}" title="Copy ${escapeAttr(meta.label)} link">⧉</button>
+    </div>
+  `;
 }
 
 // ==================== MODAL ====================
@@ -2107,11 +2431,16 @@ function getInitials(name) {
 }
 function openModal(contact) {
   currentModalContactId = contact.name;
-  modalAvatar.innerHTML = contact.avatar
-    ? `<img src="${escapeAttr(contact.avatar)}" alt="">`
+  const avatarSrc = getContactAvatar(contact);
+  modalAvatar.innerHTML = avatarSrc
+    ? `<img src="${escapeAttr(avatarSrc)}" alt="">`
     : escapeHtml(getInitials(contact.name));
-  modalName.textContent = contact.name || '—';
-  modalSubtitle.textContent = contact.org || '';
+  const countryFlag = getCountryFlag(contact);
+  const countryLabel = getCountryLabel(contact);
+  modalName.innerHTML = `${countryFlag} ${escapeHtml(contact.name || '—')}`;
+  modalSubtitle.textContent = contact.org || countryLabel || '';
+  modal.classList.add('glass-profile');
+  modal.setAttribute('data-glass', 'true');
   const isFav = favorites.has(contact.name);
   modalFav.textContent = isFav ? '★' : '☆';
   modalFav.classList.toggle('active', isFav);
@@ -2121,7 +2450,10 @@ function openModal(contact) {
   if (contact.phone) {
     const ps = contact.phone.split('/').map(p => {
       p = p.trim(); const c = p.replace(/[^\d+]/g, '');
-      return `<a href="tel:${c}" data-phone="${escapeAttr(c)}" class="phone-link">📞 ${escapeHtml(p)}</a>`;
+      const wa = cleanPhoneForWhatsApp(c);
+      const actions = [`<a href="tel:${c}" data-phone="${escapeAttr(c)}" class="phone-link call-link" title="Call">📞 Call ${escapeHtml(p)}</a>`];
+      if (wa) actions.push(`<a href="https://wa.me/${encodeURIComponent(wa)}" data-whatsapp="${escapeAttr(wa)}" target="_blank" rel="noopener" class="whatsapp-link" title="WhatsApp">💬 WA</a>`);
+      return actions.join('');
     }).join('');
     html += buildRow('📱', 'Telefon', ps);
   }
@@ -2132,10 +2464,15 @@ function openModal(contact) {
     }).join('');
     html += buildRow('✉️', 'Email', es);
   }
+  const socialEntries = getSocialEntries(contact);
+  if (socialEntries.length) {
+    html += buildRow('💬', 'Social media', `<div class="social-panel">${socialEntries.map(([platform, url]) => renderSocialLink(platform, url)).join('')}</div>`);
+  }
   if (contact.address) {
     const m = `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(contact.address)}" target="_blank" rel="noopener">🗺️ Google Maps</a>`;
     html += buildRow('📍', 'Adresa', escapeHtml(contact.address) + '<br><br>' + m);
   }
+  if (countryLabel) html += buildRow('🌍', 'Država', `${countryFlag} ${escapeHtml(countryLabel)}`);
   if (contact.org) html += buildRow('🏢', 'Organizacija', escapeHtml(contact.org));
   if (contact.notes) html += buildRow('📝', 'Notes', escapeHtml(contact.notes));
   if (Array.isArray(contact.customFields) && contact.customFields.length) {
@@ -2162,6 +2499,8 @@ function openModal(contact) {
   html += buildRow('🏷️', 'Kategorija', `<span class="modal-tag ${cc}">${cl}</span>`);
   if (!html) html = '<div class="modal-row"><div class="modal-row-content" style="text-align:center;color:var(--text-muted);">Nema podataka.</div></div>';
   modalBody.innerHTML = html;
+  modal.setAttribute('data-glass', 'true');
+  modal.classList.add('glass-profile');
   modalOverlay.classList.add('active');
   document.body.classList.add('modal-open');
   recordAnalytics('contact_opened');
@@ -2173,9 +2512,10 @@ function buildRow(icon, label, value) {
 // ==================== EDITOR ====================
 function openEditor(contact = null) {
   const orig = contact ? contact.name : currentModalContactId;
-  const fd = contact ? { ...contact } : { name: '', phone: '', email: '', address: '', org: '', notes: '', category: 'personal' };
-  modalAvatar.innerHTML = fd.avatar
-    ? `<img src="${escapeAttr(fd.avatar)}" alt="">`
+  const fd = contact ? { ...contact } : { name: '', phone: '', email: '', address: '', org: '', notes: '', country: 'Canada', category: 'personal' };
+  const editorAvatar = getContactAvatar(fd);
+  modalAvatar.innerHTML = editorAvatar
+    ? `<img src="${escapeAttr(editorAvatar)}" alt="">`
     : escapeHtml(getInitials(fd.name || 'N'));
   modalName.textContent = contact ? 'Uredi kontakt' : 'Novi kontakt';
   modalSubtitle.textContent = contact ? 'Promijeni detalje' : 'Dodaj novi zapis';
@@ -2184,6 +2524,8 @@ function openEditor(contact = null) {
       <div class="editor-grid">
         <div class="field full"><label for="editName">Ime</label>
           <input id="editName" name="name" value="${escapeAttr(fd.name || '')}" required></div>
+        <div class="field"><label for="editCountry">Država</label>
+          <input id="editCountry" name="country" value="${escapeAttr(fd.country || getCountryLabel(fd))}" placeholder="npr. Canada"></div>
         <div class="field full"><label for="editAvatar">Slika kontakta</label>
           <div class="avatar-upload">
             <img class="avatar-preview" id="avatarPreview" src="${fd.avatar ? escapeAttr(fd.avatar) : ''}" alt="">
@@ -2218,6 +2560,9 @@ function openEditor(contact = null) {
           </select></div>
         <div class="field full"><label for="editNotes">Notes</label>
           <textarea id="editNotes" name="notes">${escapeHtml(fd.notes || '')}</textarea></div>
+        <div class="field full"><label>Social media links</label>
+          <div class="social-links-editor" id="socialLinksEditor"></div>
+          <button type="button" class="mini-action-btn" id="addSocialLinkBtn">＋ Dodaj link</button></div>
         <div class="field full"><label>Custom polja</label>
           <div class="custom-fields" id="customFieldsEditor"></div>
           <button type="button" class="mini-action-btn" id="addCustomFieldBtn">＋ Dodaj polje</button></div>
@@ -2234,14 +2579,48 @@ function openEditor(contact = null) {
   const attachmentList = document.getElementById('attachmentList');
   let avatar = fd.avatar || '';
   let attachments = Array.isArray(fd.attachments) ? [...fd.attachments] : [];
+  let socialLinks = getSocialEntries(fd).map(([platform, url]) => ({ platform, url }));
+  if (!socialLinks.length) socialLinks = [{ platform: 'instagram', url: '' }];
   let customFields = Array.isArray(fd.customFields) ? fd.customFields.map(field => ({ ...field })) : [];
   const customFieldsEditor = document.getElementById('customFieldsEditor');
+  const socialLinksEditor = document.getElementById('socialLinksEditor');
   const addCustomFieldBtn = document.getElementById('addCustomFieldBtn');
+  const addSocialLinkBtn = document.getElementById('addSocialLinkBtn');
   const renderCustomFieldsEditor = () => {
     customFieldsEditor.innerHTML = customFields.map((field, index) => `<div class="custom-field-row"><input data-field-key="${index}" value="${escapeAttr(field.key || '')}" placeholder="Naziv"><input data-field-value="${index}" value="${escapeAttr(field.value || '')}" placeholder="Vrijednost"></div>`).join('');
   };
+  const renderSocialLinksEditor = () => {
+    socialLinksEditor.innerHTML = socialLinks.map((entry, index) => `
+      <div class="social-link-row">
+        <select data-social-platform="${index}">
+          <option value="instagram" ${entry.platform === 'instagram' ? 'selected' : ''}>Instagram</option>
+          <option value="facebook" ${entry.platform === 'facebook' ? 'selected' : ''}>Facebook</option>
+          <option value="snapchat" ${entry.platform === 'snapchat' ? 'selected' : ''}>Snapchat</option>
+          <option value="tiktok" ${entry.platform === 'tiktok' ? 'selected' : ''}>TikTok</option>
+          <option value="x" ${entry.platform === 'x' ? 'selected' : ''}>X / Twitter</option>
+          <option value="linkedin" ${entry.platform === 'linkedin' ? 'selected' : ''}>LinkedIn</option>
+          <option value="youtube" ${entry.platform === 'youtube' ? 'selected' : ''}>YouTube</option>
+          <option value="telegram" ${entry.platform === 'telegram' ? 'selected' : ''}>Telegram</option>
+          <option value="spotify" ${entry.platform === 'spotify' ? 'selected' : ''}>Spotify</option>
+          <option value="website" ${entry.platform === 'website' ? 'selected' : ''}>Website</option>
+        </select>
+        <input data-social-url="${index}" value="${escapeAttr(entry.url || '')}" placeholder="https://...">
+        <button type="button" class="mini-action-btn danger" data-remove-social="${index}">✕</button>
+      </div>
+    `).join('');
+    socialLinksEditor.querySelectorAll('[data-remove-social]').forEach(button => {
+      button.addEventListener('click', () => {
+        const idx = Number(button.dataset.removeSocial);
+        socialLinks.splice(idx, 1);
+        if (!socialLinks.length) socialLinks = [{ platform: 'instagram', url: '' }];
+        renderSocialLinksEditor();
+      });
+    });
+  };
   renderCustomFieldsEditor();
+  renderSocialLinksEditor();
   addCustomFieldBtn.addEventListener('click', () => { customFields.push({ key: '', value: '' }); renderCustomFieldsEditor(); });
+  addSocialLinkBtn.addEventListener('click', () => { socialLinks.push({ platform: 'instagram', url: '' }); renderSocialLinksEditor(); });
   avatarInput.addEventListener('change', () => {
     const file = avatarInput.files[0];
     if (!file) return;
@@ -2279,8 +2658,22 @@ function openEditor(contact = null) {
   });
   form.addEventListener('submit', e => {
     e.preventDefault();
+    const social = {};
+    socialLinksEditor.querySelectorAll('.social-link-row').forEach(row => {
+      const platform = row.querySelector('select')?.value || '';
+      const url = row.querySelector('input')?.value.trim() || '';
+      if (platform && url) social[platform] = sanitizeSocialUrl(url);
+    });
     const next = {
       name: form.elements.name.value.trim(),
+      country: form.elements.country.value.trim() || getCountryLabel({
+        country: form.elements.country.value.trim(),
+        address: form.elements.address.value.trim(),
+        org: form.elements.org.value.trim(),
+        notes: form.elements.notes.value.trim(),
+        email: form.elements.email.value.trim(),
+        phone: form.elements.phone.value.trim()
+      }),
       phone: form.elements.phone.value.trim(),
       email: form.elements.email.value.trim(),
       address: form.elements.address.value.trim(),
@@ -2288,6 +2681,7 @@ function openEditor(contact = null) {
       notes: form.elements.notes.value.trim(),
       avatar,
       attachments,
+      social,
       birthday: form.elements.birthday.value,
       tags: form.elements.tags.value.split(',').map(tag => tag.trim()).filter(Boolean),
       group: form.elements.group.value,
@@ -2497,7 +2891,26 @@ document.getElementById('resetSortChip').addEventListener('click', () => {
 
 searchInput.addEventListener('input', applyFilters);
 document.querySelectorAll('.advanced-search input').forEach(input => input.addEventListener('input', applyFilters));
-document.addEventListener('click', event => {
+document.addEventListener('click', async event => {
+  const copyButton = event.target.closest('[data-copy-social]');
+  if (copyButton) {
+    const text = copyButton.dataset.copySocial || '';
+    if (!text) return;
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const helper = document.createElement('textarea');
+        helper.value = text; document.body.appendChild(helper); helper.select(); document.execCommand('copy'); helper.remove();
+      }
+      showToast('✅ Link copied');
+    } catch (e) {
+      showToast('⚠️ Copy failed');
+    }
+    return;
+  }
+  const whatsappLink = event.target.closest('a[data-whatsapp]');
+  if (whatsappLink) return;
   const phoneLink = event.target.closest('a[data-phone]');
   if (!phoneLink) return;
   const contact = contacts.find(c => c.phone && c.phone.split('/').some(phone => phone.replace(/[^\d+]/g, '') === phoneLink.dataset.phone));
