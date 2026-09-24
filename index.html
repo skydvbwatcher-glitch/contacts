@@ -341,6 +341,7 @@
   .table-social-icon[data-platform="website"] { background: linear-gradient(135deg, #8b5cf6, #6366f1); color: #fff; }
   .phone-cell a, .email-cell a { color: var(--accent); text-decoration: none; word-break: break-all; }
   .phone-cell a:hover, .email-cell a:hover { color: var(--accent-hover); text-decoration: underline; }
+  .phone-number { color: var(--text-dim); margin-right: 6px; }
   .fav-cell { width: 40px; text-align: center; padding: 10px 4px !important; }
   .fav-star { font-size: 20px; cursor: pointer; user-select: none; display: inline-block; line-height: 1; filter: grayscale(1) opacity(0.4); transition: all 0.15s; }
   .fav-star:hover { transform: scale(1.2); filter: grayscale(0) opacity(1); }
@@ -458,6 +459,10 @@
   .modal-row-value .whatsapp-link { display: inline-flex; align-items: center; justify-content: center; gap: 6px; margin-right: 8px; margin-bottom: 4px; padding: 4px 10px; background: linear-gradient(135deg, #25d366, #128c7e); border: 1px solid rgba(18,140,126,0.5); border-radius: 999px; font-size: 12px; font-weight: 700; color: #fff; box-shadow: 0 4px 10px rgba(37,211,102,0.25); }
   .modal-row-value .phone-link:hover, .modal-row-value .email-link:hover { background: var(--accent-bg); border-color: var(--accent-bg); color: #fff; text-decoration: none; }
   .modal-row-value .whatsapp-link:hover { background: linear-gradient(135deg, #1fbf5a, #0f7d69); color: #fff; text-decoration: none; transform: translateY(-1px); }
+  .modal-row-value .phone-link, .modal-row-value .whatsapp-link,
+  .modal-row-value .phone-link:hover, .modal-row-value .whatsapp-link:hover {
+    background: transparent; border-color: transparent; box-shadow: none; color: var(--text-dim); text-decoration: none; transform: none;
+  }
   .modal-tag { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; margin-right: 4px; margin-bottom: 4px; }
   .modal-tag.work { background: rgba(248,81,73,0.15); color: #ff7b72; border: 1px solid rgba(248,81,73,0.3); }
   .modal-tag.personal { background: rgba(63,185,80,0.15); color: #56d364; border: 1px solid rgba(63,185,80,0.3); }
@@ -1323,7 +1328,7 @@ function loadSavedContacts() {
       const builtInNames = new Set(contacts.map(c => c.name));
       const merged = contacts
         .filter(c => !deletedNames.has(c.name))
-        .map(c => savedByName.get(c.name) || c);
+        .map(c => ({ ...c, ...(savedByName.get(c.name) || {}) }));
       parsed.forEach(c => { if (c && c.name && !builtInNames.has(c.name)) merged.push(c); });
       contacts.splice(0, contacts.length, ...merged);
     }
@@ -2338,7 +2343,7 @@ function formatPhones(p) {
     const wa = cleanPhoneForWhatsApp(c);
     return `
       <div>
-        <a href="tel:${c}" data-phone="${escapeAttr(c)}" class="phone-link call-link" title="Call">📞 Call ${escapeHtml(x)}</a>
+        <span class="phone-number">${escapeHtml(x)}</span><a href="tel:${c}" data-phone="${escapeAttr(c)}" class="phone-link call-link" title="Call">📞 Call</a>
         ${wa ? `<a href="https://wa.me/${encodeURIComponent(wa)}" data-whatsapp="${escapeAttr(wa)}" target="_blank" rel="noopener" class="whatsapp-link" title="WhatsApp">💬 WA</a>` : ''}
       </div>
     `;
@@ -2451,7 +2456,7 @@ function openModal(contact) {
     const ps = contact.phone.split('/').map(p => {
       p = p.trim(); const c = p.replace(/[^\d+]/g, '');
       const wa = cleanPhoneForWhatsApp(c);
-      const actions = [`<a href="tel:${c}" data-phone="${escapeAttr(c)}" class="phone-link call-link" title="Call">📞 Call ${escapeHtml(p)}</a>`];
+      const actions = [`<span class="phone-number">${escapeHtml(p)}</span><a href="tel:${c}" data-phone="${escapeAttr(c)}" class="phone-link call-link" title="Call">📞 Call</a>`];
       if (wa) actions.push(`<a href="https://wa.me/${encodeURIComponent(wa)}" data-whatsapp="${escapeAttr(wa)}" target="_blank" rel="noopener" class="whatsapp-link" title="WhatsApp">💬 WA</a>`);
       return actions.join('');
     }).join('');
