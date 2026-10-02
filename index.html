@@ -418,7 +418,8 @@
   }
   .modal-avatar img { width: 100%; height: 100%; border-radius: inherit; object-fit: cover; position: relative; z-index: 1; }
   .profile-photo-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-  .profile-photo-input { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+  .profile-photo-picker { position: relative; overflow: hidden; }
+  .profile-photo-input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
   #contactMap { height: 62vh; min-height: 360px; width: 100%; }
   .map-status { padding: 10px 20px; color: var(--text-muted); font-size: 13px; }
   .modal-name { font-size: 20px; font-weight: 700; color: #fff; line-height: 1.3; word-break: break-word; padding-right: 100px; }
@@ -2754,8 +2755,9 @@ function openEditor(contact = null) {
           <input id="editName" name="name" value="${escapeAttr(fd.name || '')}" required></div>
         <div class="field full"><label for="editProfilePhoto">Profilna slika</label>
           <div class="profile-photo-actions"><span class="contact-avatar-fallback" id="profilePhotoPreview">${escapeHtml(getInitials(fd.name))}</span>
-            <input id="editProfilePhoto" class="profile-photo-input" type="file" accept="image/*">
-            <button type="button" class="mini-action-btn" id="chooseProfilePhoto">Odaberi sliku</button>
+            <label class="mini-action-btn profile-photo-picker">Odaberi sliku
+              <input id="editProfilePhoto" class="profile-photo-input" type="file" accept="image/*">
+            </label>
             <button type="button" class="mini-action-btn" id="removeProfilePhoto">Ukloni sliku</button></div>
           <small id="profilePhotoHint" role="status" aria-live="polite">Slika se smanjuje prije spremanja.</small></div>
         <div class="field"><label for="editBirthday">Rođendan</label>
@@ -2804,13 +2806,11 @@ function openEditor(contact = null) {
   const attachmentList = document.getElementById('attachmentList');
   const profilePhotoInput = document.getElementById('editProfilePhoto');
   const profilePhotoPreview = document.getElementById('profilePhotoPreview');
-  const chooseProfilePhoto = document.getElementById('chooseProfilePhoto');
   const profilePhotoHint = document.getElementById('profilePhotoHint');
   const removeProfilePhoto = document.getElementById('removeProfilePhoto');
   let photoData = fd.photoData || null;
   let photoId = fd.photoId || null;
   renderContactAvatar(profilePhotoPreview, fd);
-  chooseProfilePhoto.addEventListener('click', () => profilePhotoInput.click());
   let attachments = Array.isArray(fd.attachments) ? [...fd.attachments] : [];
   let socialLinks = getSocialEntries(fd).map(([platform, url]) => ({ platform, url }));
   if (!socialLinks.length) socialLinks = [{ platform: 'instagram', url: '' }];
