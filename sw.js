@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kontakti-v2';
+const CACHE_NAME = 'kontakti-v3';
 const ASSETS = ['./', './index.html', './contacts-data.js', './manifest.json', './icon-192.png', './icon-512.png'];
 
  self.addEventListener('install', event => {
