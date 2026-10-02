@@ -51,6 +51,7 @@
     border: 1px solid var(--border); border-radius: 24px;
     padding: 18px 14px 14px; display: flex; flex-direction: column;
     gap: 14px; box-shadow: 0 18px 36px var(--shadow);
+    position: relative; z-index: 20; pointer-events: auto;
   }
   .brand-block {
     display: flex; align-items: center; gap: 10px;
@@ -71,7 +72,8 @@
     display: flex; align-items: center; gap: 10px;
     padding: 10px 12px; border-radius: 12px;
     color: var(--text-dim); border: 1px solid transparent;
-    font-weight: 600; background: transparent; cursor: pointer;
+    font: inherit; font-weight: 600; text-align: left; width: 100%;
+    background: transparent; cursor: pointer;
   }
   .nav-item:hover { background: rgba(255,255,255,0.03); }
   .nav-item.active {
@@ -80,11 +82,13 @@
   .nav-item .nav-icon { width: 28px; height: 28px; border-radius: 9px; background: rgba(255,255,255,0.04); display: flex; align-items: center; justify-content: center; font-size: 14px; }
   .sidebar-toggle { width: 100%; border: 1px solid var(--border); background: rgba(255,255,255,0.03); color: var(--text-muted); border-radius: 10px; padding: 8px; cursor: pointer; font-size: 12px; font-weight: 700; }
   .sidebar-toggle:hover { color: var(--text); border-color: var(--accent); }
+  .cloud-sync-status { display: block; padding: 0 12px; color: var(--text-muted); font-size: 11px; overflow-wrap: anywhere; }
   .workspace-layout.sidebar-collapsed .sidebar { padding-left: 10px; padding-right: 10px; }
   .workspace-layout.sidebar-collapsed .brand-block { justify-content: center; padding-left: 0; padding-right: 0; }
   .workspace-layout.sidebar-collapsed .brand-copy,
   .workspace-layout.sidebar-collapsed .nav-label,
-  .workspace-layout.sidebar-collapsed .sidebar-metric { display: none; }
+  .workspace-layout.sidebar-collapsed .sidebar-metric,
+  .workspace-layout.sidebar-collapsed .cloud-sync-status { display: none; }
   .workspace-layout.sidebar-collapsed .nav-item { justify-content: center; padding-left: 6px; padding-right: 6px; font-size: 0; }
   .workspace-layout.sidebar-collapsed .nav-item .nav-icon { margin: 0; }
   .sidebar-metric { margin-top: auto; padding: 12px 10px 8px; border-top: 1px solid var(--border-light); }
@@ -157,8 +161,8 @@
   .icon-btn.hidden { display: none; }
   
   /* SETTINGS PANEL */
-  .settings-panel { position: fixed; top: 0; right: -360px; width: 340px; max-width: 90vw; height: 100vh; background: var(--bg-card); border-left: 1px solid var(--border); box-shadow: -8px 0 24px var(--shadow); z-index: 9998; transition: right 0.3s ease; overflow-y: auto; padding: 20px; -webkit-overflow-scrolling: touch; }
-  .settings-panel.open { right: 0; }
+  .settings-panel { position: fixed; top: 0; right: -360px; width: 340px; max-width: 90vw; height: 100vh; background: var(--bg-card); border-left: 1px solid var(--border); box-shadow: -8px 0 24px var(--shadow); z-index: 9998; visibility: hidden; pointer-events: none; transition: right 0.3s ease, visibility 0s linear 0.3s; overflow-y: auto; padding: 20px; -webkit-overflow-scrolling: touch; }
+  .settings-panel.open { right: 0; visibility: visible; pointer-events: auto; transition-delay: 0s; }
   .settings-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9997; display: none; }
   .settings-overlay.active { display: block; }
   .settings-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
@@ -167,6 +171,8 @@
   .settings-close:hover { background: var(--bg-hover); border-color: var(--accent); }
   .settings-group { margin-bottom: 22px; }
   .settings-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-muted); font-weight: 600; margin-bottom: 10px; }
+  .settings-action-list { display: flex; flex-direction: column; gap: 6px; }
+  .settings-action { border-color: var(--border); border-radius: 10px; }
   .text-color-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
   .text-color-btn { height: 44px; border-radius: 10px; border: 2px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
   .text-color-btn.selected { border-color: var(--accent); border-width: 3px; }
@@ -310,6 +316,9 @@
   td { color: var(--text-dim); }
   .name-cell { font-weight: 600; color: var(--accent); cursor: pointer; }
   .name-cell:hover { color: var(--accent-hover); text-decoration: underline; }
+  .contact-avatar-small { width: 34px; height: 34px; border-radius: 50%; flex: 0 0 34px; object-fit: cover; background: var(--bg-header); border: 1px solid var(--border); }
+  .contact-avatar-fallback { width: 34px; height: 34px; border-radius: 50%; flex: 0 0 34px; display: inline-flex; align-items: center; justify-content: center; color: var(--text); background: var(--bg-header); border: 1px solid var(--border); font-size: 11px; font-weight: 700; }
+  .name-label { min-width: 0; overflow-wrap: anywhere; }
   .name-main { display: flex; align-items: center; gap: 8px; }
   .contact-quick-actions { display: inline-flex; align-items: center; gap: 5px; margin-left: 6px; vertical-align: middle; }
   .contact-quick-actions a { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 999px; font-size: 11px; font-weight: 800; text-decoration: none; white-space: nowrap; }
@@ -407,7 +416,8 @@
     z-index: 0;
   }
   .modal-avatar img { width: 100%; height: 100%; border-radius: inherit; object-fit: cover; position: relative; z-index: 1; }
-  #modalAvatar { display: none; }
+  .profile-photo-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .profile-photo-input { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
   #contactMap { height: 62vh; min-height: 360px; width: 100%; }
   .map-status { padding: 10px 20px; color: var(--text-muted); font-size: 13px; }
   .modal-name { font-size: 20px; font-weight: 700; color: #fff; line-height: 1.3; word-break: break-word; padding-right: 100px; }
@@ -618,54 +628,111 @@
   
   /* MOBILE */
   @media (max-width: 768px) {
-    body { padding: 8px; }
+    body {
+      padding: max(6px, env(safe-area-inset-top)) max(6px, env(safe-area-inset-right))
+        max(6px, env(safe-area-inset-bottom)) max(6px, env(safe-area-inset-left));
+    }
     .container { max-width: 100%; }
     .top-bar { margin-bottom: 10px; }
     h1 { font-size: 19px; }
     .subtitle { font-size: 12px; }
-    .workspace-layout { grid-template-columns: 1fr; }
+    .workspace-layout { grid-template-columns: minmax(0, 1fr); gap: 8px; }
     .workspace-layout.sidebar-collapsed { grid-template-columns: 1fr; }
-    .sidebar { order: 2; }
-    .app-shell { order: 1; }
+    .sidebar {
+      order: 0; position: sticky; top: env(safe-area-inset-top); z-index: 100;
+      flex-direction: row; flex-wrap: nowrap; gap: 8px; padding: 8px;
+      border-radius: 14px; overflow-x: auto; scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+    .sidebar::-webkit-scrollbar { display: none; }
+    .sidebar .brand-block, .sidebar .sidebar-toggle, .sidebar .nav-label,
+    .sidebar .sidebar-metric, .sidebar .cloud-sync-status { display: none; }
+    .sidebar .nav-group { flex: 0 0 auto; flex-direction: row; align-items: center; gap: 5px; }
+    .sidebar .nav-item {
+      width: auto; min-height: 44px; flex: 0 0 auto; padding: 6px 9px;
+      gap: 6px; border-radius: 10px; font-size: 12px; white-space: nowrap;
+    }
+    .sidebar .nav-item .nav-icon { width: 30px; height: 30px; flex: 0 0 30px; }
+    .sidebar #listSelect { width: 126px; min-height: 44px; flex: 0 0 126px; padding: 8px; font-size: 13px; }
+    .workspace-layout.sidebar-collapsed .sidebar { padding: 8px; }
+    .workspace-layout.sidebar-collapsed .sidebar .nav-item { font-size: 12px; }
+    .app-shell { order: 1; min-width: 0; padding: 12px; border-radius: 16px; }
     .workspace-toolbar { flex-direction: column; align-items: flex-start; }
     .toolbar-meta { align-items: flex-start; }
+    .top-actions {
+      width: 100%; flex-wrap: nowrap; overflow-x: auto; padding: 2px 0 6px;
+      scrollbar-width: none; -webkit-overflow-scrolling: touch;
+    }
+    .top-actions::-webkit-scrollbar { display: none; }
+    .top-actions .icon-btn { width: 44px; height: 44px; min-width: 44px; flex: 0 0 44px; }
+    .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .stat-card { min-height: 72px; padding: 10px; border-radius: 12px; }
+    .stat-card:last-child { grid-column: 1 / -1; }
+    .stat-value { font-size: 23px; }
     .controls { padding: 10px; gap: 6px; }
     .search-row { gap: 6px; }
+    .search-row input { min-width: 0; flex: 1 1 auto; }
+    .search-row .btn { min-width: 44px; min-height: 44px; padding: 8px; }
     .advanced-search { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .table-wrap { border-radius: 16px; overflow: hidden; }
+    .filter-chip-row { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 6px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+    .filter-chip-row::-webkit-scrollbar { display: none; }
+    .filter-chip-row > * { flex: 0 0 auto; }
+    .filter-chip { min-height: 42px; }
+    .table-wrap { width: 100%; border-radius: 14px; overflow: hidden; }
     table { display: block; min-width: 0; border-spacing: 0; }
     thead { display: none; }
     tbody { display: block; }
     tbody tr {
-      display: block; border: 1px solid var(--border); border-radius: 16px;
-      margin: 10px 8px; padding: 12px 12px 10px;
+      display: grid; grid-template-columns: 34px minmax(0, 1fr); column-gap: 9px; row-gap: 5px;
+      border: 1px solid var(--border); border-radius: 12px;
+      margin: 8px; padding: 10px;
       background: var(--bg-card); box-shadow: 0 6px 18px rgba(0,0,0,0.05);
     }
     tbody tr:hover { background: var(--bg-card); }
-    tbody tr td { display: block; width: 100%; border: none; padding: 5px 0; }
+    tbody tr td { display: none; width: auto; min-width: 0; border: none; padding: 0; }
+    tbody tr .fav-cell {
+      display: flex; grid-column: 1; grid-row: 1 / span 3; flex-direction: column;
+      align-items: center; justify-content: flex-start; gap: 9px; padding: 4px 0 0 !important;
+    }
+    tbody tr .name-cell { display: block; grid-column: 2; grid-row: 1; margin: 0; font-size: 16px; }
+    tbody tr .phone-cell { display: block; grid-column: 2; grid-row: 2; }
+    tbody tr .email-cell { display: block; grid-column: 2; grid-row: 3; }
     tbody tr td::before {
       content: attr(data-label); display: block;
-      font-size: 10px; text-transform: uppercase; color: var(--text-muted);
-      letter-spacing: 0.5px; margin-bottom: 2px; font-weight: 700;
+      font-size: 9px; text-transform: uppercase; color: var(--text-muted);
+      letter-spacing: 0.5px; margin-bottom: 1px; font-weight: 700;
     }
-    .fav-cell { padding: 0 0 12px !important; }
-    .name-cell { font-size: 17px; margin-bottom: 4px; }
-    .name-cell::after { content: ''; }
+    tbody tr .fav-cell::before, tbody tr .name-cell::before { display: none; }
+    .contact-avatar-small, .contact-avatar-fallback { width: 32px; height: 32px; flex-basis: 32px; }
+    .name-main { align-items: center; flex-wrap: wrap; }
+    .name-social-row { margin-left: 0; }
     .phone-cell a, .email-cell a { display: inline-block; }
-    .btn { padding: 11px 12px; font-size: 15px; }
-    .icon-btn { width: 38px; height: 38px; font-size: 14px; }
-    .modal-overlay { padding: 0; align-items: flex-end; }
-    .modal { max-width: 100%; max-height: 95vh; border-radius: 20px 20px 0 0; }
+    .btn { min-height: 44px; padding: 10px 12px; font-size: 15px; }
+    .modal-overlay { padding: 0 0 env(safe-area-inset-bottom); align-items: flex-end; }
+    .modal { max-width: 100%; max-height: 95vh; max-height: 92dvh; border-radius: 20px 20px 0 0; }
     .modal-header { border-radius: 20px 20px 0 0; padding: 18px 16px; }
     .modal-name { font-size: 18px; padding-right: 130px; }
     .modal-row { padding: 12px 16px; gap: 12px; }
     .modal-row-icon { width: 28px; height: 28px; font-size: 16px; }
-    .modal-close, .modal-fav, .modal-color, .modal-edit, .modal-delete, .modal-vcard, .modal-print { width: 34px; height: 34px; font-size: 14px; }
-    .settings-panel { width: 100%; max-width: 100%; }
+    .modal-close, .modal-fav, .modal-color, .modal-edit, .modal-delete, .modal-vcard, .modal-print { width: 40px; height: 40px; font-size: 14px; }
+    .settings-panel { right: -100%; width: min(380px, 92vw); max-width: 92vw; height: 100dvh; }
+    .settings-panel.open { right: 0; }
     .editor-grid { grid-template-columns: 1fr; }
     .action-bar { align-items: stretch; }
     .action-bar .status-pill { flex: 1 1 100%; text-align: center; }
     .modal-header-actions { flex-wrap: wrap; max-width: 140px; justify-content: flex-end; }
+  }
+  @media (max-width: 380px) {
+    .app-shell { padding: 9px; }
+    .workspace-toolbar { padding: 8px; }
+    .sidebar { gap: 6px; padding: 6px; }
+    .sidebar .nav-group { gap: 3px; }
+    .sidebar .nav-item { padding: 5px 7px; }
+    .sidebar .nav-item .nav-icon { width: 28px; height: 28px; flex-basis: 28px; }
+    .stat-card { padding: 8px; }
+    .modal-name { padding-right: 118px; }
+    .modal-header-actions { max-width: 126px; gap: 4px; }
+    .modal-close, .modal-fav, .modal-color, .modal-edit, .modal-delete, .modal-vcard, .modal-print { width: 36px; height: 36px; }
   }
   body.modal-open { overflow: hidden; }
 </style>
@@ -699,10 +766,10 @@
       <div class="nav-label" data-i18n="navWorkspace">Workspace</div>
       <select id="listSelect" class="saved-filter-select" aria-label="Lokalna lista"><option value="default">Glavna lista</option></select>
       <div class="nav-item" id="dashboardBtn"><span class="nav-icon">📊</span> <span>Dashboard</span></div>
-      <div class="nav-item active"><span class="nav-icon">📞</span> <span data-i18n="navContacts">Contacts</span></div>
-      <div class="nav-item"><span class="nav-icon">⭐</span> <span data-i18n="navFavorites">Favorites</span></div>
-      <div class="nav-item"><span class="nav-icon">👨‍👩‍👧‍👦</span> <span data-i18n="navFamilies">Families</span></div>
-      <div class="nav-item"><span class="nav-icon">⚡</span> <span data-i18n="navNotes">Quick notes</span></div>
+      <button class="nav-item active" id="contactsNavBtn" type="button"><span class="nav-icon">📞</span> <span data-i18n="navContacts">Contacts</span></button>
+      <button class="nav-item" id="favoritesNavBtn" type="button" onclick="activateSidebarTab('favorites')"><span class="nav-icon">⭐</span> <span data-i18n="navFavorites">Favorites</span></button>
+      <button class="nav-item" id="familiesNavBtn" type="button" onclick="activateSidebarTab('families')"><span class="nav-icon">👨‍👩‍👧‍👦</span> <span data-i18n="navFamilies">Families</span></button>
+      <button class="nav-item" id="notesNavBtn" type="button" onclick="activateSidebarTab('notes')"><span class="nav-icon">⚡</span> <span data-i18n="navNotes">Quick notes</span></button>
     </div>
 
     <div class="nav-group">
@@ -712,12 +779,6 @@
       <div class="nav-item" id="importBtn"><span class="nav-icon">📥</span> <span data-i18n="actionImport">Import CSV</span></div>
       <div class="nav-item" id="sidebarPrintBtn"><span class="nav-icon">🖨️</span> <span data-i18n="actionPrint">Print</span></div>
       <div class="nav-item" id="sidebarShareBtn"><span class="nav-icon">🔗</span> <span data-i18n="actionShare">Share</span></div>
-    </div>
-
-    <div class="nav-group">
-      <div class="nav-label" data-i18n="navSettings">Settings</div>
-      <div class="nav-item" id="sidebarPinBtn"><span class="nav-icon">🔒</span> <span data-i18n="actionPin">PIN lock</span></div>
-      <div class="nav-item" id="sidebarPwaBtn" style="display:none;"><span class="nav-icon">📱</span> <span data-i18n="actionInstall">Install app</span></div>
     </div>
 
     <div class="sidebar-metric">
@@ -748,6 +809,7 @@
         </div>
       </div>
       <div class="top-actions">
+        <button class="icon-btn" id="settingsBtn" type="button" title="Podešavanja" aria-label="Podešavanja">⚙️</button>
         <button class="icon-btn add-contact-btn" id="addContactBtn" title="Dodaj kontakt">＋</button>
         <button class="icon-btn" id="favFilterBtn" title="Favoriti">⭐<span class="badge" id="favBadge">0</span></button>
         <button class="icon-btn" id="radujkovicBtn" title="Radujkovići">👨‍👩‍👧‍👦</button>
@@ -759,7 +821,6 @@
         <button class="icon-btn" id="exportBtn" title="Export CSV">📥</button>
         <button class="icon-btn" id="printBtn" title="Print">🖨️</button>
         <button class="icon-btn" id="shareBtn" title="Share">🔗</button>
-        <button class="icon-btn" id="settingsBtn" title="Podešavanja">⚙️</button>
         <button class="icon-btn" id="themeBtn" title="Tema">🌙</button>
       </div>
     </div>
@@ -842,6 +903,8 @@
         <option value="email" data-i18n="filterEmail">✉️ Samo sa emailom</option>
         <option value="address" data-i18n="filterAddress">📍 Samo sa adresom</option>
         <option value="__fav__" data-i18n="filterFav">⭐ Samo favoriti</option>
+        <option value="__family__">👨‍👩‍👧‍👦 Samo porodica</option>
+        <option value="__notes__">⚡ Samo sa bilješkama</option>
         <option value="__radujkovic__" data-i18n="filterRad">👨‍👩‍👧‍👦 Samo Radujkovići</option>
       </select>
       <div class="advanced-search" aria-label="Napredna pretraga">
@@ -886,6 +949,15 @@
   <div class="settings-header">
     <div class="settings-title">⚙️ <span data-i18n="settingsTitle">Podešavanja</span></div>
     <button class="settings-close" id="settingsClose" type="button">✕</button>
+  </div>
+  <div class="settings-group">
+    <div class="settings-label" data-i18n="settingsAccount">Račun i uređaj</div>
+    <div class="settings-action-list">
+      <button class="nav-item settings-action" id="cloudSyncBtn" type="button"><span class="nav-icon">☁️</span> <span data-cloud-action data-i18n="cloudConnect">Connect cloud backup</span></button>
+      <small class="cloud-sync-status" id="cloudSyncStatus" aria-live="polite">Not connected</small>
+      <button class="nav-item settings-action" id="sidebarPinBtn" type="button"><span class="nav-icon">🔒</span> <span data-i18n="actionPin">PIN lock</span></button>
+      <button class="nav-item settings-action" id="sidebarPwaBtn" type="button" style="display:none;"><span class="nav-icon">📱</span> <span data-i18n="actionInstall">Install app</span></button>
+    </div>
   </div>
   <div class="settings-group">
     <div class="settings-label" data-i18n="settingsColor">🎨 Boja teksta</div>
@@ -1053,7 +1125,7 @@ const I18N = {
     brand: 'Pro Contacts', brandSub: 'Directory OS',
     navWorkspace: 'Workspace', navContacts: 'Contacts', navFavorites: 'Favorites',
     navFamilies: 'Families', navNotes: 'Quick notes', navActions: 'Actions',
-    navSettings: 'Settings',
+    navSettings: 'Settings', settingsAccount: 'Račun i uređaj', cloudConnect: 'Poveži cloud sigurnosnu kopiju',
     actionNew: 'Novi kontakt', actionExport: 'Export CSV', actionImport: 'Import CSV',
     actionPrint: 'Print', actionShare: 'Podijeli', actionPin: 'PIN zaštita', actionInstall: 'Instaliraj',
     metricCoverage: 'Pokrivenost',
@@ -1081,7 +1153,7 @@ const I18N = {
     brand: 'Pro Contacts', brandSub: 'Directory OS',
     navWorkspace: 'Workspace', navContacts: 'Contacts', navFavorites: 'Favorites',
     navFamilies: 'Families', navNotes: 'Quick notes', navActions: 'Actions',
-    navSettings: 'Settings',
+    navSettings: 'Settings', settingsAccount: 'Account & device', cloudConnect: 'Connect cloud backup',
     actionNew: 'New contact', actionExport: 'Export CSV', actionImport: 'Import CSV',
     actionPrint: 'Print', actionShare: 'Share', actionPin: 'PIN lock', actionInstall: 'Install app',
     metricCoverage: 'Coverage',
@@ -1123,6 +1195,7 @@ function applyLanguage(lang) {
   document.querySelectorAll('.lang-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.lang === lang);
   });
+  window.contactCloudSync?.refreshLanguage();
   try { localStorage.setItem('contacts_lang', lang); } catch(e) {}
 }
 
@@ -1230,7 +1303,13 @@ let deferredPrompt = null;
 const sidebarPwaBtn = document.getElementById('sidebarPwaBtn');
 
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js').catch(() => {});
+  navigator.serviceWorker.register('sw.js?v=5').then(registration => registration.update()).catch(() => {});
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!window.__serviceWorkerReloaded) {
+      window.__serviceWorkerReloaded = true;
+      window.location.reload();
+    }
+  });
 }
 
 window.addEventListener('beforeinstallprompt', (e) => {
@@ -1254,6 +1333,10 @@ if (sidebarPwaBtn) {
 }
 
 // ==================== STORAGE ====================
+function notifyCloudBackup() {
+  window.contactCloudSync?.localChanged();
+}
+
 const UrlStorage = {
   getFavorites() {
     try {
@@ -1278,6 +1361,7 @@ const UrlStorage = {
       const newHash = (hash ? hash + '&' : '') + 'fav=' + encoded;
       history.replaceState(null, '', '#' + newHash);
     } catch(e) {}
+    notifyCloudBackup();
   }
 };
 
@@ -1289,7 +1373,76 @@ const STORAGE_KEY = 'contacts-address-book-v1';
 const DELETED_STORAGE_KEY = 'contacts-deleted-v1';
 const QUICK_FILTERS_KEY = 'contacts-quick-filters-v1';
 const ANALYTICS_KEY = 'contacts-local-analytics-v1';
+const PROFILE_PHOTO_DB = 'contacts-profile-photos-v1';
+let profilePhotoDbPromise;
+let profilePhotosReady = Promise.resolve();
 let favorites = new Set(UrlStorage.getFavorites());
+
+function openProfilePhotoDb() {
+  if (!window.indexedDB) return Promise.reject(new Error('Ovaj preglednik ne podržava trajnu pohranu slika.'));
+  if (!profilePhotoDbPromise) {
+    profilePhotoDbPromise = new Promise((resolve, reject) => {
+      const request = indexedDB.open(PROFILE_PHOTO_DB, 1);
+      request.onupgradeneeded = () => request.result.createObjectStore('photos');
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error || new Error('Pohrana slika nije dostupna.'));
+    });
+  }
+  return profilePhotoDbPromise;
+}
+
+function saveProfilePhoto(photoId, photoData) {
+  return openProfilePhotoDb().then(db => new Promise((resolve, reject) => {
+    const transaction = db.transaction('photos', 'readwrite');
+    transaction.objectStore('photos').put(photoData, photoId);
+    transaction.oncomplete = () => resolve();
+    transaction.onabort = transaction.onerror = () => reject(transaction.error || new Error('Slika nije spremljena.'));
+  }));
+}
+
+function readProfilePhoto(photoId) {
+  return openProfilePhotoDb().then(db => new Promise((resolve, reject) => {
+    const request = db.transaction('photos', 'readonly').objectStore('photos').get(photoId);
+    request.onsuccess = () => resolve(typeof request.result === 'string' ? request.result : null);
+    request.onerror = () => reject(request.error || new Error('Slika se ne može učitati.'));
+  }));
+}
+
+function contactsWithoutPhotoData(entries) {
+  return entries.map(contact => {
+    if (!contact || typeof contact !== 'object') return contact;
+    const { photoData, ...savedContact } = contact;
+    return savedContact;
+  });
+}
+
+async function migrateProfilePhotos() {
+  const photoWrites = [];
+  const storedContacts = [];
+  for (let index = 0; index < localStorage.length; index++) {
+    const key = localStorage.key(index);
+    if (key !== STORAGE_KEY && !key?.startsWith('contacts-list-')) continue;
+    try {
+      const entries = JSON.parse(localStorage.getItem(key));
+      if (!Array.isArray(entries)) continue;
+      entries.forEach(contact => {
+        if (contact?.photoId && typeof contact.photoData === 'string') {
+          photoWrites.push(saveProfilePhoto(contact.photoId, contact.photoData));
+        }
+      });
+      storedContacts.push([key, entries]);
+    } catch (error) {}
+  }
+  if (!photoWrites.length) return;
+  try {
+    await Promise.all(photoWrites);
+    storedContacts.forEach(([key, entries]) => {
+      localStorage.setItem(key, JSON.stringify(contactsWithoutPhotoData(entries)));
+    });
+  } catch (error) {
+    console.error('Profilne slike nisu migrirane u trajnu pohranu.', error);
+  }
+}
 
 function recordAnalytics(event) {
   try {
@@ -1310,6 +1463,13 @@ function loadDeletedNames() {
 }
 function persistDeletedNames(names) {
   try { localStorage.setItem(DELETED_STORAGE_KEY, JSON.stringify([...names])); } catch(e) {}
+  notifyCloudBackup();
+}
+function clearDeletedContactName(name) {
+  const normalized = name.trim().toLowerCase();
+  deletedNames.forEach(deletedName => {
+    if (deletedName.trim().toLowerCase() === normalized) deletedNames.delete(deletedName);
+  });
 }
 const deletedNames = loadDeletedNames();
 const builtInContactNames = new Set(contacts.map(c => c.name));
@@ -1331,9 +1491,12 @@ function loadSavedContacts() {
   } catch (e) {}
 }
 function persistContacts() {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(contacts)); } catch(e) {}
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(contactsWithoutPhotoData(contacts))); }
+  catch(e) { showToast('⚠️ Kontakti se ne mogu spremiti. Oslobodi prostor u pregledniku.'); }
+  notifyCloudBackup();
 }
 loadSavedContacts();
+profilePhotosReady = migrateProfilePhotos();
 
 let currentTheme = 'dark', headerColor = 'blue', textColor = 'default',
     textSize = 'medium', textStyle = 'normal', showFavOnly = false,
@@ -1399,8 +1562,9 @@ const LOCAL_LISTS_KEY = 'contacts-local-lists-v1';
 function loadLocalLists() {
   try { return JSON.parse(localStorage.getItem(LOCAL_LISTS_KEY) || '{"default": "Glavna lista"}'); } catch(e) { return { default: 'Glavna lista' }; }
 }
-function persistLocalList() {
-  try { localStorage.setItem(`contacts-list-${listSelect.value}`, JSON.stringify(contacts)); } catch(e) {}
+function persistLocalList(notify = true) {
+  try { localStorage.setItem(`contacts-list-${listSelect.value}`, JSON.stringify(contactsWithoutPhotoData(contacts))); } catch(e) {}
+  if (notify) notifyCloudBackup();
 }
 function renderLocalLists() {
   const lists = loadLocalLists();
@@ -1419,9 +1583,10 @@ function switchLocalList(listId) {
   persistLocalList();
   const saved = JSON.parse(localStorage.getItem(`contacts-list-${listSelect.value}`) || 'null');
   if (Array.isArray(saved)) contacts.splice(0, contacts.length, ...saved);
-  else localStorage.setItem(`contacts-list-${listSelect.value}`, JSON.stringify(contacts));
+  else localStorage.setItem(`contacts-list-${listSelect.value}`, JSON.stringify(contactsWithoutPhotoData(contacts)));
   favorites = new Set(); selectedContacts.clear(); applyFilters();
   recordAnalytics('list_switched');
+  notifyCloudBackup();
 }
 renderLocalLists();
 listSelect.addEventListener('change', () => switchLocalList(listSelect.value));
@@ -1461,7 +1626,7 @@ bulkDeleteBtn.addEventListener('click', () => {
   if (!selectedContacts.size || !confirm(`Obrisati ${selectedContacts.size}?`)) return;
   for (let i = contacts.length - 1; i >= 0; i--) {
     if (selectedContacts.has(contacts[i].name)) {
-      if (builtInContactNames.has(contacts[i].name)) deletedNames.add(contacts[i].name);
+      deletedNames.add(contacts[i].name);
       contacts.splice(i, 1);
     }
   }
@@ -1584,6 +1749,53 @@ shareBtn.addEventListener('click', async () => {
 sidebarShareBtn.addEventListener('click', () => shareBtn.click());
 sidebarExportBtn.addEventListener('click', () => exportBtn.click());
 sidebarAddBtn.addEventListener('click', () => openEditor());
+const contactsNavBtn = $('contactsNavBtn');
+const favoritesNavBtn = $('favoritesNavBtn');
+const familiesNavBtn = $('familiesNavBtn');
+const notesNavBtn = $('notesNavBtn');
+function setActiveNav(activeButton) {
+  [contactsNavBtn, favoritesNavBtn, familiesNavBtn, notesNavBtn].forEach(button => button.classList.toggle('active', button === activeButton));
+}
+function resetNavSearch() {
+  searchInput.value = '';
+  document.querySelectorAll('.advanced-search input').forEach(input => { input.value = ''; });
+}
+window.activateSidebarTab = tab => {
+  resetNavSearch();
+  showFavOnly = false;
+  favFilterBtn.classList.remove('active');
+  if (tab === 'favorites') {
+    showFavOnly = true;
+    filterSelect.value = '__fav__';
+    favFilterBtn.classList.add('active');
+    setActiveNav(favoritesNavBtn);
+  } else if (tab === 'families') {
+    filterSelect.value = '__family__';
+    setActiveNav(familiesNavBtn);
+  } else if (tab === 'notes') {
+    filterSelect.value = '__notes__';
+    setActiveNav(notesNavBtn);
+  } else {
+    filterSelect.value = '';
+    setActiveNav(contactsNavBtn);
+  }
+  document.querySelectorAll('.filter-chip').forEach(chip => chip.classList.toggle('active', tab === 'favorites' ? chip.dataset.filter === 'favorites' : tab === 'contacts' && chip.dataset.filter === 'all'));
+  applyFilters();
+  document.querySelector('.table-wrap')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  showToast(tab === 'favorites' ? '⭐ Favorites' : tab === 'families' ? '👨‍👩‍👧‍👦 Families' : tab === 'notes' ? '⚡ Quick notes' : '📞 Contacts');
+};
+contactsNavBtn.addEventListener('click', () => {
+  activateSidebarTab('contacts');
+});
+favoritesNavBtn.addEventListener('click', () => {
+  activateSidebarTab('favorites');
+});
+familiesNavBtn.addEventListener('click', () => {
+  activateSidebarTab('families');
+});
+notesNavBtn.addEventListener('click', () => {
+  activateSidebarTab('notes');
+});
 
 // ==================== PRINT ====================
 function doPrint() {
@@ -2144,7 +2356,10 @@ function render(data) {
     return `<tr class="contact-row" data-order="${oi}" draggable="true">
       <td class="fav-cell" data-label="⭐"><input class="row-check" type="checkbox" data-name="${escapeAttr(c.name)}" ${sel ? 'checked' : ''}><span class="fav-star ${isFav ? 'active' : ''}" data-name="${escapeAttr(c.name)}">${isFav ? '★' : '☆'}</span></td>
       <td class="name-cell" data-name="${escapeAttr(c.name)}" data-label="Ime">
-        <div class="name-main">${escapeHtml(c.name)}${quickActions}</div>
+        <div class="name-main">${c.photoData && c.photoData.startsWith('data:image/')
+          ? `<img class="contact-avatar-small" src="${escapeAttr(c.photoData)}" alt="">`
+          : `<span class="contact-avatar-fallback" ${c.photoId ? `data-photo-id="${escapeAttr(c.photoId)}"` : ''}>${escapeHtml(getInitials(c.name))}</span>`}
+          <span class="name-label">${escapeHtml(c.name)}${quickActions}</span></div>
         ${socialLinks ? `<div class="name-social-row">${socialLinks}</div>` : ''}
       </td>
       <td class="phone-cell" data-label="Telefon">${formatPhones(c.phone)}</td>
@@ -2189,6 +2404,10 @@ function render(data) {
   });
   countInfo.innerHTML = `Prikazano: <b>${data.length}</b>${favorites.size ? ` • ⭐ ${favorites.size}` : ''}`;
   updateBulkControls(data);
+  tbody.querySelectorAll('.contact-avatar-fallback[data-photo-id]').forEach(element => {
+    const contact = data.find(item => item.photoId === element.dataset.photoId);
+    if (contact) renderContactAvatar(element, contact);
+  });
 }
 
 function reorderContacts(from, to) {
@@ -2359,9 +2578,95 @@ function getInitials(name) {
   if (p.length === 1) return p[0].substring(0, 2).toUpperCase();
   return (p[0][0] + p[p.length-1][0]).toUpperCase();
 }
+function setAvatarPhoto(element, photoData) {
+  const image = document.createElement('img');
+  image.alt = '';
+  image.src = photoData;
+  element.replaceChildren(image);
+}
+function renderContactAvatar(element, contact) {
+  const photoId = contact.photoId || '';
+  element.dataset.photoId = photoId;
+  element.textContent = getInitials(contact.name);
+  if (contact.photoData && contact.photoData.startsWith('data:image/')) {
+    setAvatarPhoto(element, contact.photoData);
+    return;
+  }
+  if (!photoId) return;
+  const showPhoto = photoData => {
+    if (!photoData) return;
+    contact.photoData = photoData;
+    const savedContact = contacts.find(item => item.photoId === photoId);
+    if (savedContact && !savedContact.photoData) {
+      savedContact.photoData = photoData;
+      applyFilters();
+    }
+    if (element.dataset.photoId === photoId) setAvatarPhoto(element, photoData);
+  };
+  profilePhotosReady.then(() => readProfilePhoto(photoId)).catch(() => null).then(photoData => {
+    if (photoData) {
+      showPhoto(photoData);
+      return null;
+    }
+    return window.contactCloudSync?.loadPhoto?.(photoId) || null;
+  }).then(photoData => {
+    if (!photoData) return;
+    showPhoto(photoData);
+    saveProfilePhoto(photoId, photoData).catch(() => {});
+  }).catch(() => {});
+}
+function compressProfilePhoto(file) {
+  if (file.size > 12 * 1024 * 1024) return Promise.reject(new Error('Odaberi sliku manju od 12 MB.'));
+  if (file.type && !file.type.startsWith('image/')) return Promise.reject(new Error('Odabrana datoteka nije slika.'));
+  return new Promise((resolve, reject) => {
+    const objectUrl = URL.createObjectURL(file);
+    const image = new Image();
+    image.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      try {
+        const maxDimension = 256;
+        const scale = Math.min(1, maxDimension / Math.max(image.naturalWidth, image.naturalHeight));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+        canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+        const context = canvas.getContext('2d');
+        if (!context) throw new Error('Slika se ne može obraditi u ovom pregledniku.');
+        context.fillStyle = '#fff';
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+        if (typeof canvas.toBlob !== 'function') {
+          const photoData = canvas.toDataURL('image/jpeg', 0.78);
+          if (photoData.length > 410000) throw new Error('Slika se ne može dovoljno smanjiti.');
+          resolve(photoData);
+          return;
+        }
+        canvas.toBlob(blob => {
+          if (!blob || blob.size > 300 * 1024) {
+            reject(new Error('Slika se ne može dovoljno smanjiti.'));
+            return;
+          }
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result));
+          reader.onerror = () => reject(new Error('Slika se ne može učitati.'));
+          reader.readAsDataURL(blob);
+        }, 'image/jpeg', 0.78);
+      } catch (error) {
+        reject(error);
+      }
+    };
+    image.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error('Datoteka nije valjana slika.'));
+    };
+    image.src = objectUrl;
+  });
+}
+function createPhotoId() {
+  return window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
 function openModal(contact) {
   currentModalContactId = contact.name;
-  modalAvatar.textContent = '';
+  renderContactAvatar(modalAvatar, contact);
   modalName.textContent = contact.name || '—';
   modalSubtitle.textContent = contact.org || '';
   modal.classList.add('glass-profile');
@@ -2438,7 +2743,7 @@ function buildRow(icon, label, value) {
 function openEditor(contact = null) {
   const orig = contact ? contact.name : currentModalContactId;
   const fd = contact ? { ...contact } : { name: '', phone: '', email: '', address: '', org: '', notes: '', category: 'personal' };
-  modalAvatar.textContent = '';
+  renderContactAvatar(modalAvatar, fd);
   modalName.textContent = contact ? 'Uredi kontakt' : 'Novi kontakt';
   modalSubtitle.textContent = contact ? 'Promijeni detalje' : 'Dodaj novi zapis';
   modalBody.innerHTML = `
@@ -2446,6 +2751,11 @@ function openEditor(contact = null) {
       <div class="editor-grid">
         <div class="field full"><label for="editName">Ime</label>
           <input id="editName" name="name" value="${escapeAttr(fd.name || '')}" required></div>
+        <div class="field full"><label for="editProfilePhoto">Profilna slika</label>
+          <div class="profile-photo-actions"><input id="editProfilePhoto" class="profile-photo-input" type="file" accept="image/*">
+            <label class="mini-action-btn" for="editProfilePhoto">Odaberi sliku</label>
+            <button type="button" class="mini-action-btn" id="removeProfilePhoto">Ukloni sliku</button></div>
+          <small id="profilePhotoHint" role="status" aria-live="polite">Slika se smanjuje prije spremanja.</small></div>
         <div class="field"><label for="editBirthday">Rođendan</label>
           <input id="editBirthday" name="birthday" type="date" value="${escapeAttr(fd.birthday || '')}"></div>
         <div class="field"><label for="editGroup">Grupa</label>
@@ -2490,6 +2800,11 @@ function openEditor(contact = null) {
   const form = document.getElementById('contactEditorForm');
   const attachmentInput = document.getElementById('editAttachments');
   const attachmentList = document.getElementById('attachmentList');
+  const profilePhotoInput = document.getElementById('editProfilePhoto');
+  const profilePhotoHint = document.getElementById('profilePhotoHint');
+  const removeProfilePhoto = document.getElementById('removeProfilePhoto');
+  let photoData = fd.photoData || null;
+  let photoId = fd.photoId || null;
   let attachments = Array.isArray(fd.attachments) ? [...fd.attachments] : [];
   let socialLinks = getSocialEntries(fd).map(([platform, url]) => ({ platform, url }));
   if (!socialLinks.length) socialLinks = [{ platform: 'instagram', url: '' }];
@@ -2553,7 +2868,32 @@ function openEditor(contact = null) {
     });
     attachmentInput.value = '';
   });
-  form.addEventListener('submit', e => {
+  profilePhotoInput.addEventListener('change', async () => {
+    const file = profilePhotoInput.files[0];
+    if (!file) return;
+    profilePhotoHint.textContent = `Učitavam: ${file.name}`;
+    try {
+      const nextPhotoData = await compressProfilePhoto(file);
+      const nextPhotoId = createPhotoId();
+      profilePhotoHint.textContent = 'Spremam profilnu sliku...';
+      await saveProfilePhoto(nextPhotoId, nextPhotoData);
+      photoData = nextPhotoData;
+      photoId = nextPhotoId;
+      renderContactAvatar(modalAvatar, { name: form.elements.name.value.trim(), photoId, photoData });
+      profilePhotoHint.textContent = 'Slika je spremna za spremanje.';
+    } catch (error) {
+      profilePhotoHint.textContent = error.message || 'Slika se ne može učitati.';
+      showToast(`⚠️ ${error.message}`);
+    }
+    profilePhotoInput.value = '';
+  });
+  removeProfilePhoto.addEventListener('click', () => {
+    photoData = null;
+    photoId = null;
+    renderContactAvatar(modalAvatar, { name: form.elements.name.value.trim() });
+    profilePhotoHint.textContent = 'Profilna slika uklonjena.';
+  });
+  form.addEventListener('submit', async e => {
     e.preventDefault();
     const social = {};
     socialLinksEditor.querySelectorAll('.social-link-row').forEach(row => {
@@ -2574,19 +2914,34 @@ function openEditor(contact = null) {
       tags: form.elements.tags.value.split(',').map(tag => tag.trim()).filter(Boolean),
       group: form.elements.group.value,
       category: form.elements.category.value,
+      photoId,
+      photoData,
       customFields: [...customFieldsEditor.querySelectorAll('[data-field-key]')].map(row => ({
         key: row.value.trim(),
         value: customFieldsEditor.querySelector(`[data-field-value="${row.dataset.fieldKey}"]`).value.trim()
       })).filter(field => field.key && field.value)
     };
     if (!next.name) { showToast('⚠️ Ime obavezno'); return; }
+    if (photoData && photoId && window.contactCloudSync?.isConnected()) {
+      const submitButton = form.querySelector('[type="submit"]');
+      submitButton.disabled = true;
+      try {
+        await window.contactCloudSync.uploadPhoto(photoId, photoData, true);
+      } catch (error) {
+        submitButton.disabled = false;
+        showToast(`⚠️ Fotografija nije spremljena u cloud: ${error.message}`);
+        return;
+      }
+    }
     if (contact) {
       const i = contacts.findIndex(x => x.name === orig);
       if (i >= 0) {
         const oldN = contacts[i].name;
         contacts[i] = next;
-        if (oldN !== next.name && deletedNames.has(next.name)) deletedNames.delete(next.name);
-        if (oldN !== next.name && builtInContactNames.has(oldN)) deletedNames.add(oldN);
+        if (oldN !== next.name) {
+          clearDeletedContactName(next.name);
+          if (oldN.trim().toLowerCase() !== next.name.trim().toLowerCase()) deletedNames.add(oldN);
+        }
         if (oldN !== next.name && favorites.has(oldN)) {
           favorites.delete(oldN); favorites.add(next.name);
         }
@@ -2597,6 +2952,8 @@ function openEditor(contact = null) {
       if (contacts.some(x => x.name.toLowerCase() === next.name.toLowerCase())) {
         showToast('⚠️ Postoji'); return;
       }
+      clearDeletedContactName(next.name);
+      persistDeletedNames(deletedNames);
       contactsDataMissing = false;
       contacts.push(next); persistContacts(); applyFilters();
       showToast('✅ Dodano');
@@ -2653,7 +3010,7 @@ modalDelete.addEventListener('click', e => {
   if (i >= 0) {
     const [r] = contacts.splice(i, 1);
     if (r && favorites.has(r.name)) favorites.delete(r.name);
-    if (r && builtInContactNames.has(r.name)) deletedNames.add(r.name);
+    if (r) deletedNames.add(r.name);
     persistContacts(); persistDeletedNames(deletedNames); saveFavorites(); applyFilters(); closeModal();
     showToast('🗑️ Obrisano');
   }
@@ -2673,6 +3030,8 @@ function getFilteredContacts() {
   let filtered = contacts.filter(c => {
     if (showFavOnly && !favorites.has(c.name)) return false;
     if (f === '__fav__' && !favorites.has(c.name)) return false;
+    if (f === '__family__' && c.group !== 'family' && !isRadujkovic(c.name)) return false;
+    if (f === '__notes__' && !String(c.notes || '').trim()) return false;
     if (f === '__radujkovic__' && !isRadujkovic(c.name)) return false;
     if (f === 'phone' && !c.phone) return false;
     if (f === 'email' && !c.email) return false;
@@ -2852,10 +3211,91 @@ setInterval(checkBirthdayNotifications, 60 * 60 * 1000);
 syncGoogleCalendar();
 setInterval(syncGoogleCalendar, 60 * 60 * 1000);
 
+window.ContactCloudBridge = {
+  readBackup() {
+    const lists = {};
+    for (let index = 0; index < localStorage.length; index++) {
+      const key = localStorage.key(index);
+      if (!key?.startsWith('contacts-list-')) continue;
+      try {
+        const saved = JSON.parse(localStorage.getItem(key));
+          if (Array.isArray(saved)) lists[key.slice('contacts-list-'.length)] = saved;
+      } catch(e) {}
+    }
+    lists[listSelect.value] = [...contacts];
+    return {
+      contacts: [...contacts],
+      favorites: [...favorites],
+      deletedNames: [...deletedNames],
+      localLists: loadLocalLists(),
+      lists,
+      currentList: listSelect.value
+    };
+  },
+  applyBackup(backup) {
+    const localPhotos = new Map();
+    const rememberPhoto = contact => {
+      if (contact?.photoId && contact.photoData) localPhotos.set(contact.photoId, contact.photoData);
+    };
+    contacts.forEach(rememberPhoto);
+    for (let index = 0; index < localStorage.length; index++) {
+      const key = localStorage.key(index);
+      if (!key?.startsWith('contacts-list-')) continue;
+      try {
+        const saved = JSON.parse(localStorage.getItem(key));
+        if (Array.isArray(saved)) saved.forEach(rememberPhoto);
+      } catch(e) {}
+    }
+    const preservePhoto = contact => contact?.photoId && !contact.photoData && localPhotos.has(contact.photoId)
+      ? { ...contact, photoData: localPhotos.get(contact.photoId) }
+      : contact;
+    const incomingLists = backup.lists && typeof backup.lists === 'object' ? backup.lists : {};
+    const lists = Object.fromEntries(Object.entries(incomingLists).map(([id, entries]) => [
+      id,
+      Array.isArray(entries) ? entries.map(preservePhoto) : entries
+    ]));
+    const backupContacts = Array.isArray(backup.contacts) ? backup.contacts.map(preservePhoto) : [];
+    const localLists = backup.localLists && typeof backup.localLists === 'object'
+      ? { ...backup.localLists }
+      : { default: 'Glavna lista' };
+    if (!localLists.default) localLists.default = 'Glavna lista';
+    Object.keys(lists).forEach(id => { if (!localLists[id]) localLists[id] = id; });
+
+    for (let index = localStorage.length - 1; index >= 0; index--) {
+      const key = localStorage.key(index);
+      if (key?.startsWith('contacts-list-')) localStorage.removeItem(key);
+    }
+    localStorage.setItem(LOCAL_LISTS_KEY, JSON.stringify(localLists));
+    Object.entries(lists).forEach(([id, entries]) => {
+      if (Array.isArray(entries)) localStorage.setItem(`contacts-list-${id}`, JSON.stringify(contactsWithoutPhotoData(entries)));
+    });
+
+    renderLocalLists();
+    const desiredList = typeof backup.currentList === 'string' ? backup.currentList : 'default';
+    listSelect.value = desiredList in lists ? desiredList : (Object.keys(lists)[0] || 'default');
+    const activeContacts = Array.isArray(lists[listSelect.value]) ? lists[listSelect.value] : backupContacts;
+    contacts.splice(0, contacts.length, ...(Array.isArray(activeContacts) ? activeContacts : []));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(contactsWithoutPhotoData(contacts)));
+    localStorage.setItem(`contacts-list-${listSelect.value}`, JSON.stringify(contactsWithoutPhotoData(contacts)));
+
+    favorites = new Set(Array.isArray(backup.favorites) ? backup.favorites : []);
+    deletedNames.clear();
+    (Array.isArray(backup.deletedNames) ? backup.deletedNames : []).forEach(name => deletedNames.add(name));
+    localStorage.setItem('contacts_favorites', JSON.stringify([...favorites]));
+    localStorage.setItem(DELETED_STORAGE_KEY, JSON.stringify([...deletedNames]));
+    updateFavBadge();
+    applyFilters();
+  },
+  loadProfilePhoto(photoId) {
+    return profilePhotosReady.then(() => readProfilePhoto(photoId));
+  }
+};
+
 window.addEventListener('hashchange', () => {
   favorites = new Set(UrlStorage.getFavorites());
   updateFavBadge(); applyFilters();
 });
 </script>
+<script type="module" src="./src/cloud-sync.js"></script>
 </body>
 </html>
