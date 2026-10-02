@@ -297,6 +297,8 @@
   .personal-website-link { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; color: inherit; text-decoration: none; }
   .personal-website-delete { flex: 0 0 auto; min-width: 58px; height: 32px; padding: 0 6px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-header); color: var(--danger); cursor: pointer; font-size: 11px; font-weight: 700; white-space: nowrap; }
   .personal-website-delete:hover { border-color: var(--danger); background: var(--bg-hover); }
+  .personal-website-edit { flex: 0 0 auto; width: 32px; height: 32px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-header); color: var(--text-muted); cursor: pointer; font-size: 15px; }
+  .personal-website-edit:hover { border-color: var(--accent); color: var(--accent); }
   .personal-website-mark { display: grid; place-items: center; flex: 0 0 36px; width: 36px; height: 36px; border-radius: 9px; background: linear-gradient(145deg, var(--accent-bg), #d97732); color: #fff; font-size: 15px; font-weight: 800; }
   .personal-website-name { min-width: 0; overflow: hidden; font-size: 12px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
   .website-view-tabs { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 12px; }
@@ -319,6 +321,8 @@
   .website-row-actions { display: flex; flex-direction: column; align-items: center; gap: 8px; flex: 0 0 auto; }
   .website-star { width: 36px; height: 36px; border: 1px solid var(--border); border-radius: 9px; background: var(--bg-header); color: var(--text-muted); cursor: pointer; font-size: 18px; }
   .website-star[aria-pressed="true"] { color: var(--star); border-color: var(--star); }
+  .website-edit { min-width: 58px; min-height: 36px; padding: 0 8px; border: 1px solid var(--border); border-radius: 9px; background: var(--bg-header); color: var(--text-muted); cursor: pointer; font-size: 11px; font-weight: 700; white-space: nowrap; }
+  .website-edit:hover { border-color: var(--accent); color: var(--accent); }
   .website-delete { min-width: 58px; min-height: 36px; padding: 0 8px; border: 1px solid var(--border); border-radius: 9px; background: var(--bg-header); color: var(--danger); cursor: pointer; font-size: 11px; font-weight: 700; white-space: nowrap; }
   .website-delete:hover { border-color: var(--danger); background: var(--bg-hover); }
   @media (max-width: 600px) { .bookmarks-page-header { align-items: flex-start; flex-direction: column; padding: 18px; } .bookmarks-page-title { font-size: 24px; } .personal-website-shelf { grid-template-columns: repeat(2, minmax(0, 1fr)); } .website-tools { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .website-star-filter { grid-column: 1; } .website-count { grid-column: 2; text-align: right; } .bookmark-add-form { grid-template-columns: 1fr; } .bookmark-add-actions { grid-column: 1; } }
@@ -934,7 +938,7 @@
         <label for="bookmarkUrl">URL<input id="bookmarkUrl" type="url" placeholder="https://example.com" required></label>
         <label for="bookmarkFolder">Folder<input id="bookmarkFolder" list="bookmarkFolderOptions" maxlength="80" placeholder="Other"><datalist id="bookmarkFolderOptions"></datalist></label>
         <div class="bookmark-add-actions">
-          <button class="btn primary" type="submit">Save</button>
+          <button class="btn primary" id="bookmarkSubmitButton" type="submit">Save</button>
           <button class="btn secondary" id="cancelBookmarkBtn" type="button">Cancel</button>
         </div>
       </form>
@@ -1451,7 +1455,7 @@ let deferredPrompt = null;
 const sidebarPwaBtn = document.getElementById('sidebarPwaBtn');
 
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js?v=21').then(registration => registration.update()).catch(() => {});
+  navigator.serviceWorker.register('sw.js?v=22').then(registration => registration.update()).catch(() => {});
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     if (!window.__serviceWorkerReloaded) {
       window.__serviceWorkerReloaded = true;
@@ -1936,7 +1940,9 @@ const bookmarkUrlInput = $('bookmarkUrl');
 const bookmarkFolderInput = $('bookmarkFolder');
 const bookmarkFolderOptions = $('bookmarkFolderOptions');
 const cancelBookmarkButton = $('cancelBookmarkBtn');
+const bookmarkSubmitButton = $('bookmarkSubmitButton');
 let websiteView = 'all';
+let editingWebsiteIndex = null;
 const personalWebsites = [
   ['Imenik', 'https://sites.google.com/view/telefonskipretrazivac/imenik'],
   ['Vipers Elite', 'https://sites.google.com/view/viperselite/home'],
@@ -2061,9 +2067,23 @@ function renderPersonalWebsiteShelf() {
         <span class="personal-website-mark" aria-hidden="true">${escapeHtml(title.trim().charAt(0).toUpperCase())}</span>
         <span class="personal-website-name">${escapeHtml(title)}</span>
       </a>
+      <button class="personal-website-edit" type="button" data-edit-website="${bookmarkIndex}" aria-label="Uredi ${escapeAttr(title)}" title="Uredi stranicu">✎</button>
       <button class="personal-website-delete" type="button" data-delete-website="${bookmarkIndex}" aria-label="Obriši ${escapeAttr(title)}" title="Obriši stranicu">Obriši</button>
     </div>`;
   }).join('');
+}
+function editWebsiteBookmark(websiteIndex) {
+  const index = Number(websiteIndex);
+  const bookmark = websiteBookmarks[index];
+  if (!Number.isInteger(index) || !bookmark) return;
+  editingWebsiteIndex = index;
+  bookmarkTitleInput.value = bookmark.title;
+  bookmarkUrlInput.value = bookmark.url;
+  bookmarkFolderInput.value = bookmark.folder || 'Other';
+  bookmarkUrlInput.setCustomValidity('');
+  bookmarkSubmitButton.textContent = 'Spremi izmjene';
+  bookmarkAddForm.hidden = false;
+  bookmarkTitleInput.focus();
 }
 function renderBookmarkSidebarSites() {
   bookmarkSidebarSites.innerHTML = websiteBookmarks.map(({ title, url, folder }, index) => `
@@ -2076,6 +2096,13 @@ function renderPersonalWebsiteSidebarSites() {
 renderBookmarkSidebarSites();
 renderPersonalWebsiteSidebarSites();
 personalWebsiteShelf.addEventListener('click', event => {
+  const editButton = event.target.closest('[data-edit-website]');
+  if (editButton) {
+    event.preventDefault();
+    event.stopPropagation();
+    editWebsiteBookmark(editButton.dataset.editWebsite);
+    return;
+  }
   const button = event.target.closest('[data-delete-website]');
   if (!button) return;
   event.preventDefault();
@@ -2101,10 +2128,11 @@ function renderWebsiteDirectory() {
       ? `<a class="website-open" href="${escapeAttr(bookmark.url)}" target="_blank" rel="noopener noreferrer">Open</a>`
       : '';
     const starred = websiteFavorites.has(bookmark.id);
+    const editButton = `<button class="website-edit" type="button" data-edit-website="${bookmark.id}" aria-label="Uredi ${escapeAttr(bookmark.title)}" title="Uredi stranicu">Uredi</button>`;
     const deleteButton = `<button class="website-delete" type="button" data-delete-website="${bookmark.id}" aria-label="Obriši ${escapeAttr(bookmark.title)}" title="Obriši stranicu">Obriši</button>`;
     return `<div class="website-row">
       <div class="website-row-main">${title}<span class="website-url">${escapeHtml(bookmark.folder)} · ${escapeHtml(bookmark.url)}</span></div>
-      <div class="website-row-actions"><button class="website-star" type="button" data-website-star="${bookmark.id}" aria-pressed="${starred}" aria-label="Toggle favorite" title="Toggle favorite">${starred ? '★' : '☆'}</button>${openLink}${deleteButton}</div>
+      <div class="website-row-actions"><button class="website-star" type="button" data-website-star="${bookmark.id}" aria-pressed="${starred}" aria-label="Toggle favorite" title="Toggle favorite">${starred ? '★' : '☆'}</button>${openLink}${editButton}${deleteButton}</div>
     </div>`;
   }).join('') : '<div class="no-results">No bookmarks found.</div>';
 }
@@ -2133,18 +2161,32 @@ websiteSearch.addEventListener('input', renderWebsiteDirectory);
 websiteFolderFilter.addEventListener('change', renderWebsiteDirectory);
 websiteStarredOnly.addEventListener('change', renderWebsiteDirectory);
 addBookmarkButton.addEventListener('click', () => {
+  editingWebsiteIndex = null;
+  bookmarkAddForm.reset();
+  bookmarkSubmitButton.textContent = 'Save';
   bookmarkAddForm.hidden = false;
   if (websiteView === 'personal' && !bookmarkFolderInput.value.trim()) bookmarkFolderInput.value = 'My websites';
   bookmarkTitleInput.focus();
 });
-cancelBookmarkButton.addEventListener('click', () => {
+function resetBookmarkForm() {
+  editingWebsiteIndex = null;
   bookmarkAddForm.reset();
   bookmarkUrlInput.setCustomValidity('');
+  bookmarkSubmitButton.textContent = 'Save';
   bookmarkAddForm.hidden = true;
+}
+cancelBookmarkButton.addEventListener('click', () => {
+  resetBookmarkForm();
 });
 bookmarkUrlInput.addEventListener('input', () => bookmarkUrlInput.setCustomValidity(''));
 bookmarkAddForm.addEventListener('submit', event => {
   event.preventDefault();
+  const editingIndex = editingWebsiteIndex;
+  const originalBookmark = editingIndex === null ? null : websiteBookmarks[editingIndex];
+  if (editingIndex !== null && !originalBookmark) {
+    resetBookmarkForm();
+    return;
+  }
   const keepPersonalView = websiteView === 'personal';
   const title = bookmarkTitleInput.value.trim();
   const folder = bookmarkFolderInput.value.trim() || (websiteView === 'personal' ? 'My websites' : 'Other');
@@ -2162,29 +2204,54 @@ bookmarkAddForm.addEventListener('submit', event => {
     return;
   }
   const bookmark = { title, url: url.href, folder };
-  const nextUserBookmarks = [...userWebsiteBookmarks, bookmark];
+  const nextUserBookmarks = [...userWebsiteBookmarks];
+  const nextDeletedWebsiteBookmarks = new Set(deletedWebsiteBookmarks);
+  const favoriteKeys = new Set([...websiteFavorites]
+    .map(favoriteId => websiteBookmarks[Number(favoriteId)])
+    .filter(Boolean)
+    .map(getWebsiteBookmarkKey));
+  if (originalBookmark) {
+    const originalKey = getWebsiteBookmarkKey(originalBookmark);
+    const updatedKey = getWebsiteBookmarkKey(bookmark);
+    if (Number.isInteger(originalBookmark.userBookmarkIndex)) {
+      nextUserBookmarks[originalBookmark.userBookmarkIndex] = bookmark;
+      if (originalKey !== updatedKey) nextDeletedWebsiteBookmarks.add(originalKey);
+    } else if (originalKey !== updatedKey) {
+      nextDeletedWebsiteBookmarks.add(originalKey);
+      nextUserBookmarks.push(bookmark);
+    }
+    if (websiteFavorites.has(String(editingIndex))) favoriteKeys.add(updatedKey);
+  } else {
+    nextUserBookmarks.push(bookmark);
+  }
+  const nextWebsiteBookmarks = [...builtInWebsiteBookmarks, ...nextUserBookmarks.map((userBookmark, userBookmarkIndex) => ({ ...userBookmark, userBookmarkIndex }))]
+    .filter(item => !nextDeletedWebsiteBookmarks.has(getWebsiteBookmarkKey(item)));
+  const nextWebsiteFavorites = nextWebsiteBookmarks.flatMap((item, index) =>
+    favoriteKeys.has(getWebsiteBookmarkKey(item)) ? [String(index)] : []);
   try {
     localStorage.setItem(USER_WEBSITE_BOOKMARKS_KEY, JSON.stringify(nextUserBookmarks));
+    localStorage.setItem(DELETED_WEBSITE_BOOKMARKS_KEY, JSON.stringify([...nextDeletedWebsiteBookmarks]));
+    localStorage.setItem(WEBSITE_FAVORITES_KEY, JSON.stringify(nextWebsiteFavorites));
   } catch(e) {
     showToast('⚠️ Bookmark could not be saved in this browser.');
     return;
   }
   userWebsiteBookmarks = nextUserBookmarks;
-  websiteBookmarks = getWebsiteBookmarks();
+  deletedWebsiteBookmarks = nextDeletedWebsiteBookmarks;
+  websiteFavorites = new Set(nextWebsiteFavorites);
+  websiteBookmarks = nextWebsiteBookmarks;
   refreshWebsiteFolderOptions(folder);
   websiteView = keepPersonalView ? 'personal' : 'all';
   websiteSearch.value = '';
   websiteStarredOnly.checked = false;
   websiteFolderFilter.value = websiteView === 'personal' ? 'My websites' : '';
   document.querySelectorAll('[data-website-view]').forEach(tab => tab.classList.toggle('active', tab.dataset.websiteView === websiteView));
-  bookmarkAddForm.reset();
-  bookmarkUrlInput.setCustomValidity('');
-  bookmarkAddForm.hidden = true;
+  resetBookmarkForm();
   renderPersonalWebsiteShelf();
   renderBookmarkSidebarSites();
   renderPersonalWebsiteSidebarSites();
   renderWebsiteDirectory();
-  showToast('✅ Bookmark saved');
+  showToast(originalBookmark ? '✅ Izmjene spremljene' : '✅ Bookmark saved');
 });
 function deleteWebsiteBookmark(websiteIndex) {
   const index = Number(websiteIndex);
@@ -2220,6 +2287,11 @@ bookmarkSidebarSites.addEventListener('click', event => {
   deleteWebsiteBookmark(button.dataset.deleteWebsite);
 });
 websiteDirectory.addEventListener('click', event => {
+  const editButton = event.target.closest('[data-edit-website]');
+  if (editButton) {
+    editWebsiteBookmark(editButton.dataset.editWebsite);
+    return;
+  }
   const deleteButton = event.target.closest('[data-delete-website]');
   if (deleteButton) {
     deleteWebsiteBookmark(deleteButton.dataset.deleteWebsite);
