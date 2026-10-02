@@ -285,6 +285,7 @@
   .quick-note-link:hover { background: var(--bg-hover); }
   .quick-note-link strong { font-size: 14px; }
   .quick-note-link span { color: var(--text-muted); font-size: 12px; }
+  .quick-note-frame { display: block; width: 100%; height: min(72vh, 820px); min-height: 480px; border: 1px solid var(--border); border-radius: 8px; background: #fff; }
   .quick-note-form { display: grid; gap: 10px; padding: 16px 0; }
   .quick-note-form label { color: var(--text-muted); font-size: 12px; font-weight: 700; }
   .quick-note-form textarea { width: 100%; min-height: 180px; padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-input); color: var(--text); font: inherit; resize: vertical; }
@@ -984,6 +985,7 @@
           <p class="bookmarks-page-subtitle">Your saved notes</p>
         </div>
         <div class="bookmarks-page-actions">
+      <iframe class="quick-note-frame" src="https://share.evernote.com/note/3dc3c371-3ea0-1925-0df9-9409fee7899b" title="Evernote note" loading="lazy"></iframe>
           <button class="btn secondary" id="quickNotesBackBtn" type="button">← <span data-i18n="navContacts">Contacts</span></button>
         </div>
       </header>
