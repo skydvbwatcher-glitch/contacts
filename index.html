@@ -320,6 +320,7 @@
   .contact-avatar-fallback { width: 34px; height: 34px; border-radius: 50%; flex: 0 0 34px; display: inline-flex; align-items: center; justify-content: center; overflow: hidden; color: var(--text); background: var(--bg-header); border: 1px solid var(--border); font-size: 11px; font-weight: 700; }
   .contact-avatar-fallback img { display: block; width: 100%; height: 100%; border-radius: inherit; object-fit: cover; }
   .contact-photo-button { position: relative; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 40px; width: 40px; height: 40px; padding: 0; border: 0; background: transparent; cursor: pointer; }
+  .contact-photo-input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
   .contact-photo-camera { position: absolute; right: -1px; bottom: -1px; display: grid; place-items: center; width: 19px; height: 19px; border: 2px solid var(--bg-card); border-radius: 50%; background: var(--accent-bg); color: #fff; font-size: 10px; line-height: 1; }
   .contact-photo-button:hover .contact-photo-camera { background: var(--accent-bg-hover); }
   .name-label { min-width: 0; overflow-wrap: anywhere; }
@@ -419,7 +420,14 @@
     opacity: 0.95;
     z-index: 0;
   }
+  .modal-avatar-content { position: relative; z-index: 1; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; border-radius: inherit; }
   .modal-avatar img { width: 100%; height: 100%; border-radius: inherit; object-fit: cover; position: relative; z-index: 1; }
+  .modal-avatar.photo-editing { cursor: pointer; }
+  .modal-avatar.photo-editing:focus-within { outline: 3px solid var(--accent-hover); outline-offset: 4px; }
+  .modal-profile-photo-input { position: absolute; inset: 0; z-index: 4; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+  .modal-profile-photo-input:disabled { display: none; }
+  .modal-photo-action { position: absolute; right: -1px; bottom: -1px; z-index: 3; display: none; align-items: center; justify-content: center; width: 22px; height: 22px; border: 2px solid var(--bg-card); border-radius: 50%; background: var(--accent-bg); color: #fff; font-size: 11px; pointer-events: none; }
+  .modal-avatar.photo-editing .modal-photo-action { display: flex; }
   .profile-photo-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   .profile-photo-picker { position: relative; overflow: hidden; }
   .profile-photo-input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
@@ -1027,7 +1035,7 @@
         <div class="color-swatch swatch-orange" data-color="orange"></div>
         <div class="color-swatch swatch-pink" data-color="pink"></div>
       </div>
-      <div class="modal-avatar" id="modalAvatar">?</div>
+      <label class="modal-avatar" id="modalAvatar"><span class="modal-avatar-content" id="modalAvatarContent">?</span><span class="modal-photo-action" aria-hidden="true">📷</span><input id="modalProfilePhotoInput" class="modal-profile-photo-input" type="file" accept="image/*" disabled aria-label="Odaberi profilnu sliku"></label>
       <div class="modal-name" id="modalName">—</div>
       <div class="modal-subtitle" id="modalSubtitle"></div>
     </div>
@@ -1115,7 +1123,6 @@
 
 <div class="toast" id="toast"></div>
 <input id="importCsvInput" type="file" accept=".csv,text/csv" hidden>
-<input id="contactPhotoInput" type="file" accept="image/*" hidden>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" crossorigin="anonymous"></script>
@@ -1535,6 +1542,7 @@ const tbody = $('tableBody'), searchInput = $('searchInput'), searchBtn = $('sea
   settingsClose = $('settingsClose'), resetSettings = $('resetSettings'), toast = $('toast'),
   modalOverlay = $('modalOverlay'), modal = modalOverlay.querySelector('.modal'), modalHeader = $('modalHeader'), modalClose = $('modalClose'),
   modalFav = $('modalFav'), modalColor = $('modalColor'), modalAvatar = $('modalAvatar'),
+  modalAvatarContent = $('modalAvatarContent'), modalProfilePhotoInput = $('modalProfilePhotoInput'),
   modalName = $('modalName'), modalSubtitle = $('modalSubtitle'), modalBody = $('modalBody'),
   colorPicker = $('colorPicker'), radujkovicOverlay = $('radujkovicOverlay'),
   radujkovicClose = $('radujkovicClose'), radujkovicBody = $('radujkovicBody'),
@@ -1562,32 +1570,22 @@ const tbody = $('tableBody'), searchInput = $('searchInput'), searchBtn = $('sea
   sidebarShareBtn = $('sidebarShareBtn'), sidebarCoverage = $('sidebarCoverage'),
   sidebarPrintBtn = $('sidebarPrintBtn'), printBtn = $('printBtn'),
   letterGrid = $('letterGrid'), cityStatsGrid = $('cityStatsGrid'), saveFilterChip = $('saveFilterChip'),
-  savedFilterSelect = $('savedFilterSelect'), listSelect = $('listSelect'), contactPhotoInput = $('contactPhotoInput');
-let contactPhotoTarget = null;
-contactPhotoInput.addEventListener('change', async () => {
-  const file = contactPhotoInput.files[0];
-  const contact = contacts.find(item => item.name === contactPhotoTarget);
-  contactPhotoTarget = null;
-  if (!file || !contact) return;
-  try {
-    const photoData = await compressProfilePhoto(file);
-    const photoId = createPhotoId();
-    if (window.contactCloudSync?.isConnected()) {
-      await window.contactCloudSync.uploadPhoto(photoId, photoData, true);
-    }
-    await saveProfilePhoto(photoId, photoData);
-    contact.photoData = photoData;
-    contact.photoId = photoId;
-    persistContacts();
-    persistLocalList();
-    applyFilters();
-    showToast('✅ Profilna slika spremljena');
-  } catch (error) {
-    showToast(`⚠️ ${error.message || 'Slika se ne može spremiti.'}`);
-  } finally {
-    contactPhotoInput.value = '';
+  savedFilterSelect = $('savedFilterSelect'), listSelect = $('listSelect');
+
+async function saveContactProfilePhoto(contact, file) {
+  const photoData = await compressProfilePhoto(file);
+  const photoId = createPhotoId();
+  if (window.contactCloudSync?.isConnected()) {
+    await window.contactCloudSync.uploadPhoto(photoId, photoData, true);
   }
-});
+  await saveProfilePhoto(photoId, photoData);
+  contact.photoData = photoData;
+  contact.photoId = photoId;
+  persistContacts();
+  persistLocalList();
+  applyFilters();
+  showToast('✅ Profilna slika spremljena');
+}
 
 const LOCAL_LISTS_KEY = 'contacts-local-lists-v1';
 function loadLocalLists() {
@@ -2387,7 +2385,7 @@ function render(data) {
     return `<tr class="contact-row" data-order="${oi}" draggable="true">
       <td class="fav-cell" data-label="⭐"><input class="row-check" type="checkbox" data-name="${escapeAttr(c.name)}" ${sel ? 'checked' : ''}><span class="fav-star ${isFav ? 'active' : ''}" data-name="${escapeAttr(c.name)}">${isFav ? '★' : '☆'}</span></td>
       <td class="name-cell" data-name="${escapeAttr(c.name)}" data-label="Ime">
-        <div class="name-main"><button type="button" class="contact-photo-button" data-contact-photo="${escapeAttr(c.name)}" title="Dodaj ili promijeni profilnu sliku" aria-label="Dodaj ili promijeni profilnu sliku za ${escapeAttr(c.name)}"><span class="contact-avatar-fallback" data-contact-name="${escapeAttr(c.name)}" ${c.photoId ? `data-photo-id="${escapeAttr(c.photoId)}"` : ''}>${escapeHtml(getInitials(c.name))}</span><span class="contact-photo-camera" aria-hidden="true">📷</span></button>
+        <div class="name-main"><label class="contact-photo-button" title="Dodaj ili promijeni profilnu sliku"><span class="contact-avatar-fallback" data-contact-name="${escapeAttr(c.name)}" ${c.photoId ? `data-photo-id="${escapeAttr(c.photoId)}"` : ''}>${escapeHtml(getInitials(c.name))}</span><span class="contact-photo-camera" aria-hidden="true">📷</span><input type="file" class="contact-photo-input" data-contact-photo="${escapeAttr(c.name)}" accept="image/*" aria-label="Dodaj ili promijeni profilnu sliku za ${escapeAttr(c.name)}"></label>
           <span class="name-label">${escapeHtml(c.name)}${quickActions}</span></div>
         ${socialLinks ? `<div class="name-social-row">${socialLinks}</div>` : ''}
       </td>
@@ -2417,11 +2415,21 @@ function render(data) {
       if (c) openModal(c);
     });
   });
-  tbody.querySelectorAll('.contact-photo-button').forEach(button => {
-    button.addEventListener('click', event => {
-      event.stopPropagation();
-      contactPhotoTarget = button.dataset.contactPhoto;
-      contactPhotoInput.click();
+  tbody.querySelectorAll('.contact-photo-button').forEach(label => {
+    label.addEventListener('click', event => event.stopPropagation());
+  });
+  tbody.querySelectorAll('.contact-photo-input').forEach(input => {
+    input.addEventListener('change', async () => {
+      const contact = contacts.find(item => item.name === input.dataset.contactPhoto);
+      const file = input.files[0];
+      if (!file || !contact) return;
+      try {
+        await saveContactProfilePhoto(contact, file);
+      } catch (error) {
+        showToast(`⚠️ ${error.message || 'Slika se ne može spremiti.'}`);
+      } finally {
+        input.value = '';
+      }
     });
   });
   document.querySelectorAll('.contact-row').forEach(row => {
@@ -2702,7 +2710,11 @@ function createPhotoId() {
 }
 function openModal(contact) {
   currentModalContactId = contact.name;
-  renderContactAvatar(modalAvatar, contact);
+  modalProfilePhotoInput.onchange = null;
+  modalProfilePhotoInput.disabled = true;
+  modalAvatar.classList.remove('photo-editing');
+  modalAvatar.removeAttribute('title');
+  renderContactAvatar(modalAvatarContent, contact);
   modalName.textContent = contact.name || '—';
   modalSubtitle.textContent = contact.org || '';
   modal.classList.add('glass-profile');
@@ -2779,7 +2791,11 @@ function buildRow(icon, label, value) {
 function openEditor(contact = null) {
   const orig = contact ? contact.name : currentModalContactId;
   const fd = contact ? { ...contact } : { name: '', phone: '', email: '', address: '', org: '', notes: '', category: 'personal' };
-  renderContactAvatar(modalAvatar, fd);
+  modalProfilePhotoInput.disabled = false;
+  modalProfilePhotoInput.setAttribute('aria-label', `Odaberi profilnu sliku za ${fd.name || 'novi kontakt'}`);
+  modalAvatar.classList.add('photo-editing');
+  modalAvatar.title = 'Dodaj ili promijeni profilnu sliku';
+  renderContactAvatar(modalAvatarContent, fd);
   modalName.textContent = contact ? 'Uredi kontakt' : 'Novi kontakt';
   modalSubtitle.textContent = contact ? 'Promijeni detalje' : 'Dodaj novi zapis';
   modalBody.innerHTML = `
@@ -2845,6 +2861,25 @@ function openEditor(contact = null) {
   let photoData = fd.photoData || null;
   let photoId = fd.photoId || null;
   renderContactAvatar(profilePhotoPreview, fd);
+  const updateProfilePhoto = async file => {
+    if (!file) return;
+    profilePhotoHint.textContent = `Učitavam: ${file.name}`;
+    try {
+      const nextPhotoData = await compressProfilePhoto(file);
+      const nextPhotoId = createPhotoId();
+      profilePhotoHint.textContent = 'Spremam profilnu sliku...';
+      await saveProfilePhoto(nextPhotoId, nextPhotoData);
+      photoData = nextPhotoData;
+      photoId = nextPhotoId;
+      const photoContact = { name: form.elements.name.value.trim(), photoId, photoData };
+      renderContactAvatar(profilePhotoPreview, photoContact);
+      renderContactAvatar(modalAvatarContent, photoContact);
+      profilePhotoHint.textContent = 'Slika je spremna za spremanje.';
+    } catch (error) {
+      profilePhotoHint.textContent = error.message || 'Slika se ne može učitati.';
+      showToast(`⚠️ ${error.message}`);
+    }
+  };
   let attachments = Array.isArray(fd.attachments) ? [...fd.attachments] : [];
   let socialLinks = getSocialEntries(fd).map(([platform, url]) => ({ platform, url }));
   if (!socialLinks.length) socialLinks = [{ platform: 'instagram', url: '' }];
@@ -2909,28 +2944,18 @@ function openEditor(contact = null) {
     attachmentInput.value = '';
   });
   profilePhotoInput.addEventListener('change', async () => {
-    const file = profilePhotoInput.files[0];
-    if (!file) return;
-    profilePhotoHint.textContent = `Učitavam: ${file.name}`;
-    try {
-      const nextPhotoData = await compressProfilePhoto(file);
-      const nextPhotoId = createPhotoId();
-      profilePhotoHint.textContent = 'Spremam profilnu sliku...';
-      await saveProfilePhoto(nextPhotoId, nextPhotoData);
-      photoData = nextPhotoData;
-      photoId = nextPhotoId;
-      renderContactAvatar(profilePhotoPreview, { name: form.elements.name.value.trim(), photoId, photoData });
-      profilePhotoHint.textContent = 'Slika je spremna za spremanje.';
-    } catch (error) {
-      profilePhotoHint.textContent = error.message || 'Slika se ne može učitati.';
-      showToast(`⚠️ ${error.message}`);
-    }
+    await updateProfilePhoto(profilePhotoInput.files[0]);
     profilePhotoInput.value = '';
   });
+  modalProfilePhotoInput.onchange = async () => {
+    await updateProfilePhoto(modalProfilePhotoInput.files[0]);
+    modalProfilePhotoInput.value = '';
+  };
   removeProfilePhoto.addEventListener('click', () => {
     photoData = null;
     photoId = null;
     renderContactAvatar(profilePhotoPreview, { name: form.elements.name.value.trim() });
+    renderContactAvatar(modalAvatarContent, { name: form.elements.name.value.trim() });
     profilePhotoHint.textContent = 'Profilna slika uklonjena.';
   });
   form.addEventListener('submit', async e => {
@@ -3010,6 +3035,10 @@ function closeModal() {
   modalOverlay.classList.remove('active');
   document.body.classList.remove('modal-open');
   colorPicker.classList.remove('active');
+  modalProfilePhotoInput.onchange = null;
+  modalProfilePhotoInput.disabled = true;
+  modalAvatar.classList.remove('photo-editing');
+  modalAvatar.removeAttribute('title');
   currentModalContactId = null;
 }
 modalClose.addEventListener('click', closeModal);
