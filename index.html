@@ -345,6 +345,18 @@
   .template-form textarea { min-height: 150px; resize: vertical; }
   .template-actions { display: flex; justify-content: flex-end; gap: 8px; }
   .saved-filter-select { max-width: 220px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 999px; background: var(--bg-card); color: var(--text); font: inherit; }
+  .workspace-list-controls { display: flex; align-items: center; gap: 6px; width: 100%; }
+  .workspace-list-controls select { flex: 1; min-width: 0; }
+  .delete-list-btn { flex: 0 0 40px; width: 40px; height: 40px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-card); color: var(--danger); cursor: pointer; font: inherit; }
+  .delete-list-btn:disabled { opacity: .45; cursor: not-allowed; }
+  .create-list-dialog { width: min(420px, calc(100% - 32px)); padding: 0; border: 1px solid var(--border); border-radius: 14px; background: var(--bg-card); color: var(--text); box-shadow: 0 20px 60px rgba(0,0,0,.35); }
+  .create-list-dialog::backdrop { background: var(--overlay); backdrop-filter: blur(4px); }
+  .create-list-form { display: grid; gap: 16px; padding: 22px; }
+  .create-list-form h2 { margin: 0; font-size: 19px; }
+  .create-list-form label { display: grid; gap: 7px; color: var(--text-muted); font-size: 12px; font-weight: 700; }
+  .create-list-form input { width: 100%; min-height: 42px; padding: 9px 11px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-input); color: var(--text); font: inherit; }
+  .create-list-error { min-height: 18px; margin: -10px 0 0; color: var(--danger); font-size: 12px; }
+  .create-list-actions { display: flex; justify-content: flex-end; gap: 8px; }
   .custom-fields { display: grid; gap: 8px; }
   .custom-field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   @media (max-width: 600px) { .dashboard-grid { grid-template-columns: 1fr; padding: 14px; } }
@@ -865,7 +877,10 @@
 
     <div class="nav-group">
       <div class="nav-label" data-i18n="navWorkspace">Workspace</div>
-      <select id="listSelect" class="saved-filter-select" aria-label="Lokalna lista"><option value="default">Glavna lista</option></select>
+      <div class="workspace-list-controls">
+        <select id="listSelect" class="saved-filter-select" aria-label="Lokalna lista"><option value="default">Glavna lista</option></select>
+        <button class="delete-list-btn" id="deleteListBtn" type="button" data-i18n-title="deleteList" data-i18n-aria="deleteList" title="Obriši listu" aria-label="Obriši listu" disabled>🗑</button>
+      </div>
       <div class="nav-item" id="dashboardBtn"><span class="nav-icon">📊</span> <span>Dashboard</span></div>
       <button class="nav-item active" id="contactsNavBtn" type="button"><span class="nav-icon">📞</span> <span data-i18n="navContacts">Contacts</span></button>
       <button class="nav-item" id="favoritesNavBtn" type="button" onclick="activateSidebarTab('favorites')"><span class="nav-icon">⭐</span> <span data-i18n="navFavorites">Favorites</span></button>
@@ -1297,6 +1312,29 @@
 </div>
 
 <div class="toast" id="toast"></div>
+<dialog class="create-list-dialog" id="createListDialog" aria-labelledby="createListTitle">
+  <form class="create-list-form" id="createListForm">
+    <h2 id="createListTitle" data-i18n="createListTitle">Nova lista</h2>
+    <label for="newListName" data-i18n="listNameLabel">Naziv liste</label>
+    <input id="newListName" name="name" type="text" maxlength="80" required autocomplete="off">
+    <p class="create-list-error" id="createListError" role="alert"></p>
+    <div class="create-list-actions">
+      <button class="btn secondary" id="cancelCreateList" type="button" data-i18n="cancel">Odustani</button>
+      <button class="btn primary" type="submit" data-i18n="create">Kreiraj</button>
+    </div>
+  </form>
+</dialog>
+<dialog class="create-list-dialog" id="deleteListDialog" aria-labelledby="deleteListTitle">
+  <form class="create-list-form" id="deleteListForm">
+    <h2 id="deleteListTitle" data-i18n="deleteListTitle">Obriši listu?</h2>
+    <p id="deleteListMessage"></p>
+    <p class="create-list-error" id="deleteListError" role="alert"></p>
+    <div class="create-list-actions">
+      <button class="btn secondary" id="cancelDeleteList" type="button" data-i18n="cancel">Odustani</button>
+      <button class="btn primary" type="submit" data-i18n="delete">Obriši</button>
+    </div>
+  </form>
+</dialog>
 <input id="importCsvInput" type="file" accept=".csv,text/csv" hidden>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
@@ -1316,6 +1354,11 @@ const I18N = {
     navFamilies: 'Families', navNotes: 'Quick notes', navWebsites: 'Bookmarks', navActions: 'Actions',
     websitesSubtitle: 'Sačuvane internet stranice', bookmarkStarred: 'Samo označeni',
     navSettings: 'Settings', settingsAccount: 'Račun i uređaj', cloudConnect: 'Poveži cloud sigurnosnu kopiju',
+    createListTitle: 'Nova lista', listNameLabel: 'Naziv liste', cancel: 'Odustani', create: 'Kreiraj',
+    duplicateListName: 'Lista s tim nazivom već postoji.', listSaveError: 'Lista se nije mogla spremiti.',
+    deleteList: 'Obriši listu', deleteListTitle: 'Obriši listu?', delete: 'Obriši',
+    deleteListMessage: 'Lista i kontakti u njoj biće trajno obrisani. Glavna lista se ne može obrisati.',
+    deleteListError: 'Listu nije moguće obrisati.',
     actionNew: 'Novi kontakt', actionExport: 'Export CSV', actionImport: 'Import CSV',
     actionPrint: 'Print', actionShare: 'Podijeli', actionPin: 'PIN zaštita', actionInstall: 'Instaliraj',
     metricCoverage: 'Pokrivenost',
@@ -1345,6 +1388,11 @@ const I18N = {
     navFamilies: 'Families', navNotes: 'Quick notes', navWebsites: 'Bookmarks', navActions: 'Actions',
     websitesSubtitle: 'Your saved browser bookmarks', bookmarkStarred: 'Starred only',
     navSettings: 'Settings', settingsAccount: 'Account & device', cloudConnect: 'Connect cloud backup',
+    createListTitle: 'New list', listNameLabel: 'List name', cancel: 'Cancel', create: 'Create',
+    duplicateListName: 'A list with that name already exists.', listSaveError: 'The list could not be saved.',
+    deleteList: 'Delete list', deleteListTitle: 'Delete list?', delete: 'Delete',
+    deleteListMessage: 'This list and its contacts will be permanently deleted. The main list cannot be deleted.',
+    deleteListError: 'The list could not be deleted.',
     actionNew: 'New contact', actionExport: 'Export CSV', actionImport: 'Import CSV',
     actionPrint: 'Print', actionShare: 'Share', actionPin: 'PIN lock', actionInstall: 'Install app',
     metricCoverage: 'Coverage',
@@ -1381,6 +1429,14 @@ function applyLanguage(lang) {
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const key = el.dataset.i18n;
     if (t[key]) el.textContent = t[key];
+  });
+  document.querySelectorAll('[data-i18n-title]').forEach(el => {
+    const key = el.dataset.i18nTitle;
+    if (t[key]) el.title = t[key];
+  });
+  document.querySelectorAll('[data-i18n-aria]').forEach(el => {
+    const key = el.dataset.i18nAria;
+    if (t[key]) el.setAttribute('aria-label', t[key]);
   });
   document.documentElement.lang = lang;
   document.querySelectorAll('.lang-btn').forEach(btn => {
@@ -1765,37 +1821,150 @@ async function saveContactProfilePhoto(contact, file) {
 }
 
 const LOCAL_LISTS_KEY = 'contacts-local-lists-v1';
+const createListDialog = $('createListDialog');
+const createListForm = $('createListForm');
+const newListName = $('newListName');
+const createListError = $('createListError');
+const cancelCreateList = $('cancelCreateList');
+const deleteListBtn = $('deleteListBtn');
+const deleteListDialog = $('deleteListDialog');
+const deleteListForm = $('deleteListForm');
+const deleteListMessage = $('deleteListMessage');
+const deleteListError = $('deleteListError');
+const cancelDeleteList = $('cancelDeleteList');
+let pendingDeleteListId = null;
 function loadLocalLists() {
   try { return JSON.parse(localStorage.getItem(LOCAL_LISTS_KEY) || '{"default": "Glavna lista"}'); } catch(e) { return { default: 'Glavna lista' }; }
 }
 function persistLocalList(notify = true) {
-  try { localStorage.setItem(`contacts-list-${listSelect.value}`, JSON.stringify(contactsWithoutPhotoData(contacts))); } catch(e) {}
+  try { localStorage.setItem(`contacts-list-${activeLocalListId}`, JSON.stringify(contactsWithoutPhotoData(contacts))); } catch(e) {}
   if (notify) notifyCloudBackup();
 }
 function renderLocalLists() {
   const lists = loadLocalLists();
   listSelect.innerHTML = Object.entries(lists).map(([id, name]) => `<option value="${escapeAttr(id)}">${escapeHtml(name)}</option>`).join('') + '<option value="__new__">＋ Nova lista</option>';
+  deleteListBtn.disabled = activeLocalListId === 'default';
 }
+let activeLocalListId = listSelect.value;
 function switchLocalList(listId) {
   if (listId === '__new__') {
-    const name = prompt('Naziv nove liste:');
-    if (!name?.trim()) { listSelect.value = 'default'; return; }
-    const id = 'list-' + Date.now();
-    const lists = loadLocalLists(); lists[id] = name.trim();
-    localStorage.setItem(LOCAL_LISTS_KEY, JSON.stringify(lists));
-    localStorage.setItem(`contacts-list-${id}`, '[]');
-    listSelect.value = id;
+    listSelect.value = activeLocalListId;
+    createListError.textContent = '';
+    newListName.value = '';
+    createListDialog.showModal();
+    newListName.focus();
+    return;
   }
-  persistLocalList();
+  if (listId === activeLocalListId) return;
+  persistLocalList(false);
+  activeLocalListId = listId;
+  deleteListBtn.disabled = activeLocalListId === 'default';
   const saved = JSON.parse(localStorage.getItem(`contacts-list-${listSelect.value}`) || 'null');
   if (Array.isArray(saved)) contacts.splice(0, contacts.length, ...saved);
-  else localStorage.setItem(`contacts-list-${listSelect.value}`, JSON.stringify(contactsWithoutPhotoData(contacts)));
+  else {
+    contacts.splice(0, contacts.length);
+    localStorage.setItem(`contacts-list-${activeLocalListId}`, '[]');
+  }
   favorites = new Set(); selectedContacts.clear(); applyFilters();
   recordAnalytics('list_switched');
   notifyCloudBackup();
 }
 renderLocalLists();
 listSelect.addEventListener('change', () => switchLocalList(listSelect.value));
+newListName.addEventListener('input', () => { createListError.textContent = ''; });
+cancelCreateList.addEventListener('click', () => createListDialog.close());
+createListDialog.addEventListener('close', () => { listSelect.value = activeLocalListId; });
+createListForm.addEventListener('submit', event => {
+  event.preventDefault();
+  const name = newListName.value.trim();
+  if (!name) {
+    newListName.focus();
+    return;
+  }
+
+  const lists = loadLocalLists();
+  if (Object.values(lists).some(existingName => String(existingName).trim().toLocaleLowerCase() === name.toLocaleLowerCase())) {
+    createListError.textContent = I18N[currentLang].duplicateListName;
+    newListName.focus();
+    return;
+  }
+
+  try {
+    let id = `list-${Date.now()}`;
+    let suffix = 1;
+    while (id in lists || localStorage.getItem(`contacts-list-${id}`) !== null) {
+      id = `list-${Date.now()}-${suffix++}`;
+    }
+    localStorage.setItem(`contacts-list-${activeLocalListId}`, JSON.stringify(contactsWithoutPhotoData(contacts)));
+    localStorage.setItem(`contacts-list-${id}`, '[]');
+    lists[id] = name;
+    localStorage.setItem(LOCAL_LISTS_KEY, JSON.stringify(lists));
+  } catch (error) {
+    createListError.textContent = `${I18N[currentLang].listSaveError} ${error.message || ''}`.trim();
+    return;
+  }
+
+  activeLocalListId = id;
+  renderLocalLists();
+  listSelect.value = id;
+  contacts.splice(0, contacts.length);
+  favorites = new Set();
+  selectedContacts.clear();
+  applyFilters();
+  recordAnalytics('list_switched');
+  notifyCloudBackup();
+  createListDialog.close();
+  showToast(`✅ ${name}`);
+});
+deleteListBtn.addEventListener('click', () => {
+  if (activeLocalListId === 'default') return;
+  const lists = loadLocalLists();
+  if (!(activeLocalListId in lists)) return;
+  pendingDeleteListId = activeLocalListId;
+  deleteListError.textContent = '';
+  deleteListMessage.textContent = `${lists[activeLocalListId]} — ${I18N[currentLang].deleteListMessage}`;
+  deleteListDialog.showModal();
+});
+cancelDeleteList.addEventListener('click', () => deleteListDialog.close());
+deleteListDialog.addEventListener('close', () => { pendingDeleteListId = null; });
+deleteListForm.addEventListener('submit', event => {
+  event.preventDefault();
+  const listId = pendingDeleteListId;
+  const lists = loadLocalLists();
+  if (!listId || listId === 'default' || !(listId in lists)) {
+    deleteListDialog.close();
+    return;
+  }
+
+  deleteListError.textContent = '';
+  const updatedLists = { ...lists };
+  delete updatedLists[listId];
+  try {
+    localStorage.setItem(LOCAL_LISTS_KEY, JSON.stringify(updatedLists));
+    localStorage.removeItem(`contacts-list-${listId}`);
+  } catch (error) {
+    try {
+      localStorage.setItem(LOCAL_LISTS_KEY, JSON.stringify(lists));
+    } catch (restoreError) {
+      console.error('Lista nije obrisana niti se popis lista mogao vratiti.', restoreError);
+    }
+    deleteListError.textContent = `${I18N[currentLang].deleteListError} ${error.message || ''}`.trim();
+    return;
+  }
+
+  activeLocalListId = 'default';
+  listSelect.value = 'default';
+  renderLocalLists();
+  const mainList = JSON.parse(localStorage.getItem('contacts-list-default') || 'null');
+  if (Array.isArray(mainList)) contacts.splice(0, contacts.length, ...mainList);
+  favorites = new Set();
+  selectedContacts.clear();
+  applyFilters();
+  recordAnalytics('list_deleted');
+  notifyCloudBackup();
+  deleteListDialog.close();
+  showToast('🗑 ' + I18N[currentLang].deleteList);
+});
 
 // ==================== BULK ====================
 function updateBulkControls(visibleContacts = getFilteredContacts()) {
@@ -3885,6 +4054,8 @@ window.ContactCloudBridge = {
     renderLocalLists();
     const desiredList = typeof backup.currentList === 'string' ? backup.currentList : 'default';
     listSelect.value = desiredList in lists ? desiredList : (Object.keys(lists)[0] || 'default');
+    activeLocalListId = listSelect.value;
+    deleteListBtn.disabled = activeLocalListId === 'default';
     const activeContacts = Array.isArray(lists[listSelect.value]) ? lists[listSelect.value] : backupContacts;
     contacts.splice(0, contacts.length, ...(Array.isArray(activeContacts) ? activeContacts : []));
     localStorage.setItem(STORAGE_KEY, JSON.stringify(contactsWithoutPhotoData(contacts)));
