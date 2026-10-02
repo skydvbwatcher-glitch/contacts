@@ -292,8 +292,11 @@
   .bookmark-add-form input { width: 100%; min-width: 0; min-height: 40px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-input); color: var(--text); font: inherit; }
   .bookmark-add-actions { grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: 8px; }
   .personal-website-shelf { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 9px; }
-  .personal-website { display: flex; align-items: center; gap: 10px; min-width: 0; min-height: 58px; padding: 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-card); color: var(--text); text-decoration: none; transition: transform .16s ease, border-color .16s ease, background .16s ease; }
+  .personal-website { display: flex; align-items: center; gap: 8px; min-width: 0; min-height: 58px; padding: 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-card); color: var(--text); transition: transform .16s ease, border-color .16s ease, background .16s ease; }
   .personal-website:hover { transform: translateY(-2px); border-color: var(--warning); background: var(--bg-hover); }
+  .personal-website-link { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; color: inherit; text-decoration: none; }
+  .personal-website-delete { flex: 0 0 32px; width: 32px; height: 32px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-header); color: var(--danger); cursor: pointer; font-size: 15px; }
+  .personal-website-delete:hover { border-color: var(--danger); background: var(--bg-hover); }
   .personal-website-mark { display: grid; place-items: center; flex: 0 0 36px; width: 36px; height: 36px; border-radius: 9px; background: linear-gradient(145deg, var(--accent-bg), #d97732); color: #fff; font-size: 15px; font-weight: 800; }
   .personal-website-name { min-width: 0; overflow: hidden; font-size: 12px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
   .website-view-tabs { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 12px; }
@@ -1950,6 +1953,15 @@ const builtInWebsiteBookmarks = [
   ...(Array.isArray(window.INTERNET_BOOKMARKS) ? window.INTERNET_BOOKMARKS : []),
   ...personalWebsites.map(([title, url]) => ({ title, url, folder: 'My websites' }))
 ];
+const DELETED_WEBSITE_BOOKMARKS_KEY = 'internet-bookmark-deleted-items-v1';
+let deletedWebsiteBookmarks = new Set();
+try {
+  const savedDeletedWebsiteBookmarks = JSON.parse(localStorage.getItem(DELETED_WEBSITE_BOOKMARKS_KEY) || '[]');
+  if (Array.isArray(savedDeletedWebsiteBookmarks)) deletedWebsiteBookmarks = new Set(savedDeletedWebsiteBookmarks.filter(id => typeof id === 'string'));
+} catch(e) {}
+function getWebsiteBookmarkKey(bookmark) {
+  return JSON.stringify([bookmark.title, bookmark.url, bookmark.folder || 'Other']);
+}
 const USER_WEBSITE_BOOKMARKS_KEY = 'internet-bookmark-user-items-v1';
 function loadUserWebsiteBookmarks() {
   try {
@@ -1963,7 +1975,11 @@ function loadUserWebsiteBookmarks() {
   } catch(e) { return []; }
 }
 let userWebsiteBookmarks = loadUserWebsiteBookmarks();
-let websiteBookmarks = [...builtInWebsiteBookmarks, ...userWebsiteBookmarks.map((bookmark, userBookmarkIndex) => ({ ...bookmark, userBookmarkIndex }))];
+function getWebsiteBookmarks() {
+  return [...builtInWebsiteBookmarks, ...userWebsiteBookmarks.map((bookmark, userBookmarkIndex) => ({ ...bookmark, userBookmarkIndex }))]
+    .filter(bookmark => !deletedWebsiteBookmarks.has(getWebsiteBookmarkKey(bookmark)));
+}
+let websiteBookmarks = getWebsiteBookmarks();
 const WEBSITE_FAVORITES_KEY = 'internet-bookmark-favorites-v1';
 let websiteFavorites = new Set();
 try {
@@ -2034,21 +2050,24 @@ function openWebsites(view = 'all') {
   renderWebsiteDirectory();
 }
 function getPersonalWebsiteEntries() {
-  const personalWebsiteEntries = personalWebsites.concat(
-    websiteBookmarks.filter(bookmark => bookmark.folder === 'My websites').map(({ title, url }) => [title, url])
-  );
+  const personalWebsiteEntries = websiteBookmarks.filter(bookmark => bookmark.folder === 'My websites').map(({ title, url }) => [title, url]);
   return [...new Map(personalWebsiteEntries.map(([title, url]) => [url, [title, url]])).values()];
 }
 function renderPersonalWebsiteShelf() {
-  personalWebsiteShelf.innerHTML = getPersonalWebsiteEntries().map(([title, url]) => `
-    <a class="personal-website" href="${escapeAttr(url)}" target="_blank" rel="noopener noreferrer" title="Open ${escapeAttr(title)}">
-      <span class="personal-website-mark" aria-hidden="true">${escapeHtml(title.trim().charAt(0).toUpperCase())}</span>
-      <span class="personal-website-name">${escapeHtml(title)}</span>
-    </a>`).join('');
+  personalWebsiteShelf.innerHTML = getPersonalWebsiteEntries().map(([title, url]) => {
+    const bookmarkIndex = websiteBookmarks.findIndex(bookmark => bookmark.url === url && bookmark.folder === 'My websites');
+    return `<div class="personal-website">
+      <a class="personal-website-link" href="${escapeAttr(url)}" target="_blank" rel="noopener noreferrer" title="Open ${escapeAttr(title)}">
+        <span class="personal-website-mark" aria-hidden="true">${escapeHtml(title.trim().charAt(0).toUpperCase())}</span>
+        <span class="personal-website-name">${escapeHtml(title)}</span>
+      </a>
+      <button class="personal-website-delete" type="button" data-delete-website="${bookmarkIndex}" aria-label="Delete ${escapeAttr(title)}" title="Delete website">✕</button>
+    </div>`;
+  }).join('');
 }
 function renderBookmarkSidebarSites() {
-  bookmarkSidebarSites.innerHTML = websiteBookmarks.map(({ title, url, folder, userBookmarkIndex }) => `
-    <div class="bookmark-sidebar-entry"><a href="${escapeAttr(url)}" target="_blank" rel="noopener noreferrer" title="${escapeAttr(title)}">${escapeHtml(title)} <small>${escapeHtml(folder || 'Other')}</small></a>${Number.isInteger(userBookmarkIndex) ? `<button class="bookmark-sidebar-delete" type="button" data-delete-user-bookmark="${userBookmarkIndex}" aria-label="Delete ${escapeAttr(title)}" title="Delete bookmark">✕</button>` : ''}</div>`).join('');
+  bookmarkSidebarSites.innerHTML = websiteBookmarks.map(({ title, url, folder }, index) => `
+    <div class="bookmark-sidebar-entry"><a href="${escapeAttr(url)}" target="_blank" rel="noopener noreferrer" title="${escapeAttr(title)}">${escapeHtml(title)} <small>${escapeHtml(folder || 'Other')}</small></a><button class="bookmark-sidebar-delete" type="button" data-delete-website="${index}" aria-label="Delete ${escapeAttr(title)}" title="Delete bookmark">✕</button></div>`).join('');
 }
 function renderPersonalWebsiteSidebarSites() {
   personalWebsiteSidebarSites.innerHTML = getPersonalWebsiteEntries().map(([title, url]) => `
@@ -2056,6 +2075,13 @@ function renderPersonalWebsiteSidebarSites() {
 }
 renderBookmarkSidebarSites();
 renderPersonalWebsiteSidebarSites();
+personalWebsiteShelf.addEventListener('click', event => {
+  const button = event.target.closest('[data-delete-website]');
+  if (!button) return;
+  event.preventDefault();
+  event.stopPropagation();
+  deleteWebsiteBookmark(button.dataset.deleteWebsite);
+});
 function renderWebsiteDirectory() {
   const query = websiteSearch.value.trim().toLowerCase();
   const selectedFolder = websiteFolderFilter.value;
@@ -2075,9 +2101,7 @@ function renderWebsiteDirectory() {
       ? `<a class="website-open" href="${escapeAttr(bookmark.url)}" target="_blank" rel="noopener noreferrer">Open</a>`
       : '';
     const starred = websiteFavorites.has(bookmark.id);
-    const deleteButton = Number.isInteger(bookmark.userBookmarkIndex)
-      ? `<button class="website-delete" type="button" data-delete-user-bookmark="${bookmark.userBookmarkIndex}" aria-label="Delete ${escapeAttr(bookmark.title)}" title="Delete bookmark">✕</button>`
-      : '';
+    const deleteButton = `<button class="website-delete" type="button" data-delete-website="${bookmark.id}" aria-label="Delete ${escapeAttr(bookmark.title)}" title="Delete bookmark">✕</button>`;
     return `<div class="website-row">
       <div class="website-row-main">${title}<span class="website-url">${escapeHtml(bookmark.folder)} · ${escapeHtml(bookmark.url)}</span></div>
       <div class="website-row-actions"><button class="website-star" type="button" data-website-star="${bookmark.id}" aria-pressed="${starred}" aria-label="Toggle favorite" title="Toggle favorite">${starred ? '★' : '☆'}</button>${deleteButton}${openLink}</div>
@@ -2146,7 +2170,7 @@ bookmarkAddForm.addEventListener('submit', event => {
     return;
   }
   userWebsiteBookmarks = nextUserBookmarks;
-  websiteBookmarks = [...builtInWebsiteBookmarks, ...userWebsiteBookmarks.map((item, userBookmarkIndex) => ({ ...item, userBookmarkIndex }))];
+  websiteBookmarks = getWebsiteBookmarks();
   refreshWebsiteFolderOptions(folder);
   websiteView = keepPersonalView ? 'personal' : 'all';
   websiteSearch.value = '';
@@ -2162,25 +2186,25 @@ bookmarkAddForm.addEventListener('submit', event => {
   renderWebsiteDirectory();
   showToast('✅ Bookmark saved');
 });
-function deleteUserWebsiteBookmark(userBookmarkIndex) {
-  const index = Number(userBookmarkIndex);
-  const bookmark = userWebsiteBookmarks[index];
+function deleteWebsiteBookmark(websiteIndex) {
+  const index = Number(websiteIndex);
+  const bookmark = websiteBookmarks[index];
   if (!Number.isInteger(index) || !bookmark || !confirm(`Delete "${bookmark.title}"?`)) return;
-  const deletedWebsiteIndex = builtInWebsiteBookmarks.length + index;
-  const nextUserBookmarks = userWebsiteBookmarks.filter((_, bookmarkIndex) => bookmarkIndex !== index);
+  const nextDeletedWebsiteBookmarks = new Set(deletedWebsiteBookmarks);
+  nextDeletedWebsiteBookmarks.add(getWebsiteBookmarkKey(bookmark));
   const nextWebsiteFavorites = [...websiteFavorites]
-    .filter(favoriteId => Number(favoriteId) !== deletedWebsiteIndex)
-    .map(favoriteId => Number(favoriteId) > deletedWebsiteIndex ? String(Number(favoriteId) - 1) : favoriteId);
+    .filter(favoriteId => Number(favoriteId) !== index)
+    .map(favoriteId => Number(favoriteId) > index ? String(Number(favoriteId) - 1) : favoriteId);
   try {
-    localStorage.setItem(USER_WEBSITE_BOOKMARKS_KEY, JSON.stringify(nextUserBookmarks));
+    localStorage.setItem(DELETED_WEBSITE_BOOKMARKS_KEY, JSON.stringify([...nextDeletedWebsiteBookmarks]));
     localStorage.setItem(WEBSITE_FAVORITES_KEY, JSON.stringify(nextWebsiteFavorites));
   } catch(e) {
     showToast('⚠️ Bookmark could not be deleted.');
     return;
   }
-  userWebsiteBookmarks = nextUserBookmarks;
+  deletedWebsiteBookmarks = nextDeletedWebsiteBookmarks;
   websiteFavorites = new Set(nextWebsiteFavorites);
-  websiteBookmarks = [...builtInWebsiteBookmarks, ...userWebsiteBookmarks.map((item, userBookmarkIndex) => ({ ...item, userBookmarkIndex }))];
+  websiteBookmarks = getWebsiteBookmarks();
   refreshWebsiteFolderOptions();
   renderPersonalWebsiteShelf();
   renderBookmarkSidebarSites();
@@ -2189,16 +2213,16 @@ function deleteUserWebsiteBookmark(userBookmarkIndex) {
   showToast('🗑 Bookmark deleted');
 }
 bookmarkSidebarSites.addEventListener('click', event => {
-  const button = event.target.closest('[data-delete-user-bookmark]');
+  const button = event.target.closest('[data-delete-website]');
   if (!button) return;
   event.preventDefault();
   event.stopPropagation();
-  deleteUserWebsiteBookmark(button.dataset.deleteUserBookmark);
+  deleteWebsiteBookmark(button.dataset.deleteWebsite);
 });
 websiteDirectory.addEventListener('click', event => {
-  const deleteButton = event.target.closest('[data-delete-user-bookmark]');
+  const deleteButton = event.target.closest('[data-delete-website]');
   if (deleteButton) {
-    deleteUserWebsiteBookmark(deleteButton.dataset.deleteUserBookmark);
+    deleteWebsiteBookmark(deleteButton.dataset.deleteWebsite);
     return;
   }
   const button = event.target.closest('[data-website-star]');
