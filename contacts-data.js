@@ -5447,7 +5447,7 @@ window.CONTACTS = window.CONTACTS || [
   {
     "name": "Sinisa Mracajac",
     "phone": "+44 7988 043710",
-    "email": "slyny71@googlemail.com",
+    "email": "slyny71@googlemail.com / slyny71@gmail.com",
     "address": "",
     "org": "",
     "notes": "",

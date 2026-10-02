@@ -40,12 +40,12 @@
     min-height: 100vh; font-size: 16px; -webkit-text-size-adjust: 100%;
     transition: background 0.3s, color 0.3s;
   }
-  .container { max-width: 1480px; margin: 0 auto; }
+  .container { width: 100%; max-width: 1780px; margin: 0 auto; }
   .workspace-layout {
-    display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 18px;
+    display: grid; grid-template-columns: 230px minmax(0, 1fr) 250px; gap: 18px;
     align-items: stretch; transition: grid-template-columns .25s ease;
   }
-  .workspace-layout.sidebar-collapsed { grid-template-columns: 72px minmax(0, 1fr); }
+  .workspace-layout.sidebar-collapsed { grid-template-columns: 72px minmax(0, 1fr) 250px; }
   .sidebar {
     background: linear-gradient(180deg, rgba(24, 29, 38, 0.96), rgba(17, 21, 27, 0.94));
     border: 1px solid var(--border); border-radius: 24px;
@@ -86,15 +86,29 @@
   .sidebar-toggle { width: 100%; border: 1px solid var(--border); background: rgba(255,255,255,0.03); color: var(--text-muted); border-radius: 10px; padding: 8px; cursor: pointer; font-size: 12px; font-weight: 700; }
   .sidebar-toggle:hover { color: var(--text); border-color: var(--accent); }
   .cloud-sync-status { display: block; padding: 0 12px; color: var(--text-muted); font-size: 11px; overflow-wrap: anywhere; }
-  .workspace-layout.sidebar-collapsed .sidebar { padding-left: 10px; padding-right: 10px; }
-  .workspace-layout.sidebar-collapsed .brand-block { justify-content: center; padding-left: 0; padding-right: 0; }
-  .workspace-layout.sidebar-collapsed .brand-copy,
-  .workspace-layout.sidebar-collapsed .nav-label,
-  .workspace-layout.sidebar-collapsed .sidebar-metric,
-  .workspace-layout.sidebar-collapsed .cloud-sync-status { display: none; }
-  .workspace-layout.sidebar-collapsed .nav-item { justify-content: center; padding-left: 6px; padding-right: 6px; font-size: 0; }
-  .workspace-layout.sidebar-collapsed .nav-item .nav-icon { margin: 0; }
+  .workspace-layout.sidebar-collapsed > .sidebar:not(.bookmark-sidebar) { padding-left: 10px; padding-right: 10px; }
+  .workspace-layout.sidebar-collapsed > .sidebar:not(.bookmark-sidebar) .brand-block { justify-content: center; padding-left: 0; padding-right: 0; }
+  .workspace-layout.sidebar-collapsed > .sidebar:not(.bookmark-sidebar) .brand-copy,
+  .workspace-layout.sidebar-collapsed > .sidebar:not(.bookmark-sidebar) .nav-label,
+  .workspace-layout.sidebar-collapsed > .sidebar:not(.bookmark-sidebar) .sidebar-metric,
+  .workspace-layout.sidebar-collapsed > .sidebar:not(.bookmark-sidebar) .cloud-sync-status { display: none; }
+  .workspace-layout.sidebar-collapsed > .sidebar:not(.bookmark-sidebar) .nav-item { justify-content: center; padding-left: 6px; padding-right: 6px; font-size: 0; }
+  .workspace-layout.sidebar-collapsed > .sidebar:not(.bookmark-sidebar) .nav-item .nav-icon { margin: 0; }
   .sidebar-metric { margin-top: auto; padding: 12px 10px 8px; border-top: 1px solid var(--border-light); }
+  .bookmark-sidebar { align-self: start; min-height: 100%; }
+  .bookmark-sidebar .brand-mark { background: linear-gradient(135deg, #bc4c00, #fb8500); box-shadow: 0 12px 24px rgba(251,133,0,0.2); }
+  .bookmark-sidebar .nav-item { text-decoration: none; }
+  .bookmark-sidebar .nav-label { margin-top: 4px; }
+  .bookmark-sidebar-sites { display: grid; gap: 4px; max-height: 0; margin: 0 0 0 40px; padding-left: 9px; border-left: 1px solid var(--border); overflow: hidden; opacity: 0; visibility: hidden; transition: max-height .25s ease, opacity .2s ease, visibility .25s; }
+  .bookmark-sidebar-sites.open { max-height: min(45vh, 420px); margin: -5px 0 4px 40px; overflow-y: auto; opacity: 1; visibility: visible; }
+  .bookmark-sidebar-sites a { display: block; overflow: hidden; padding: 6px 7px; border-radius: 6px; color: var(--text-muted); font-size: 11px; text-decoration: none; text-overflow: ellipsis; white-space: nowrap; }
+  .bookmark-sidebar-sites a:hover { background: var(--bg-hover); color: var(--accent); }
+  .bookmark-sidebar-entry { display: grid; grid-template-columns: minmax(0, 1fr) 28px; align-items: center; gap: 4px; min-width: 0; }
+  .bookmark-sidebar-delete { width: 28px; height: 28px; border: 0; border-radius: 6px; background: transparent; color: var(--danger); cursor: pointer; }
+  .bookmark-sidebar-delete:hover { background: var(--bg-hover); }
+  .personal-bookmark-sidebar-sites { display: grid; gap: 4px; margin: -5px 0 4px 40px; padding-left: 9px; border-left: 1px solid var(--border); }
+  .personal-bookmark-sidebar-sites a { display: block; overflow: hidden; padding: 6px 7px; border-radius: 6px; color: var(--text-muted); font-size: 11px; text-decoration: none; text-overflow: ellipsis; white-space: nowrap; }
+  .personal-bookmark-sidebar-sites a:hover { background: var(--bg-hover); color: var(--accent); }
   .mini-card {
     background: linear-gradient(180deg, rgba(88,166,255,0.1), rgba(255,255,255,0.02));
     border: 1px solid var(--border); border-radius: 16px; padding: 12px;
@@ -269,9 +283,14 @@
   .bookmarks-page-title { margin: 0 0 5px; color: var(--text); font-size: 28px; }
   .bookmarks-page-subtitle { color: var(--text-muted); font-size: 13px; }
   .bookmarks-section { margin: 22px 0; }
-  .bookmarks-section-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+  .bookmarks-section-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
   .bookmarks-section-heading h3 { font-size: 15px; }
   .bookmarks-section-heading span { color: var(--text-muted); font-size: 11px; }
+  .bookmark-add-form { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 4px 0 14px; }
+  .bookmark-add-form[hidden] { display: none; }
+  .bookmark-add-form label { display: grid; gap: 6px; color: var(--text-muted); font-size: 11px; font-weight: 700; }
+  .bookmark-add-form input { width: 100%; min-width: 0; min-height: 40px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-input); color: var(--text); font: inherit; }
+  .bookmark-add-actions { grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: 8px; }
   .personal-website-shelf { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 9px; }
   .personal-website { display: flex; align-items: center; gap: 10px; min-width: 0; min-height: 58px; padding: 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-card); color: var(--text); text-decoration: none; transition: transform .16s ease, border-color .16s ease, background .16s ease; }
   .personal-website:hover { transform: translateY(-2px); border-color: var(--warning); background: var(--bg-hover); }
@@ -297,7 +316,9 @@
   .website-row-actions { display: flex; flex-direction: column; align-items: center; gap: 8px; flex: 0 0 auto; }
   .website-star { width: 36px; height: 36px; border: 1px solid var(--border); border-radius: 9px; background: var(--bg-header); color: var(--text-muted); cursor: pointer; font-size: 18px; }
   .website-star[aria-pressed="true"] { color: var(--star); border-color: var(--star); }
-  @media (max-width: 600px) { .bookmarks-page-header { align-items: flex-start; flex-direction: column; padding: 18px; } .bookmarks-page-title { font-size: 24px; } .personal-website-shelf { grid-template-columns: repeat(2, minmax(0, 1fr)); } .website-tools { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .website-star-filter { grid-column: 1; } .website-count { grid-column: 2; text-align: right; } }
+  .website-delete { width: 36px; height: 36px; border: 1px solid var(--border); border-radius: 9px; background: var(--bg-header); color: var(--danger); cursor: pointer; font-size: 15px; }
+  .website-delete:hover { border-color: var(--danger); background: var(--bg-hover); }
+  @media (max-width: 600px) { .bookmarks-page-header { align-items: flex-start; flex-direction: column; padding: 18px; } .bookmarks-page-title { font-size: 24px; } .personal-website-shelf { grid-template-columns: repeat(2, minmax(0, 1fr)); } .website-tools { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .website-star-filter { grid-column: 1; } .website-count { grid-column: 2; text-align: right; } .bookmark-add-form { grid-template-columns: 1fr; } .bookmark-add-actions { grid-column: 1; } }
   .template-form { display: grid; gap: 12px; padding: 20px; }
   .template-form label { display: grid; gap: 6px; color: var(--text-muted); font-size: 11px; font-weight: 700; text-transform: uppercase; }
   .template-form select, .template-form input, .template-form textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-input); color: var(--text); font: inherit; }
@@ -685,32 +706,37 @@
       padding: max(6px, env(safe-area-inset-top)) max(6px, env(safe-area-inset-right))
         max(6px, env(safe-area-inset-bottom)) max(6px, env(safe-area-inset-left));
     }
-    .container { max-width: 100%; }
+    .container { width: 100%; min-width: 0; max-width: 100%; }
     .top-bar { margin-bottom: 10px; }
     h1 { font-size: 19px; }
     .subtitle { font-size: 12px; }
     .workspace-layout { grid-template-columns: minmax(0, 1fr); gap: 8px; }
     .workspace-layout.sidebar-collapsed { grid-template-columns: 1fr; }
-    .sidebar {
+    .sidebar:not(.bookmark-sidebar) {
       order: 0; position: sticky; top: env(safe-area-inset-top); z-index: 100;
       flex-direction: row; flex-wrap: nowrap; gap: 8px; padding: 8px;
       border-radius: 14px; overflow-x: auto; scrollbar-width: none;
       -webkit-overflow-scrolling: touch;
     }
-    .sidebar::-webkit-scrollbar { display: none; }
-    .sidebar .brand-block, .sidebar .sidebar-toggle, .sidebar .nav-label,
-    .sidebar .sidebar-metric, .sidebar .cloud-sync-status { display: none; }
-    .sidebar .nav-group { flex: 0 0 auto; flex-direction: row; align-items: center; gap: 5px; }
-    .sidebar .nav-item {
+    .sidebar:not(.bookmark-sidebar)::-webkit-scrollbar { display: none; }
+    .sidebar:not(.bookmark-sidebar) .brand-block, .sidebar:not(.bookmark-sidebar) .sidebar-toggle, .sidebar:not(.bookmark-sidebar) .nav-label,
+    .sidebar:not(.bookmark-sidebar) .sidebar-metric, .sidebar:not(.bookmark-sidebar) .cloud-sync-status { display: none; }
+    .sidebar:not(.bookmark-sidebar) .nav-group { flex: 0 0 auto; flex-direction: row; align-items: center; gap: 5px; }
+    .sidebar:not(.bookmark-sidebar) .nav-item {
       width: auto; min-height: 44px; flex: 0 0 auto; padding: 6px 9px;
       gap: 6px; border-radius: 10px; font-size: 12px; white-space: nowrap;
     }
-    .sidebar .bookmark-sidebar-sites { flex: 0 0 190px; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(5, 20px); gap: 2px; max-height: 108px; margin: 0; padding-left: 6px; }
-    .sidebar .bookmark-sidebar-sites a { padding: 2px 4px; font-size: 10px; }
-    .sidebar .nav-item .nav-icon { width: 30px; height: 30px; flex: 0 0 30px; }
-    .sidebar #listSelect { width: 126px; min-height: 44px; flex: 0 0 126px; padding: 8px; font-size: 13px; }
-    .workspace-layout.sidebar-collapsed .sidebar { padding: 8px; }
-    .workspace-layout.sidebar-collapsed .sidebar .nav-item { font-size: 12px; }
+    .sidebar:not(.bookmark-sidebar) .nav-item .nav-icon { width: 30px; height: 30px; flex: 0 0 30px; }
+    .sidebar:not(.bookmark-sidebar) #listSelect { width: 126px; min-height: 44px; flex: 0 0 126px; padding: 8px; font-size: 13px; }
+    .workspace-layout.sidebar-collapsed > .sidebar:not(.bookmark-sidebar) { padding: 8px; }
+    .workspace-layout.sidebar-collapsed > .sidebar:not(.bookmark-sidebar) .nav-item { font-size: 12px; }
+    .bookmark-sidebar { order: 2; min-height: 0; padding: 14px; border-radius: 16px; }
+    .bookmark-sidebar .brand-block { display: flex; }
+    .bookmark-sidebar .nav-group { display: flex; flex-direction: column; align-items: stretch; gap: 8px; }
+    .bookmark-sidebar .nav-item { width: 100%; min-height: 44px; flex: initial; font-size: 14px; }
+    .bookmark-sidebar .nav-label { display: block; }
+    .bookmark-sidebar-sites { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 3px; margin: -5px 0 4px 40px; }
+    .personal-bookmark-sidebar-sites { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 3px; }
     .app-shell { order: 1; min-width: 0; padding: 12px; border-radius: 16px; }
     .workspace-toolbar { flex-direction: column; align-items: flex-start; }
     .toolbar-meta { align-items: flex-start; }
@@ -825,20 +851,6 @@
       <button class="nav-item" id="favoritesNavBtn" type="button" onclick="activateSidebarTab('favorites')"><span class="nav-icon">⭐</span> <span data-i18n="navFavorites">Favorites</span></button>
       <button class="nav-item" id="familiesNavBtn" type="button" onclick="activateSidebarTab('families')"><span class="nav-icon">👨‍👩‍👧‍👦</span> <span data-i18n="navFamilies">Families</span></button>
       <button class="nav-item" id="notesNavBtn" type="button" onclick="activateSidebarTab('notes')"><span class="nav-icon">⚡</span> <span data-i18n="navNotes">Quick notes</span></button>
-      <button class="nav-item" id="websitesNavBtn" type="button" title="Bookmarks" aria-label="Bookmarks"><span class="nav-icon">🔖</span> <span data-i18n="navWebsites">Bookmarks</span></button>
-      <nav class="bookmark-sidebar-sites" aria-label="My websites">
-        <a href="https://sites.google.com/view/telefonskipretrazivac/imenik" target="_blank" rel="noopener noreferrer" title="Imenik">Imenik</a>
-        <a href="https://sites.google.com/view/viperselite/home" target="_blank" rel="noopener noreferrer" title="Vipers Elite">Vipers Elite</a>
-        <a href="https://sites.google.com/view/radujkovic/home?authuser=0" target="_blank" rel="noopener noreferrer" title="Obiteljska Web Stranica">Obiteljska Web Stranica</a>
-        <a href="http://radiomaxitalo.com/" target="_blank" rel="noopener noreferrer" title="Italo Disco Muzika">Italo Disco Muzika</a>
-        <a href="https://www.twitch.tv/newxsound" target="_blank" rel="noopener noreferrer" title="Twitch">Twitch</a>
-        <a href="http://www.radiouboji.com/" target="_blank" rel="noopener noreferrer" title="Radio u Boji">Radio u Boji</a>
-        <a href="https://radiouboji.nicepage.io/" target="_blank" rel="noopener noreferrer" title="Radio u Boji Mobile">Radio u Boji Mobile</a>
-        <a href="https://skydvbwatcher-glitch.github.io/contacts/" target="_blank" rel="noopener noreferrer" title="Contact List Book">Contact List Book</a>
-        <a href="https://sites.google.com/view/idchek/home" target="_blank" rel="noopener noreferrer" title="Elite Security">Elite Security</a>
-        <a href="http://newxsound.blogspot.com/" target="_blank" rel="noopener noreferrer" title="NewXSound">NewXSound</a>
-      </nav>
-      <button class="nav-item" id="personalWebsitesNavBtn" type="button"><span class="nav-icon">🌐</span> <span data-i18n="navPersonalWebsites">My websites</span></button>
     </div>
 
     <div class="nav-group">
@@ -902,14 +914,27 @@
           <h2 class="bookmarks-page-title" id="bookmarksPageTitle" data-i18n="navWebsites">Bookmarks</h2>
           <p class="bookmarks-page-subtitle" data-i18n="websitesSubtitle">Your saved browser bookmarks</p>
         </div>
-        <button class="btn secondary" id="bookmarksBackBtn" type="button">← <span data-i18n="navContacts">Contacts</span></button>
+        <div class="bookmarks-page-actions">
+          <button class="btn secondary" id="bookmarksBackBtn" type="button">← <span data-i18n="navContacts">Contacts</span></button>
+        </div>
       </header>
       <section class="bookmarks-section" aria-labelledby="personalSitesTitle">
-        <div class="bookmarks-section-heading"><h3 id="personalSitesTitle">My websites</h3><span>Quick access · 10 sites</span></div>
+        <div class="bookmarks-section-heading"><div><h3 id="personalSitesTitle">My websites</h3><span>Quick access · 10 sites</span></div><button class="btn primary" id="addBookmarkBtn" type="button">＋ Add bookmark</button></div>
         <div class="personal-website-shelf" id="personalWebsiteShelf"></div>
       </section>
       <section class="bookmarks-section" aria-labelledby="bookmarkLibraryTitle">
-      <div class="bookmarks-section-heading"><h3 id="bookmarkLibraryTitle">Website library</h3><span>Imported bookmarks and personal links</span></div>
+      <div class="bookmarks-section-heading">
+        <div><h3 id="bookmarkLibraryTitle">Website library</h3><span>Imported bookmarks and personal links</span></div>
+      </div>
+      <form class="bookmark-add-form" id="bookmarkAddForm" hidden>
+        <label for="bookmarkTitle">Title<input id="bookmarkTitle" maxlength="120" required></label>
+        <label for="bookmarkUrl">URL<input id="bookmarkUrl" type="url" placeholder="https://example.com" required></label>
+        <label for="bookmarkFolder">Folder<input id="bookmarkFolder" list="bookmarkFolderOptions" maxlength="80" placeholder="Other"><datalist id="bookmarkFolderOptions"></datalist></label>
+        <div class="bookmark-add-actions">
+          <button class="btn primary" type="submit">Save</button>
+          <button class="btn secondary" id="cancelBookmarkBtn" type="button">Cancel</button>
+        </div>
+      </form>
       <div class="website-view-tabs" role="group" aria-label="Bookmark views">
         <button class="website-view-tab active" type="button" data-website-view="all">All websites</button>
         <button class="website-view-tab" type="button" data-website-view="personal">My websites</button>
@@ -1041,6 +1066,23 @@
       </table>
     </div>
   </main>
+
+  <aside class="sidebar bookmark-sidebar" aria-label="Pro Bookmarks">
+    <div class="brand-block">
+      <div class="brand-mark">🔖</div>
+      <div class="brand-copy">
+        <strong data-i18n="bookmarkBrand">Pro Bookmarks</strong>
+        <span data-i18n="brandSub">Directory OS</span>
+      </div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-label" data-i18n="bookmarkLibrary">Bookmarks</div>
+      <button class="nav-item" id="websitesNavBtn" type="button" title="Bookmarks" aria-label="Bookmarks" aria-expanded="false" aria-controls="bookmarkSidebarSites"><span class="nav-icon">🔖</span> <span data-i18n="navWebsites">Bookmarks</span></button>
+      <nav class="bookmark-sidebar-sites" id="bookmarkSidebarSites" aria-label="Bookmarks" aria-hidden="true"></nav>
+      <button class="nav-item" id="personalWebsitesNavBtn" type="button"><span class="nav-icon">🌐</span> <span data-i18n="navPersonalWebsites">My websites</span></button>
+      <nav class="personal-bookmark-sidebar-sites" id="personalWebsiteSidebarSites" aria-label="My websites"></nav>
+    </div>
+  </aside>
 </div>
 
 <!-- SETTINGS PANEL -->
@@ -1223,7 +1265,7 @@ window.CALENDAR_EVENTS = window.CALENDAR_EVENTS || [];
 // ==================== TRANSLATIONS ====================
 const I18N = {
   hr: {
-    brand: 'Pro Contacts', brandSub: 'Directory OS',
+    brand: 'Pro Contacts', bookmarkBrand: 'Pro Bookmarks', bookmarkLibrary: 'Bookmarks', brandSub: 'Directory OS',
     navWorkspace: 'Workspace', navContacts: 'Contacts', navFavorites: 'Favorites', navPersonalWebsites: 'Moje web stranice',
     navFamilies: 'Families', navNotes: 'Quick notes', navWebsites: 'Bookmarks', navActions: 'Actions',
     websitesSubtitle: 'Sačuvane internet stranice', bookmarkStarred: 'Samo označeni',
@@ -1252,7 +1294,7 @@ const I18N = {
     pinBtn: 'Otključaj', pinError: 'Pogrešan PIN'
   },
   en: {
-    brand: 'Pro Contacts', brandSub: 'Directory OS',
+    brand: 'Pro Contacts', bookmarkBrand: 'Pro Bookmarks', bookmarkLibrary: 'Bookmarks', brandSub: 'Directory OS',
     navWorkspace: 'Workspace', navContacts: 'Contacts', navFavorites: 'Favorites', navPersonalWebsites: 'My websites',
     navFamilies: 'Families', navNotes: 'Quick notes', navWebsites: 'Bookmarks', navActions: 'Actions',
     websitesSubtitle: 'Your saved browser bookmarks', bookmarkStarred: 'Starred only',
@@ -1406,7 +1448,7 @@ let deferredPrompt = null;
 const sidebarPwaBtn = document.getElementById('sidebarPwaBtn');
 
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js?v=13').then(registration => registration.update()).catch(() => {});
+  navigator.serviceWorker.register('sw.js?v=20').then(registration => registration.update()).catch(() => {});
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     if (!window.__serviceWorkerReloaded) {
       window.__serviceWorkerReloaded = true;
@@ -1468,9 +1510,8 @@ const UrlStorage = {
   }
 };
 
-let contacts = window.CONTACTS;
-let contactsDataMissing = !Array.isArray(contacts) || contacts.length === 0;
-if (contactsDataMissing) { contacts = []; }
+let contacts = Array.isArray(window.CONTACTS) ? window.CONTACTS : [];
+let contactsDataMissing = true;
 
 const STORAGE_KEY = 'contacts-address-book-v1';
 const DELETED_STORAGE_KEY = 'contacts-deleted-v1';
@@ -1593,12 +1634,12 @@ function loadSavedContacts() {
     }
   } catch (e) {}
 }
+loadSavedContacts();
 function persistContacts() {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(contactsWithoutPhotoData(contacts))); }
   catch(e) { showToast('⚠️ Kontakti se ne mogu spremiti. Oslobodi prostor u pregledniku.'); }
   notifyCloudBackup();
 }
-loadSavedContacts();
 profilePhotosReady = migrateProfilePhotos();
 
 let currentTheme = 'dark', headerColor = 'blue', textColor = 'default',
@@ -1878,11 +1919,20 @@ const bookmarksTopBtn = $('bookmarksTopBtn');
 const bookmarksWorkspace = $('bookmarksWorkspace');
 const bookmarksBackBtn = $('bookmarksBackBtn');
 const personalWebsiteShelf = $('personalWebsiteShelf');
+const bookmarkSidebarSites = $('bookmarkSidebarSites');
+const personalWebsiteSidebarSites = $('personalWebsiteSidebarSites');
 const websiteDirectory = $('websiteDirectory');
 const websiteSearch = $('websiteSearch');
 const websiteFolderFilter = $('websiteFolderFilter');
 const websiteStarredOnly = $('websiteStarredOnly');
 const websiteCount = $('websiteCount');
+const addBookmarkButton = $('addBookmarkBtn');
+const bookmarkAddForm = $('bookmarkAddForm');
+const bookmarkTitleInput = $('bookmarkTitle');
+const bookmarkUrlInput = $('bookmarkUrl');
+const bookmarkFolderInput = $('bookmarkFolder');
+const bookmarkFolderOptions = $('bookmarkFolderOptions');
+const cancelBookmarkButton = $('cancelBookmarkBtn');
 let websiteView = 'all';
 const personalWebsites = [
   ['Imenik', 'https://sites.google.com/view/telefonskipretrazivac/imenik'],
@@ -1896,20 +1946,39 @@ const personalWebsites = [
   ['Elite Security', 'https://sites.google.com/view/idchek/home'],
   ['NewXSound', 'http://newxsound.blogspot.com/']
 ];
-const websiteBookmarks = [
+const builtInWebsiteBookmarks = [
   ...(Array.isArray(window.INTERNET_BOOKMARKS) ? window.INTERNET_BOOKMARKS : []),
   ...personalWebsites.map(([title, url]) => ({ title, url, folder: 'My websites' }))
 ];
+const USER_WEBSITE_BOOKMARKS_KEY = 'internet-bookmark-user-items-v1';
+function loadUserWebsiteBookmarks() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(USER_WEBSITE_BOOKMARKS_KEY) || '[]');
+    if (!Array.isArray(saved)) return [];
+    return saved.filter(bookmark => bookmark && typeof bookmark.title === 'string' && bookmark.title.trim()
+      && typeof bookmark.url === 'string' && /^https?:\/\//i.test(bookmark.url)
+      && typeof bookmark.folder === 'string').map(bookmark => ({
+      title: bookmark.title.trim(), url: bookmark.url.trim(), folder: bookmark.folder.trim() || 'Other'
+    }));
+  } catch(e) { return []; }
+}
+let userWebsiteBookmarks = loadUserWebsiteBookmarks();
+let websiteBookmarks = [...builtInWebsiteBookmarks, ...userWebsiteBookmarks.map((bookmark, userBookmarkIndex) => ({ ...bookmark, userBookmarkIndex }))];
 const WEBSITE_FAVORITES_KEY = 'internet-bookmark-favorites-v1';
 let websiteFavorites = new Set();
 try {
   const savedWebsiteFavorites = JSON.parse(localStorage.getItem(WEBSITE_FAVORITES_KEY) || '[]');
   if (Array.isArray(savedWebsiteFavorites)) websiteFavorites = new Set(savedWebsiteFavorites.filter(id => typeof id === 'string'));
 } catch(e) {}
-websiteFolderFilter.innerHTML = '<option value="">All folders</option>' +
-  [...new Set(websiteBookmarks.map(bookmark => bookmark.folder || 'Other'))].sort((a, b) => a.localeCompare(b)).map(folder =>
+function refreshWebsiteFolderOptions(selectedFolder = websiteFolderFilter.value) {
+  const folders = [...new Set(websiteBookmarks.map(bookmark => bookmark.folder || 'Other'))].sort((a, b) => a.localeCompare(b));
+  websiteFolderFilter.innerHTML = '<option value="">All folders</option>' + folders.map(folder =>
     `<option value="${escapeAttr(folder)}">${escapeHtml(folder)}</option>`
   ).join('');
+  bookmarkFolderOptions.innerHTML = folders.map(folder => `<option value="${escapeAttr(folder)}"></option>`).join('');
+  websiteFolderFilter.value = folders.includes(selectedFolder) ? selectedFolder : '';
+}
+refreshWebsiteFolderOptions();
 function setActiveNav(activeButton) {
   [contactsNavBtn, favoritesNavBtn, familiesNavBtn, notesNavBtn, websitesNavBtn, personalWebsitesNavBtn].forEach(button => button.classList.toggle('active', button === activeButton));
 }
@@ -1964,13 +2033,29 @@ function openWebsites(view = 'all') {
   renderPersonalWebsiteShelf();
   renderWebsiteDirectory();
 }
+function getPersonalWebsiteEntries() {
+  const personalWebsiteEntries = personalWebsites.concat(
+    websiteBookmarks.filter(bookmark => bookmark.folder === 'My websites').map(({ title, url }) => [title, url])
+  );
+  return [...new Map(personalWebsiteEntries.map(([title, url]) => [url, [title, url]])).values()];
+}
 function renderPersonalWebsiteShelf() {
-  personalWebsiteShelf.innerHTML = personalWebsites.map(([title, url]) => `
+  personalWebsiteShelf.innerHTML = getPersonalWebsiteEntries().map(([title, url]) => `
     <a class="personal-website" href="${escapeAttr(url)}" target="_blank" rel="noopener noreferrer" title="Open ${escapeAttr(title)}">
       <span class="personal-website-mark" aria-hidden="true">${escapeHtml(title.trim().charAt(0).toUpperCase())}</span>
       <span class="personal-website-name">${escapeHtml(title)}</span>
     </a>`).join('');
 }
+function renderBookmarkSidebarSites() {
+  bookmarkSidebarSites.innerHTML = websiteBookmarks.map(({ title, url, folder, userBookmarkIndex }) => `
+    <div class="bookmark-sidebar-entry"><a href="${escapeAttr(url)}" target="_blank" rel="noopener noreferrer" title="${escapeAttr(title)}">${escapeHtml(title)} <small>${escapeHtml(folder || 'Other')}</small></a>${Number.isInteger(userBookmarkIndex) ? `<button class="bookmark-sidebar-delete" type="button" data-delete-user-bookmark="${userBookmarkIndex}" aria-label="Delete ${escapeAttr(title)}" title="Delete bookmark">✕</button>` : ''}</div>`).join('');
+}
+function renderPersonalWebsiteSidebarSites() {
+  personalWebsiteSidebarSites.innerHTML = getPersonalWebsiteEntries().map(([title, url]) => `
+    <a href="${escapeAttr(url)}" target="_blank" rel="noopener noreferrer" title="${escapeAttr(title)}">${escapeHtml(title)}</a>`).join('');
+}
+renderBookmarkSidebarSites();
+renderPersonalWebsiteSidebarSites();
 function renderWebsiteDirectory() {
   const query = websiteSearch.value.trim().toLowerCase();
   const selectedFolder = websiteFolderFilter.value;
@@ -1990,9 +2075,12 @@ function renderWebsiteDirectory() {
       ? `<a class="website-open" href="${escapeAttr(bookmark.url)}" target="_blank" rel="noopener noreferrer">Open</a>`
       : '';
     const starred = websiteFavorites.has(bookmark.id);
+    const deleteButton = Number.isInteger(bookmark.userBookmarkIndex)
+      ? `<button class="website-delete" type="button" data-delete-user-bookmark="${bookmark.userBookmarkIndex}" aria-label="Delete ${escapeAttr(bookmark.title)}" title="Delete bookmark">✕</button>`
+      : '';
     return `<div class="website-row">
       <div class="website-row-main">${title}<span class="website-url">${escapeHtml(bookmark.folder)} · ${escapeHtml(bookmark.url)}</span></div>
-      <div class="website-row-actions"><button class="website-star" type="button" data-website-star="${bookmark.id}" aria-pressed="${starred}" aria-label="Toggle favorite" title="Toggle favorite">${starred ? '★' : '☆'}</button>${openLink}</div>
+      <div class="website-row-actions"><button class="website-star" type="button" data-website-star="${bookmark.id}" aria-pressed="${starred}" aria-label="Toggle favorite" title="Toggle favorite">${starred ? '★' : '☆'}</button>${deleteButton}${openLink}</div>
     </div>`;
   }).join('') : '<div class="no-results">No bookmarks found.</div>';
 }
@@ -2006,14 +2094,113 @@ document.querySelectorAll('[data-website-view]').forEach(button => {
     renderWebsiteDirectory();
   });
 });
-websitesNavBtn.addEventListener('click', openWebsites);
+websitesNavBtn.addEventListener('click', () => {
+  const expanded = websitesNavBtn.getAttribute('aria-expanded') !== 'true';
+  websitesNavBtn.setAttribute('aria-expanded', String(expanded));
+  bookmarkSidebarSites.setAttribute('aria-hidden', String(!expanded));
+  bookmarkSidebarSites.inert = !expanded;
+  bookmarkSidebarSites.classList.toggle('open', expanded);
+  openWebsites();
+});
 personalWebsitesNavBtn.addEventListener('click', () => openWebsites('personal'));
-bookmarksTopBtn.addEventListener('click', openWebsites);
+bookmarksTopBtn.addEventListener('click', () => openWebsites());
 bookmarksBackBtn.addEventListener('click', () => activateSidebarTab('contacts'));
 websiteSearch.addEventListener('input', renderWebsiteDirectory);
 websiteFolderFilter.addEventListener('change', renderWebsiteDirectory);
 websiteStarredOnly.addEventListener('change', renderWebsiteDirectory);
+addBookmarkButton.addEventListener('click', () => {
+  bookmarkAddForm.hidden = false;
+  if (websiteView === 'personal' && !bookmarkFolderInput.value.trim()) bookmarkFolderInput.value = 'My websites';
+  bookmarkTitleInput.focus();
+});
+cancelBookmarkButton.addEventListener('click', () => {
+  bookmarkAddForm.reset();
+  bookmarkUrlInput.setCustomValidity('');
+  bookmarkAddForm.hidden = true;
+});
+bookmarkUrlInput.addEventListener('input', () => bookmarkUrlInput.setCustomValidity(''));
+bookmarkAddForm.addEventListener('submit', event => {
+  event.preventDefault();
+  const keepPersonalView = websiteView === 'personal';
+  const title = bookmarkTitleInput.value.trim();
+  const folder = bookmarkFolderInput.value.trim() || (websiteView === 'personal' ? 'My websites' : 'Other');
+  let url;
+  try {
+    url = new URL(bookmarkUrlInput.value.trim());
+  } catch(e) {
+    bookmarkUrlInput.setCustomValidity('Enter a valid URL.');
+    bookmarkUrlInput.reportValidity();
+    return;
+  }
+  if (!['http:', 'https:'].includes(url.protocol)) {
+    bookmarkUrlInput.setCustomValidity('Only http:// and https:// links are supported.');
+    bookmarkUrlInput.reportValidity();
+    return;
+  }
+  const bookmark = { title, url: url.href, folder };
+  const nextUserBookmarks = [...userWebsiteBookmarks, bookmark];
+  try {
+    localStorage.setItem(USER_WEBSITE_BOOKMARKS_KEY, JSON.stringify(nextUserBookmarks));
+  } catch(e) {
+    showToast('⚠️ Bookmark could not be saved in this browser.');
+    return;
+  }
+  userWebsiteBookmarks = nextUserBookmarks;
+  websiteBookmarks = [...builtInWebsiteBookmarks, ...userWebsiteBookmarks.map((item, userBookmarkIndex) => ({ ...item, userBookmarkIndex }))];
+  refreshWebsiteFolderOptions(folder);
+  websiteView = keepPersonalView ? 'personal' : 'all';
+  websiteSearch.value = '';
+  websiteStarredOnly.checked = false;
+  websiteFolderFilter.value = websiteView === 'personal' ? 'My websites' : '';
+  document.querySelectorAll('[data-website-view]').forEach(tab => tab.classList.toggle('active', tab.dataset.websiteView === websiteView));
+  bookmarkAddForm.reset();
+  bookmarkUrlInput.setCustomValidity('');
+  bookmarkAddForm.hidden = true;
+  renderPersonalWebsiteShelf();
+  renderBookmarkSidebarSites();
+  renderPersonalWebsiteSidebarSites();
+  renderWebsiteDirectory();
+  showToast('✅ Bookmark saved');
+});
+function deleteUserWebsiteBookmark(userBookmarkIndex) {
+  const index = Number(userBookmarkIndex);
+  const bookmark = userWebsiteBookmarks[index];
+  if (!Number.isInteger(index) || !bookmark || !confirm(`Delete "${bookmark.title}"?`)) return;
+  const deletedWebsiteIndex = builtInWebsiteBookmarks.length + index;
+  const nextUserBookmarks = userWebsiteBookmarks.filter((_, bookmarkIndex) => bookmarkIndex !== index);
+  const nextWebsiteFavorites = [...websiteFavorites]
+    .filter(favoriteId => Number(favoriteId) !== deletedWebsiteIndex)
+    .map(favoriteId => Number(favoriteId) > deletedWebsiteIndex ? String(Number(favoriteId) - 1) : favoriteId);
+  try {
+    localStorage.setItem(USER_WEBSITE_BOOKMARKS_KEY, JSON.stringify(nextUserBookmarks));
+    localStorage.setItem(WEBSITE_FAVORITES_KEY, JSON.stringify(nextWebsiteFavorites));
+  } catch(e) {
+    showToast('⚠️ Bookmark could not be deleted.');
+    return;
+  }
+  userWebsiteBookmarks = nextUserBookmarks;
+  websiteFavorites = new Set(nextWebsiteFavorites);
+  websiteBookmarks = [...builtInWebsiteBookmarks, ...userWebsiteBookmarks.map((item, userBookmarkIndex) => ({ ...item, userBookmarkIndex }))];
+  refreshWebsiteFolderOptions();
+  renderPersonalWebsiteShelf();
+  renderBookmarkSidebarSites();
+  renderPersonalWebsiteSidebarSites();
+  renderWebsiteDirectory();
+  showToast('🗑 Bookmark deleted');
+}
+bookmarkSidebarSites.addEventListener('click', event => {
+  const button = event.target.closest('[data-delete-user-bookmark]');
+  if (!button) return;
+  event.preventDefault();
+  event.stopPropagation();
+  deleteUserWebsiteBookmark(button.dataset.deleteUserBookmark);
+});
 websiteDirectory.addEventListener('click', event => {
+  const deleteButton = event.target.closest('[data-delete-user-bookmark]');
+  if (deleteButton) {
+    deleteUserWebsiteBookmark(deleteButton.dataset.deleteUserBookmark);
+    return;
+  }
   const button = event.target.closest('[data-website-star]');
   if (!button) return;
   const id = button.dataset.websiteStar;
@@ -2559,7 +2746,7 @@ function render(data) {
   
   if (!data.length) {
     tbody.innerHTML = contactsDataMissing
-      ? '<tr><td colspan="7" class="no-results"><strong>Nema kontakata</strong><br><small>Provjeri contacts-data.js.</small></td></tr>'
+      ? '<tr><td colspan="7" class="no-results"><strong>Nema kontakata</strong><br><small>Provjeri Firestore bazu i uvoz kontakata.</small></td></tr>'
       : '<tr><td colspan="7" class="no-results">Nema rezultata.</td></tr>';
     countInfo.innerHTML = 'Prikazano: <b>0</b>';
     updateBulkControls(data); return;
@@ -3563,6 +3750,5 @@ window.addEventListener('hashchange', () => {
   updateFavBadge(); applyFilters();
 });
 </script>
-<script type="module" src="./src/cloud-sync.js"></script>
 </body>
 </html>
