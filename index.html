@@ -349,8 +349,7 @@
   .workspace-list-controls select { flex: 1; min-width: 0; }
   .delete-list-btn { flex: 0 0 40px; width: 40px; height: 40px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-card); color: var(--danger); cursor: pointer; font: inherit; }
   .delete-list-btn:disabled { opacity: .45; cursor: not-allowed; }
-  .create-list-dialog { width: min(420px, calc(100% - 32px)); padding: 0; border: 1px solid var(--border); border-radius: 14px; background: var(--bg-card); color: var(--text); box-shadow: 0 20px 60px rgba(0,0,0,.35); }
-  .create-list-dialog::backdrop { background: var(--overlay); backdrop-filter: blur(4px); }
+  .modal.create-list-dialog { width: min(420px, 100%); max-width: 420px; max-height: 90vh; padding: 0; border: 1px solid var(--border); border-radius: 14px; background: var(--bg-card); color: var(--text); box-shadow: 0 20px 60px rgba(0,0,0,.35); }
   .create-list-form { display: grid; gap: 16px; padding: 22px; }
   .create-list-form h2 { margin: 0; font-size: 19px; }
   .create-list-form label { display: grid; gap: 7px; color: var(--text-muted); font-size: 12px; font-weight: 700; }
@@ -1312,29 +1311,33 @@
 </div>
 
 <div class="toast" id="toast"></div>
-<dialog class="create-list-dialog" id="createListDialog" aria-labelledby="createListTitle">
-  <form class="create-list-form" id="createListForm">
-    <h2 id="createListTitle" data-i18n="createListTitle">Nova lista</h2>
-    <label for="newListName" data-i18n="listNameLabel">Naziv liste</label>
-    <input id="newListName" name="name" type="text" maxlength="80" required autocomplete="off">
-    <p class="create-list-error" id="createListError" role="alert"></p>
-    <div class="create-list-actions">
-      <button class="btn secondary" id="cancelCreateList" type="button" data-i18n="cancel">Odustani</button>
-      <button class="btn primary" type="submit" data-i18n="create">Kreiraj</button>
-    </div>
-  </form>
-</dialog>
-<dialog class="create-list-dialog" id="deleteListDialog" aria-labelledby="deleteListTitle">
-  <form class="create-list-form" id="deleteListForm">
-    <h2 id="deleteListTitle" data-i18n="deleteListTitle">Obriši listu?</h2>
-    <p id="deleteListMessage"></p>
-    <p class="create-list-error" id="deleteListError" role="alert"></p>
-    <div class="create-list-actions">
-      <button class="btn secondary" id="cancelDeleteList" type="button" data-i18n="cancel">Odustani</button>
-      <button class="btn primary" type="submit" data-i18n="delete">Obriši</button>
-    </div>
-  </form>
-</dialog>
+<div class="modal-overlay list-dialog-overlay" id="createListDialog" aria-hidden="true">
+  <div class="modal create-list-dialog" role="dialog" aria-modal="true" aria-labelledby="createListTitle">
+    <form class="create-list-form" id="createListForm">
+      <h2 id="createListTitle" data-i18n="createListTitle">Nova lista</h2>
+      <label for="newListName" data-i18n="listNameLabel">Naziv liste</label>
+      <input id="newListName" name="name" type="text" maxlength="80" required autocomplete="off">
+      <p class="create-list-error" id="createListError" role="alert"></p>
+      <div class="create-list-actions">
+        <button class="btn secondary" id="cancelCreateList" type="button" data-i18n="cancel">Odustani</button>
+        <button class="btn primary" type="submit" data-i18n="create">Kreiraj</button>
+      </div>
+    </form>
+  </div>
+</div>
+<div class="modal-overlay list-dialog-overlay" id="deleteListDialog" aria-hidden="true">
+  <div class="modal create-list-dialog" role="dialog" aria-modal="true" aria-labelledby="deleteListTitle">
+    <form class="create-list-form" id="deleteListForm">
+      <h2 id="deleteListTitle" data-i18n="deleteListTitle">Obriši listu?</h2>
+      <p id="deleteListMessage"></p>
+      <p class="create-list-error" id="deleteListError" role="alert"></p>
+      <div class="create-list-actions">
+        <button class="btn secondary" id="cancelDeleteList" type="button" data-i18n="cancel">Odustani</button>
+        <button class="btn primary" type="submit" data-i18n="delete">Obriši</button>
+      </div>
+    </form>
+  </div>
+</div>
 <input id="importCsvInput" type="file" accept=".csv,text/csv" hidden>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
@@ -1356,6 +1359,7 @@ const I18N = {
     navSettings: 'Settings', settingsAccount: 'Račun i uređaj', cloudConnect: 'Poveži cloud sigurnosnu kopiju',
     createListTitle: 'Nova lista', listNameLabel: 'Naziv liste', cancel: 'Odustani', create: 'Kreiraj',
     duplicateListName: 'Lista s tim nazivom već postoji.', listSaveError: 'Lista se nije mogla spremiti.',
+    deleteSelectedList: '🗑 Obriši odabranu listu',
     deleteList: 'Obriši listu', deleteListTitle: 'Obriši listu?', delete: 'Obriši',
     deleteListMessage: 'Lista i kontakti u njoj biće trajno obrisani. Glavna lista se ne može obrisati.',
     deleteListError: 'Listu nije moguće obrisati.',
@@ -1390,6 +1394,7 @@ const I18N = {
     navSettings: 'Settings', settingsAccount: 'Account & device', cloudConnect: 'Connect cloud backup',
     createListTitle: 'New list', listNameLabel: 'List name', cancel: 'Cancel', create: 'Create',
     duplicateListName: 'A list with that name already exists.', listSaveError: 'The list could not be saved.',
+    deleteSelectedList: '🗑 Delete selected list',
     deleteList: 'Delete list', deleteListTitle: 'Delete list?', delete: 'Delete',
     deleteListMessage: 'This list and its contacts will be permanently deleted. The main list cannot be deleted.',
     deleteListError: 'The list could not be deleted.',
@@ -1438,6 +1443,7 @@ function applyLanguage(lang) {
     const key = el.dataset.i18nAria;
     if (t[key]) el.setAttribute('aria-label', t[key]);
   });
+  if (typeof renderLocalLists === 'function') renderLocalLists();
   document.documentElement.lang = lang;
   document.querySelectorAll('.lang-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.lang === lang);
@@ -1550,7 +1556,7 @@ let deferredPrompt = null;
 const sidebarPwaBtn = document.getElementById('sidebarPwaBtn');
 
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js?v=24').then(registration => registration.update()).catch(() => {});
+  navigator.serviceWorker.register('sw.js?v=25').then(registration => registration.update()).catch(() => {});
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     if (!window.__serviceWorkerReloaded) {
       window.__serviceWorkerReloaded = true;
@@ -1842,17 +1848,31 @@ function persistLocalList(notify = true) {
 }
 function renderLocalLists() {
   const lists = loadLocalLists();
-  listSelect.innerHTML = Object.entries(lists).map(([id, name]) => `<option value="${escapeAttr(id)}">${escapeHtml(name)}</option>`).join('') + '<option value="__new__">＋ Nova lista</option>';
+  listSelect.innerHTML = Object.entries(lists).map(([id, name]) => `<option value="${escapeAttr(id)}">${escapeHtml(name)}</option>`).join('')
+    + `<option value="__new__">＋ ${escapeHtml(I18N[currentLang].createListTitle)}</option><option value="__delete__">${escapeHtml(I18N[currentLang].deleteSelectedList)}</option>`;
   deleteListBtn.disabled = activeLocalListId === 'default';
 }
 let activeLocalListId = listSelect.value;
+function openLocalListDialog(dialog) {
+  dialog.classList.add('active');
+  dialog.setAttribute('aria-hidden', 'false');
+}
+function closeLocalListDialog(dialog) {
+  dialog.classList.remove('active');
+  dialog.setAttribute('aria-hidden', 'true');
+}
 function switchLocalList(listId) {
   if (listId === '__new__') {
     listSelect.value = activeLocalListId;
     createListError.textContent = '';
     newListName.value = '';
-    createListDialog.showModal();
+    openLocalListDialog(createListDialog);
     newListName.focus();
+    return;
+  }
+  if (listId === '__delete__') {
+    listSelect.value = activeLocalListId;
+    openDeleteLocalListDialog();
     return;
   }
   if (listId === activeLocalListId) return;
@@ -1872,8 +1892,14 @@ function switchLocalList(listId) {
 renderLocalLists();
 listSelect.addEventListener('change', () => switchLocalList(listSelect.value));
 newListName.addEventListener('input', () => { createListError.textContent = ''; });
-cancelCreateList.addEventListener('click', () => createListDialog.close());
-createListDialog.addEventListener('close', () => { listSelect.value = activeLocalListId; });
+function closeCreateLocalListDialog() {
+  closeLocalListDialog(createListDialog);
+  listSelect.value = activeLocalListId;
+}
+cancelCreateList.addEventListener('click', closeCreateLocalListDialog);
+createListDialog.addEventListener('click', event => {
+  if (event.target === createListDialog) closeCreateLocalListDialog();
+});
 createListForm.addEventListener('submit', event => {
   event.preventDefault();
   const name = newListName.value.trim();
@@ -1913,26 +1939,39 @@ createListForm.addEventListener('submit', event => {
   applyFilters();
   recordAnalytics('list_switched');
   notifyCloudBackup();
-  createListDialog.close();
+  closeCreateLocalListDialog();
   showToast(`✅ ${name}`);
 });
-deleteListBtn.addEventListener('click', () => {
+function openDeleteLocalListDialog() {
   if (activeLocalListId === 'default') return;
   const lists = loadLocalLists();
   if (!(activeLocalListId in lists)) return;
   pendingDeleteListId = activeLocalListId;
   deleteListError.textContent = '';
   deleteListMessage.textContent = `${lists[activeLocalListId]} — ${I18N[currentLang].deleteListMessage}`;
-  deleteListDialog.showModal();
+  openLocalListDialog(deleteListDialog);
+}
+deleteListBtn.addEventListener('click', openDeleteLocalListDialog);
+function closeDeleteLocalListDialog() {
+  closeLocalListDialog(deleteListDialog);
+  pendingDeleteListId = null;
+  listSelect.value = activeLocalListId;
+}
+cancelDeleteList.addEventListener('click', closeDeleteLocalListDialog);
+deleteListDialog.addEventListener('click', event => {
+  if (event.target === deleteListDialog) closeDeleteLocalListDialog();
 });
-cancelDeleteList.addEventListener('click', () => deleteListDialog.close());
-deleteListDialog.addEventListener('close', () => { pendingDeleteListId = null; });
+document.addEventListener('keydown', event => {
+  if (event.key !== 'Escape') return;
+  if (createListDialog.classList.contains('active')) closeCreateLocalListDialog();
+  if (deleteListDialog.classList.contains('active')) closeDeleteLocalListDialog();
+});
 deleteListForm.addEventListener('submit', event => {
   event.preventDefault();
   const listId = pendingDeleteListId;
   const lists = loadLocalLists();
   if (!listId || listId === 'default' || !(listId in lists)) {
-    deleteListDialog.close();
+    closeDeleteLocalListDialog();
     return;
   }
 
@@ -1962,7 +2001,7 @@ deleteListForm.addEventListener('submit', event => {
   applyFilters();
   recordAnalytics('list_deleted');
   notifyCloudBackup();
-  deleteListDialog.close();
+  closeDeleteLocalListDialog();
   showToast('🗑 ' + I18N[currentLang].deleteList);
 });
 
