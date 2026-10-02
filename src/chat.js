@@ -70,6 +70,16 @@ function renderMessages(snapshot, uid) {
   feed.scrollTop = feed.scrollHeight;
 }
 
+function getJoinErrorMessage(error) {
+  const guidance = {
+    'auth/operation-not-allowed': 'U Firebase Console uključite Anonymous sign-in.',
+    'auth/invalid-api-key': 'Proverite Firebase Web API ključ.',
+    'auth/unauthorized-domain': 'Dodajte skydvbwatcher-glitch.github.io u Firebase Authorized domains.',
+    'auth/network-request-failed': 'Proverite internet vezu ili blokadu Firebase zahteva u pregledaču.'
+  };
+  return guidance[error.code] || `Firebase greška: ${error.code || error.message || error.name || 'nepoznata greška'}`;
+}
+
 async function joinChat() {
   const requestedName = nameInput.value.trim().replace(/\s+/g, ' ');
   if (requestedName.length < 2 || requestedName.length > 40) {
@@ -96,7 +106,7 @@ async function joinChat() {
   } catch (error) {
     console.error('Could not join public chat:', error);
     feed.hidden = false;
-    showStatus('Povezivanje nije uspjelo. Provjerite Firebase web konfiguraciju i uključite Anonymous sign-in.');
+    showStatus(`Povezivanje nije uspjelo. ${getJoinErrorMessage(error)}`);
     displayName = '';
   } finally {
     joinButton.disabled = false;
