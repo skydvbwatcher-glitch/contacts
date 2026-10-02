@@ -319,6 +319,9 @@
   .contact-avatar-small { width: 34px; height: 34px; border-radius: 50%; flex: 0 0 34px; object-fit: cover; background: var(--bg-header); border: 1px solid var(--border); }
   .contact-avatar-fallback { width: 34px; height: 34px; border-radius: 50%; flex: 0 0 34px; display: inline-flex; align-items: center; justify-content: center; overflow: hidden; color: var(--text); background: var(--bg-header); border: 1px solid var(--border); font-size: 11px; font-weight: 700; }
   .contact-avatar-fallback img { display: block; width: 100%; height: 100%; border-radius: inherit; object-fit: cover; }
+  .contact-photo-button { position: relative; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 40px; width: 40px; height: 40px; padding: 0; border: 0; background: transparent; cursor: pointer; }
+  .contact-photo-camera { position: absolute; right: -1px; bottom: -1px; display: grid; place-items: center; width: 19px; height: 19px; border: 2px solid var(--bg-card); border-radius: 50%; background: var(--accent-bg); color: #fff; font-size: 10px; line-height: 1; }
+  .contact-photo-button:hover .contact-photo-camera { background: var(--accent-bg-hover); }
   .name-label { min-width: 0; overflow-wrap: anywhere; }
   .name-main { display: flex; align-items: center; gap: 8px; }
   .contact-quick-actions { display: inline-flex; align-items: center; gap: 5px; margin-left: 6px; vertical-align: middle; }
@@ -1112,6 +1115,7 @@
 
 <div class="toast" id="toast"></div>
 <input id="importCsvInput" type="file" accept=".csv,text/csv" hidden>
+<input id="contactPhotoInput" type="file" accept="image/*" hidden>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" crossorigin="anonymous"></script>
@@ -1558,7 +1562,32 @@ const tbody = $('tableBody'), searchInput = $('searchInput'), searchBtn = $('sea
   sidebarShareBtn = $('sidebarShareBtn'), sidebarCoverage = $('sidebarCoverage'),
   sidebarPrintBtn = $('sidebarPrintBtn'), printBtn = $('printBtn'),
   letterGrid = $('letterGrid'), cityStatsGrid = $('cityStatsGrid'), saveFilterChip = $('saveFilterChip'),
-  savedFilterSelect = $('savedFilterSelect'), listSelect = $('listSelect');
+  savedFilterSelect = $('savedFilterSelect'), listSelect = $('listSelect'), contactPhotoInput = $('contactPhotoInput');
+let contactPhotoTarget = null;
+contactPhotoInput.addEventListener('change', async () => {
+  const file = contactPhotoInput.files[0];
+  const contact = contacts.find(item => item.name === contactPhotoTarget);
+  contactPhotoTarget = null;
+  if (!file || !contact) return;
+  try {
+    const photoData = await compressProfilePhoto(file);
+    const photoId = createPhotoId();
+    if (window.contactCloudSync?.isConnected()) {
+      await window.contactCloudSync.uploadPhoto(photoId, photoData, true);
+    }
+    await saveProfilePhoto(photoId, photoData);
+    contact.photoData = photoData;
+    contact.photoId = photoId;
+    persistContacts();
+    persistLocalList();
+    applyFilters();
+    showToast('✅ Profilna slika spremljena');
+  } catch (error) {
+    showToast(`⚠️ ${error.message || 'Slika se ne može spremiti.'}`);
+  } finally {
+    contactPhotoInput.value = '';
+  }
+});
 
 const LOCAL_LISTS_KEY = 'contacts-local-lists-v1';
 function loadLocalLists() {
@@ -2358,9 +2387,7 @@ function render(data) {
     return `<tr class="contact-row" data-order="${oi}" draggable="true">
       <td class="fav-cell" data-label="⭐"><input class="row-check" type="checkbox" data-name="${escapeAttr(c.name)}" ${sel ? 'checked' : ''}><span class="fav-star ${isFav ? 'active' : ''}" data-name="${escapeAttr(c.name)}">${isFav ? '★' : '☆'}</span></td>
       <td class="name-cell" data-name="${escapeAttr(c.name)}" data-label="Ime">
-        <div class="name-main">${c.photoData && c.photoData.startsWith('data:image/')
-          ? `<img class="contact-avatar-small" src="${escapeAttr(c.photoData)}" alt="">`
-          : `<span class="contact-avatar-fallback" ${c.photoId ? `data-photo-id="${escapeAttr(c.photoId)}"` : ''}>${escapeHtml(getInitials(c.name))}</span>`}
+        <div class="name-main"><button type="button" class="contact-photo-button" data-contact-photo="${escapeAttr(c.name)}" title="Dodaj ili promijeni profilnu sliku" aria-label="Dodaj ili promijeni profilnu sliku za ${escapeAttr(c.name)}"><span class="contact-avatar-fallback" data-contact-name="${escapeAttr(c.name)}" ${c.photoId ? `data-photo-id="${escapeAttr(c.photoId)}"` : ''}>${escapeHtml(getInitials(c.name))}</span><span class="contact-photo-camera" aria-hidden="true">📷</span></button>
           <span class="name-label">${escapeHtml(c.name)}${quickActions}</span></div>
         ${socialLinks ? `<div class="name-social-row">${socialLinks}</div>` : ''}
       </td>
@@ -2390,6 +2417,13 @@ function render(data) {
       if (c) openModal(c);
     });
   });
+  tbody.querySelectorAll('.contact-photo-button').forEach(button => {
+    button.addEventListener('click', event => {
+      event.stopPropagation();
+      contactPhotoTarget = button.dataset.contactPhoto;
+      contactPhotoInput.click();
+    });
+  });
   document.querySelectorAll('.contact-row').forEach(row => {
     row.addEventListener('dragstart', () => {
       draggedIndex = Number(row.dataset.order); row.classList.add('dragging');
@@ -2406,8 +2440,8 @@ function render(data) {
   });
   countInfo.innerHTML = `Prikazano: <b>${data.length}</b>${favorites.size ? ` • ⭐ ${favorites.size}` : ''}`;
   updateBulkControls(data);
-  tbody.querySelectorAll('.contact-avatar-fallback[data-photo-id]').forEach(element => {
-    const contact = data.find(item => item.photoId === element.dataset.photoId);
+  tbody.querySelectorAll('.contact-avatar-fallback[data-contact-name]').forEach(element => {
+    const contact = data.find(item => item.name === element.dataset.contactName);
     if (contact) renderContactAvatar(element, contact);
   });
 }
