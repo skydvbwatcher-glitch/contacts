@@ -920,6 +920,7 @@
         <div class="command-line"><span class="live-dot"></span> <span data-i18n="statusSynced">Local workspace synced</span></div>
         <div class="lang-toggle">
           <button class="lang-btn active" data-lang="hr">🇭🇷 HR</button>
+          <button class="lang-btn" data-lang="sr-Latn">🇷🇸 SR</button>
           <button class="lang-btn" data-lang="en">🇬🇧 EN</button>
         </div>
       </div>
@@ -1420,6 +1421,41 @@ const I18N = {
     radTitle: 'All Radujković',
     pinTitle: 'Contact List', pinSubtitle: 'Enter PIN to access',
     pinBtn: 'Unlock', pinError: 'Wrong PIN'
+  },
+  'sr-Latn': {
+    brand: 'Pro Contacts', bookmarkBrand: 'Pro Bookmarks', bookmarkLibrary: 'Obeleživači', brandSub: 'Imenik',
+    navWorkspace: 'Radni prostor', navContacts: 'Kontakti', navFavorites: 'Omiljeni', navPersonalWebsites: 'Moji sajtovi',
+    navFamilies: 'Porodice', navNotes: 'Brze beleške', navWebsites: 'Obeleživači', navActions: 'Radnje',
+    websitesSubtitle: 'Sačuvani internet sajtovi', bookmarkStarred: 'Samo označeni',
+    navSettings: 'Podešavanja', settingsAccount: 'Nalog i uređaj', cloudConnect: 'Poveži rezervnu kopiju u oblaku',
+    createListTitle: 'Nova lista', listNameLabel: 'Naziv liste', cancel: 'Otkaži', create: 'Napravi',
+    duplicateListName: 'Lista sa ovim nazivom već postoji.', listSaveError: 'Listu nije moguće sačuvati.',
+    deleteSelectedList: '🗑 Obriši izabranu listu',
+    deleteList: 'Obriši listu', deleteListTitle: 'Obrisati listu?', delete: 'Obriši',
+    deleteListMessage: 'Lista i kontakti u njoj biće trajno obrisani. Glavna lista ne može da se obriše.',
+    deleteListError: 'Listu nije moguće obrisati.',
+    actionNew: 'Novi kontakt', actionExport: 'Izvezi CSV', actionImport: 'Uvezi CSV',
+    actionPrint: 'Štampaj', actionShare: 'Podeli', actionPin: 'PIN zaštita', actionInstall: 'Instaliraj',
+    metricCoverage: 'Pokrivenost',
+    badge: 'Radni prostor za kontakte', title: 'Lista kontakata',
+    statusSynced: 'Radni prostor je sinhronizovan',
+    subtitle: 'Klikni na ime za detalje • ⭐ za omiljene • prevuci i pusti za promenu redosleda',
+    statTotal: 'Ukupno', statFav: 'Omiljeni', statWork: 'Poslovni',
+    lettersTitle: 'Kontakti po slovima',
+    selectAll: 'Izaberi sve', pillContacts: 'Kontakti', addBtn: 'Dodaj kontakt',
+    chipAll: 'Svi', chipFav: 'Omiljeni', chipWork: 'Poslovni', chipPersonal: 'Lični',
+    chipPhone: 'Sa telefonom', chipEmail: 'Sa imejlom',
+    filterAll: 'Sve kategorije', filterWork: '🏢 Poslovni (Bell)', filterPersonal: '👤 Lični',
+    filterPhone: '📞 Samo sa telefonom', filterEmail: '✉️ Samo sa imejlom',
+    filterAddress: '📍 Samo sa adresom', filterFav: '⭐ Samo omiljeni',
+    filterRad: '👨‍👩‍👧‍👦 Samo Radujkovići',
+    thName: 'Ime', thPhone: 'Telefon', thEmail: 'Imejl', thAddress: 'Adresa',
+    thOrg: 'Organizacija', thNotes: 'Beleške',
+    settingsTitle: 'Podešavanja', settingsColor: '🎨 Boja teksta',
+    settingsSize: '🔠 Veličina slova', settingsStyle: '🔤 Stil slova', settingsReset: 'Vrati na početno',
+    radTitle: 'Svi Radujkovići',
+    pinTitle: 'Lista kontakata', pinSubtitle: 'Unesi PIN za pristup',
+    pinBtn: 'Otključaj', pinError: 'Pogrešan PIN'
   }
 };
 
@@ -1466,7 +1502,7 @@ function applyCustomTheme(theme) {
 document.querySelectorAll('.lang-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     applyLanguage(btn.dataset.lang);
-    showToast(currentLang === 'hr' ? '🇭🇷 Hrvatski' : '🇬🇧 English');
+    showToast(currentLang === 'hr' ? '🇭🇷 Hrvatski' : currentLang === 'sr-Latn' ? '🇷🇸 Srpski (latinica)' : '🇬🇧 English');
   });
 });
 
@@ -1556,7 +1592,7 @@ let deferredPrompt = null;
 const sidebarPwaBtn = document.getElementById('sidebarPwaBtn');
 
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js?v=25').then(registration => registration.update()).catch(() => {});
+  navigator.serviceWorker.register('sw.js?v=26').then(registration => registration.update()).catch(() => {});
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     if (!window.__serviceWorkerReloaded) {
       window.__serviceWorkerReloaded = true;
@@ -2930,7 +2966,8 @@ async function syncGoogleCalendar(force = false) {
 function renderCalendar() {
   const year = calendarCursor.getFullYear();
   const month = calendarCursor.getMonth();
-  const monthName = new Intl.DateTimeFormat(currentLang === 'hr' ? 'hr-HR' : 'en-US', { month: 'long', year: 'numeric' }).format(calendarCursor);
+  const dateLocale = currentLang === 'hr' ? 'hr-HR' : currentLang === 'sr-Latn' ? 'sr-Latn-RS' : 'en-US';
+  const monthName = new Intl.DateTimeFormat(dateLocale, { month: 'long', year: 'numeric' }).format(calendarCursor);
   calendarMonth.textContent = monthName.charAt(0).toUpperCase() + monthName.slice(1);
   const birthdays = {};
   const events = {};
@@ -2952,7 +2989,10 @@ function renderCalendar() {
   const today = new Date();
   const firstDay = (new Date(year, month, 1).getDay() + 6) % 7;
   const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const weekdays = currentLang === 'hr' ? ['Pon', 'Uto', 'Sri', 'Čet', 'Pet', 'Sub', 'Ned'] : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const weekdays = currentLang === 'hr'
+    ? ['Pon', 'Uto', 'Sri', 'Čet', 'Pet', 'Sub', 'Ned']
+    : currentLang === 'sr-Latn' ? ['Pon', 'Uto', 'Sre', 'Čet', 'Pet', 'Sub', 'Ned']
+      : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   let html = weekdays.map(day => `<div class="calendar-weekday">${day}</div>`).join('');
   for (let i = 0; i < firstDay; i++) html += '<div class="calendar-day empty"></div>';
   for (let day = 1; day <= daysInMonth; day++) {
@@ -3987,7 +4027,7 @@ const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecogni
 if (SpeechRecognition) {
   voiceSearchBtn.addEventListener('click', () => {
     const recognition = new SpeechRecognition();
-    recognition.lang = currentLang === 'hr' ? 'hr-HR' : 'en-US';
+    recognition.lang = currentLang === 'hr' ? 'hr-HR' : currentLang === 'sr-Latn' ? 'sr-RS' : 'en-US';
     recognition.interimResults = false;
     recognition.onresult = event => {
       searchInput.value = event.results[0][0].transcript;

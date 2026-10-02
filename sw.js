@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kontakti-v25';
+const CACHE_NAME = 'kontakti-v26';
 const ASSETS = ['./', './index.html', './contacts-data.js', './internet-bookmarks-data.js', './events-data.js', './src/firebase.js', './manifest.json', './icon-192.png', './icon-512.png'];
 
  self.addEventListener('install', event => {
