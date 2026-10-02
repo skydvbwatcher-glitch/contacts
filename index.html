@@ -264,31 +264,6 @@
   .app-shell.bookmarks-open > :not(.workspace-toolbar):not(#bookmarksWorkspace) { display: none; }
   .app-shell #bookmarksWorkspace { display: none; padding: 12px 4px 4px; }
   .app-shell.bookmarks-open #bookmarksWorkspace { display: block; }
-  .app-shell.chat-open > :not(.workspace-toolbar):not(#chatWorkspace) { display: none; }
-  .app-shell #chatWorkspace { display: none; padding: 12px 4px 4px; }
-  .app-shell.chat-open #chatWorkspace { display: block; }
-  .chat-panel { display: flex; flex-direction: column; height: min(72vh, 760px); min-height: 420px; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: var(--bg-card); }
-  .chat-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 18px; border-bottom: 1px solid var(--border); }
-  .chat-heading h2 { font-size: 18px; }
-  .chat-heading p { margin-top: 4px; color: var(--text-muted); font-size: 12px; }
-  .chat-feed { display: flex; flex: 1; flex-direction: column; gap: 10px; overflow-y: auto; padding: 16px; }
-  .chat-message { max-width: min(78%, 620px); padding: 9px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-input); overflow-wrap: anywhere; }
-  .chat-message.mine { align-self: flex-end; border-color: var(--accent); background: color-mix(in srgb, var(--accent-bg) 16%, var(--bg-card)); }
-  .chat-message-meta { display: flex; align-items: baseline; gap: 9px; margin-bottom: 4px; }
-  .chat-message-meta strong { font-size: 12px; }
-  .chat-message-meta time { color: var(--text-muted); font-size: 10px; }
-  .chat-message p { white-space: pre-wrap; line-height: 1.45; }
-  .chat-compose { display: flex; gap: 8px; padding: 12px; border-top: 1px solid var(--border); }
-  .chat-compose textarea { flex: 1; min-width: 0; min-height: 44px; max-height: 120px; resize: vertical; padding: 11px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-input); color: var(--text); font: inherit; }
-  .chat-compose button, .chat-join button { min-height: 44px; padding: 0 16px; border: 1px solid var(--accent-bg); border-radius: 8px; background: var(--accent-bg); color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
-  .chat-compose button:disabled { opacity: .55; cursor: wait; }
-  .chat-join { display: grid; gap: 12px; width: min(420px, 100%); margin: auto; padding: 24px; }
-  .chat-join[hidden], .chat-feed[hidden], .chat-compose[hidden] { display: none; }
-  .chat-join h3 { font-size: 18px; }
-  .chat-join p, .chat-status { color: var(--text-muted); font-size: 13px; line-height: 1.5; }
-  .chat-join input { min-height: 44px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-input); color: var(--text); font: inherit; }
-  .chat-status { padding: 8px 16px; }
-  @media (max-width: 600px) { .chat-panel { height: calc(100dvh - 190px); min-height: 360px; } .chat-message { max-width: 90%; } .chat-heading { align-items: flex-start; flex-direction: column; } }
   .bookmarks-page-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 18px; padding: 24px; border: 1px solid var(--border); border-radius: 16px; background: radial-gradient(ellipse at 92% 8%, rgba(240,180,41,.18), transparent 38%), linear-gradient(120deg, rgba(88,166,255,.15), rgba(255,255,255,.02) 68%); }
   .bookmarks-eyebrow { display: block; margin-bottom: 8px; color: var(--warning); font-size: 10px; font-weight: 800; text-transform: uppercase; }
   .bookmarks-page-title { margin: 0 0 5px; color: var(--text); font-size: 28px; }
@@ -850,7 +825,6 @@
       <button class="nav-item" id="favoritesNavBtn" type="button" onclick="activateSidebarTab('favorites')"><span class="nav-icon">⭐</span> <span data-i18n="navFavorites">Favorites</span></button>
       <button class="nav-item" id="familiesNavBtn" type="button" onclick="activateSidebarTab('families')"><span class="nav-icon">👨‍👩‍👧‍👦</span> <span data-i18n="navFamilies">Families</span></button>
       <button class="nav-item" id="notesNavBtn" type="button" onclick="activateSidebarTab('notes')"><span class="nav-icon">⚡</span> <span data-i18n="navNotes">Quick notes</span></button>
-      <button class="nav-item" id="chatNavBtn" type="button" title="Chat" aria-label="Chat"><span class="nav-icon">💬</span> <span>Chat</span></button>
       <button class="nav-item" id="websitesNavBtn" type="button" title="Bookmarks" aria-label="Bookmarks"><span class="nav-icon">🔖</span> <span data-i18n="navWebsites">Bookmarks</span></button>
       <nav class="bookmark-sidebar-sites" aria-label="My websites">
         <a href="https://sites.google.com/view/telefonskipretrazivac/imenik" target="_blank" rel="noopener noreferrer" title="Imenik">Imenik</a>
@@ -904,7 +878,6 @@
         </div>
       </div>
       <div class="top-actions">
-        <button class="icon-btn" id="chatTopBtn" type="button" title="Chat" aria-label="Chat">💬</button>
         <button class="icon-btn" id="settingsBtn" type="button" title="Podešavanja" aria-label="Podešavanja">⚙️</button>
         <button class="icon-btn add-contact-btn" id="addContactBtn" title="Dodaj kontakt">＋</button>
         <button class="icon-btn" id="favFilterBtn" title="Favoriti">⭐<span class="badge" id="favBadge">0</span></button>
@@ -950,26 +923,6 @@
       </div>
       <div class="website-directory" id="websiteDirectory"></div>
       </section>
-    </section>
-
-    <section id="chatWorkspace" aria-labelledby="chatTitle">
-      <div class="chat-panel">
-        <header class="chat-heading">
-          <div><h2 id="chatTitle">Zajednički chat</h2><p>Javna soba · poruke su vidljive svima koji imaju pristup stranici</p></div>
-          <span class="chat-status" id="chatIdentity"></span>
-        </header>
-        <div class="chat-join" id="chatJoin">
-          <h3>Prije ulaska upišite ime</h3>
-          <p>Ime će se prikazivati uz vaše poruke. Ne potvrđuje vaš stvarni identitet.</p>
-          <input id="chatName" maxlength="40" autocomplete="name" placeholder="Vaše ime" aria-label="Vaše ime" required>
-          <button id="chatJoinBtn" type="button">Uđi u chat</button>
-        </div>
-        <div class="chat-feed" id="chatFeed" role="log" aria-live="polite" hidden></div>
-        <form class="chat-compose" id="chatForm" hidden>
-          <textarea id="chatMessage" maxlength="1000" placeholder="Napišite poruku..." aria-label="Poruka" required></textarea>
-          <button id="chatSendBtn" type="submit" aria-label="Pošalji poruku">Pošalji</button>
-        </form>
-      </div>
     </section>
 
     <div class="top-bar">
@@ -1453,7 +1406,7 @@ let deferredPrompt = null;
 const sidebarPwaBtn = document.getElementById('sidebarPwaBtn');
 
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js?v=12').then(registration => registration.update()).catch(() => {});
+  navigator.serviceWorker.register('sw.js?v=13').then(registration => registration.update()).catch(() => {});
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     if (!window.__serviceWorkerReloaded) {
       window.__serviceWorkerReloaded = true;
@@ -1919,7 +1872,6 @@ const contactsNavBtn = $('contactsNavBtn');
 const favoritesNavBtn = $('favoritesNavBtn');
 const familiesNavBtn = $('familiesNavBtn');
 const notesNavBtn = $('notesNavBtn');
-const chatNavBtn = $('chatNavBtn');
 const websitesNavBtn = $('websitesNavBtn');
 const personalWebsitesNavBtn = $('personalWebsitesNavBtn');
 const bookmarksTopBtn = $('bookmarksTopBtn');
@@ -1959,14 +1911,14 @@ websiteFolderFilter.innerHTML = '<option value="">All folders</option>' +
     `<option value="${escapeAttr(folder)}">${escapeHtml(folder)}</option>`
   ).join('');
 function setActiveNav(activeButton) {
-  [contactsNavBtn, favoritesNavBtn, familiesNavBtn, notesNavBtn, chatNavBtn, websitesNavBtn, personalWebsitesNavBtn].forEach(button => button.classList.toggle('active', button === activeButton));
+  [contactsNavBtn, favoritesNavBtn, familiesNavBtn, notesNavBtn, websitesNavBtn, personalWebsitesNavBtn].forEach(button => button.classList.toggle('active', button === activeButton));
 }
 function resetNavSearch() {
   searchInput.value = '';
   document.querySelectorAll('.advanced-search input').forEach(input => { input.value = ''; });
 }
 window.activateSidebarTab = tab => {
-  document.querySelector('.app-shell').classList.remove('bookmarks-open', 'chat-open');
+  document.querySelector('.app-shell').classList.remove('bookmarks-open');
   resetNavSearch();
   showFavOnly = false;
   favFilterBtn.classList.remove('active');
@@ -2003,7 +1955,6 @@ notesNavBtn.addEventListener('click', () => {
   activateSidebarTab('notes');
 });
 function openWebsites(view = 'all') {
-  document.querySelector('.app-shell').classList.remove('chat-open');
   document.querySelector('.app-shell').classList.add('bookmarks-open');
   websiteView = view;
   websiteFolderFilter.value = view === 'personal' ? 'My websites' : '';
@@ -3613,6 +3564,5 @@ window.addEventListener('hashchange', () => {
 });
 </script>
 <script type="module" src="./src/cloud-sync.js"></script>
-<script type="module" src="./src/chat.js"></script>
 </body>
 </html>
