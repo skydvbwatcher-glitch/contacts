@@ -852,7 +852,60 @@
 </head>
 <body>
 <style>#pagesNav{display:flex;gap:6px;padding:8px 10px;background:#010409;border-bottom:1px solid #30363d;overflow-x:auto;white-space:nowrap;font-family:system-ui,sans-serif}#pagesNav a{color:#e6edf3;text-decoration:none;padding:6px 10px;border-radius:8px;border:1px solid #30363d;font-size:14px}#pagesNav a.on{background:#1f6feb;border-color:#1f6feb}</style>
-<nav id="pagesNav"><a href="contacts-v2.html">👤 Kontakti v2</a><a href="bookmarks-v3.html">🔖 Bookmarks</a><a href="mysites-v4.html">🌐 Moje web stranice</a><a href="./" class="on">🏠 Stara</a></nav>
+<nav id="pagesNav"><a href="contacts-v2.html">👤 Kontakti v2</a><a href="bookmarks-v3.html">🔖 Bookmarks</a><a href="mysites-v4.html">🌐 Moje web stranice</a><a href="./" class="on">🏠 Stara</a><a href="#" id="ghAutoBtn">☁ GitHub: …</a></nav>
+<script>
+(function(){
+  const L=k=>localStorage.getItem(k)||'', btn=document.getElementById('ghAutoBtn');
+  const cfg=()=>({repo:L('gh_repo'),path:L('gh_path')||'backups/contacts-backup.json',token:L('gh_token')});
+  const ok=()=>{const c=cfg();return c.repo&&c.token;};
+  const show=t=>{btn.textContent='☁ GitHub: '+t;};
+  const b64=s=>{let b='';new TextEncoder().encode(s).forEach(x=>b+=String.fromCharCode(x));return btoa(b);};
+  const read=k=>{try{return JSON.parse(localStorage.getItem(k)||'null');}catch(e){return null;}};
+  function data(){
+    const c=read('contacts-sync-v1'),b=read('bookmarks-sync-v1');
+    if(!c||!c.contacts||!c.contacts.length)return null;
+    return {app:'contacts-v2',version:2,exported:new Date().toISOString(),contacts:c.contacts,bookmarks:b&&b.bookmarks||[]};
+  }
+  let busy=false;
+  async function upload(force){
+    if(busy||!ok())return;
+    const d=data();if(!d)return;
+    const hash=JSON.stringify([d.contacts,d.bookmarks]);
+    if(!force&&hash===L('gh_last_hash'))return;
+    busy=true;show('šaljem…');
+    try{
+      const c=cfg(),url='https://api.github.com/repos/'+c.repo+'/contents/'+c.path.split('/').map(encodeURIComponent).join('/');
+      const h={Authorization:'Bearer '+c.token,Accept:'application/vnd.github+json'};
+      const g=await fetch(url,{headers:h});
+      if(!g.ok&&g.status!==404)throw new Error(g.status);
+      const sha=g.ok?(await g.json()).sha:undefined;
+      const r=await fetch(url,{method:'PUT',headers:h,body:JSON.stringify({message:'Auto backup '+new Date().toISOString(),content:b64(JSON.stringify(d,null,1)),sha})});
+      if(!r.ok)throw new Error(r.status);
+      localStorage.setItem('gh_last_hash',hash);localStorage.setItem('gh_last_ok',new Date().toLocaleString());
+      show('OK '+new Date().toLocaleTimeString());
+    }catch(e){show('greška '+e.message);}
+    busy=false;
+  }
+  btn.addEventListener('click',e=>{
+    e.preventDefault();
+    const c=cfg();
+    const repo=prompt('GitHub repo (vlasnik/ime). Preporuka: PRIVATNI repo.',c.repo||'');
+    if(repo===null)return;
+    const path=prompt('Putanja datoteke u repo-u:',c.path);
+    if(path===null)return;
+    const token=prompt('GitHub token (fine-grained, Contents: read/write). Prazno = isključi automatski backup. Ostaje samo na ovom uređaju.',c.token?'(zadržati postojeći: ostavi prazno za isključivanje)':'');
+    if(token===null)return;
+    localStorage.setItem('gh_repo',repo.trim());localStorage.setItem('gh_path',path.trim()||'backups/contacts-backup.json');
+    if(token.trim()&&!token.startsWith('(zadržati'))localStorage.setItem('gh_token',token.trim());
+    else if(!token.trim())localStorage.removeItem('gh_token');
+    localStorage.removeItem('gh_last_hash');
+    if(ok()){show('uključeno');upload(true);}else show('isključeno');
+  });
+  show(ok()?'uključeno'+(L('gh_last_ok')?' (zadnji: '+L('gh_last_ok')+')':''):'isključeno (klikni za postavke)');
+  setInterval(()=>upload(false),20000);
+  setTimeout(()=>upload(false),5000);
+})();
+</script>
 
 <!-- PIN LOCK -->
 <div class="pin-lock" id="pinLock">
