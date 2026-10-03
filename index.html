@@ -83,6 +83,7 @@
   .bookmark-sidebar-sites { display: grid; gap: 3px; margin: -5px 0 3px 40px; padding-left: 9px; border-left: 1px solid var(--border); }
   .bookmark-sidebar-sites a { display: block; overflow: hidden; padding: 5px 7px; border-radius: 6px; color: var(--text-muted); font-size: 11px; text-decoration: none; text-overflow: ellipsis; white-space: nowrap; }
   .bookmark-sidebar-sites a:hover { background: var(--bg-hover); color: var(--accent); }
+  .bookmark-sidebar-sites a > span, .personal-bookmark-sidebar-sites a > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .sidebar-toggle { width: 100%; border: 1px solid var(--border); background: rgba(255,255,255,0.03); color: var(--text-muted); border-radius: 10px; padding: 8px; cursor: pointer; font-size: 12px; font-weight: 700; }
   .sidebar-toggle:hover { color: var(--text); border-color: var(--accent); }
   .cloud-sync-status { display: block; padding: 0 12px; color: var(--text-muted); font-size: 11px; overflow-wrap: anywhere; }
@@ -101,13 +102,16 @@
   .bookmark-sidebar .nav-label { margin-top: 4px; }
   .bookmark-sidebar-sites { display: grid; gap: 4px; max-height: 0; margin: 0 0 0 40px; padding-left: 9px; border-left: 1px solid var(--border); overflow: hidden; opacity: 0; visibility: hidden; transition: max-height .25s ease, opacity .2s ease, visibility .25s; }
   .bookmark-sidebar-sites.open { max-height: min(45vh, 420px); margin: -5px 0 4px 40px; overflow-y: auto; opacity: 1; visibility: visible; }
-  .bookmark-sidebar-sites a { display: block; overflow: hidden; padding: 6px 7px; border-radius: 6px; color: var(--text-muted); font-size: 11px; text-decoration: none; text-overflow: ellipsis; white-space: nowrap; }
+  .bookmark-sidebar-sites a { display: flex; align-items: center; gap: 6px; overflow: hidden; padding: 6px 7px; border-radius: 6px; color: var(--text-muted); font-size: 11px; text-decoration: none; text-overflow: ellipsis; white-space: nowrap; }
   .bookmark-sidebar-sites a:hover { background: var(--bg-hover); color: var(--accent); }
   .bookmark-sidebar-entry { display: grid; grid-template-columns: minmax(0, 1fr) 28px; align-items: center; gap: 4px; min-width: 0; }
   .bookmark-sidebar-delete { width: 28px; height: 28px; border: 0; border-radius: 6px; background: transparent; color: var(--danger); cursor: pointer; }
   .bookmark-sidebar-delete:hover { background: var(--bg-hover); }
   .personal-bookmark-sidebar-sites { display: grid; gap: 4px; margin: -5px 0 4px 40px; padding-left: 9px; border-left: 1px solid var(--border); }
-  .personal-bookmark-sidebar-sites a { display: block; overflow: hidden; padding: 6px 7px; border-radius: 6px; color: var(--text-muted); font-size: 11px; text-decoration: none; text-overflow: ellipsis; white-space: nowrap; }
+  .personal-bookmark-sidebar-sites a { display: flex; align-items: center; gap: 6px; overflow: hidden; padding: 6px 7px; border-radius: 6px; color: var(--text-muted); font-size: 11px; text-decoration: none; text-overflow: ellipsis; white-space: nowrap; }
+  .bookmark-link-favicon { flex: 0 0 16px; width: 16px; height: 16px; object-fit: contain; border-radius: 3px; }
+  .bookmark-sidebar-entry > a { min-width: 0; }
+  .bookmark-sidebar-entry > a small { overflow: hidden; text-overflow: ellipsis; }
   .personal-bookmark-sidebar-sites a:hover { background: var(--bg-hover); color: var(--accent); }
   .mini-card {
     background: linear-gradient(180deg, rgba(88,166,255,0.1), rgba(255,255,255,0.02));
@@ -313,7 +317,8 @@
   .personal-website-delete:hover { border-color: var(--danger); background: var(--bg-hover); }
   .personal-website-edit { flex: 0 0 auto; width: 32px; height: 32px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-header); color: var(--text-muted); cursor: pointer; font-size: 15px; }
   .personal-website-edit:hover { border-color: var(--accent); color: var(--accent); }
-  .personal-website-mark { display: grid; place-items: center; flex: 0 0 36px; width: 36px; height: 36px; border-radius: 9px; background: linear-gradient(145deg, var(--accent-bg), #d97732); color: #fff; font-size: 15px; font-weight: 800; }
+  .personal-website-mark { position: relative; display: grid; place-items: center; flex: 0 0 36px; width: 36px; height: 36px; border-radius: 9px; background: linear-gradient(145deg, var(--accent-bg), #d97732); color: #fff; font-size: 15px; font-weight: 800; }
+  .personal-website-mark .bookmark-link-favicon { position: absolute; inset: 0; width: 100%; height: 100%; padding: 7px; border-radius: 9px; background: var(--bg-card); }
   .personal-website-name { min-width: 0; overflow: hidden; font-size: 12px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
   .website-view-tabs { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 12px; }
   .website-view-tab { min-height: 36px; padding: 7px 11px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-card); color: var(--text-dim); font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
@@ -322,6 +327,7 @@
   .website-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; min-height: 126px; padding: 14px; border: 1px solid var(--border); border-radius: 10px; background: linear-gradient(145deg, var(--bg-card), rgba(255,255,255,.015)); transition: border-color 0.15s, transform 0.15s; }
   .website-row:hover { border-color: var(--accent); transform: translateY(-2px); }
   .website-title { color: var(--text); font-size: 14px; font-weight: 700; line-height: 1.35; text-decoration: none; overflow-wrap: anywhere; }
+  a.website-title { display: inline-flex; align-items: center; gap: 7px; }
   .website-title:hover { color: var(--accent); }
   .website-url { display: block; margin-top: 8px; color: var(--text-muted); font-size: 11px; line-height: 1.4; overflow-wrap: anywhere; }
   .website-open { display: inline-flex; align-items: center; justify-content: center; min-height: 34px; padding: 0 10px; border: 1px solid var(--border); border-radius: 8px; color: var(--accent); font-size: 12px; font-weight: 700; text-decoration: none; white-space: nowrap; }
@@ -2434,12 +2440,22 @@ function getPersonalWebsiteEntries() {
   const personalWebsiteEntries = websiteBookmarks.filter(bookmark => bookmark.folder === 'My websites').map(({ title, url }) => [title, url]);
   return [...new Map(personalWebsiteEntries.map(([title, url]) => [url, [title, url]])).values()];
 }
+function getWebsiteFavicon(url, className = 'bookmark-link-favicon') {
+  try {
+    const parsedUrl = new URL(url);
+    if (!['http:', 'https:'].includes(parsedUrl.protocol)) return '';
+    const faviconUrl = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(parsedUrl.hostname)}&sz=64`;
+    return `<img class="${className}" src="${escapeAttr(faviconUrl)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.hidden=true">`;
+  } catch(e) {
+    return '';
+  }
+}
 function renderPersonalWebsiteShelf() {
   personalWebsiteShelf.innerHTML = getPersonalWebsiteEntries().map(([title, url]) => {
     const bookmarkIndex = websiteBookmarks.findIndex(bookmark => bookmark.url === url && bookmark.folder === 'My websites');
     return `<div class="personal-website">
       <a class="personal-website-link" href="${escapeAttr(url)}" target="_blank" rel="noopener noreferrer" title="Open ${escapeAttr(title)}">
-        <span class="personal-website-mark" aria-hidden="true">${escapeHtml(title.trim().charAt(0).toUpperCase())}</span>
+        <span class="personal-website-mark" aria-hidden="true">${escapeHtml(title.trim().charAt(0).toUpperCase())}${getWebsiteFavicon(url)}</span>
         <span class="personal-website-name">${escapeHtml(title)}</span>
       </a>
       <button class="personal-website-edit" type="button" data-edit-website="${bookmarkIndex}" aria-label="Uredi ${escapeAttr(title)}" title="Uredi stranicu">✎</button>
@@ -2462,11 +2478,11 @@ function editWebsiteBookmark(websiteIndex) {
 }
 function renderBookmarkSidebarSites() {
   bookmarkSidebarSites.innerHTML = websiteBookmarks.map(({ title, url, folder }, index) => `
-    <div class="bookmark-sidebar-entry"><a href="${escapeAttr(url)}" target="_blank" rel="noopener noreferrer" title="${escapeAttr(title)}">${escapeHtml(title)} <small>${escapeHtml(folder || 'Other')}</small></a><button class="bookmark-sidebar-delete" type="button" data-delete-website="${index}" aria-label="Delete ${escapeAttr(title)}" title="Delete bookmark">✕</button></div>`).join('');
+    <div class="bookmark-sidebar-entry"><a href="${escapeAttr(url)}" target="_blank" rel="noopener noreferrer" title="${escapeAttr(title)}">${getWebsiteFavicon(url)}<span>${escapeHtml(title)} <small>${escapeHtml(folder || 'Other')}</small></span></a><button class="bookmark-sidebar-delete" type="button" data-delete-website="${index}" aria-label="Delete ${escapeAttr(title)}" title="Delete bookmark">✕</button></div>`).join('');
 }
 function renderPersonalWebsiteSidebarSites() {
   personalWebsiteSidebarSites.innerHTML = getPersonalWebsiteEntries().map(([title, url]) => `
-    <a href="${escapeAttr(url)}" target="_blank" rel="noopener noreferrer" title="${escapeAttr(title)}">${escapeHtml(title)}</a>`).join('');
+    <a href="${escapeAttr(url)}" target="_blank" rel="noopener noreferrer" title="${escapeAttr(title)}">${getWebsiteFavicon(url)}<span>${escapeHtml(title)}</span></a>`).join('');
 }
 renderBookmarkSidebarSites();
 renderPersonalWebsiteSidebarSites();
@@ -2497,7 +2513,7 @@ function renderWebsiteDirectory() {
   websiteDirectory.innerHTML = visible.length ? visible.map(bookmark => {
     const safeUrl = /^https?:\/\//i.test(bookmark.url);
     const title = safeUrl
-      ? `<a class="website-title" href="${escapeAttr(bookmark.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(bookmark.title)}</a>`
+      ? `<a class="website-title" href="${escapeAttr(bookmark.url)}" target="_blank" rel="noopener noreferrer">${getWebsiteFavicon(bookmark.url)}${escapeHtml(bookmark.title)}</a>`
       : `<span class="website-title">${escapeHtml(bookmark.title)}</span>`;
     const openLink = safeUrl
       ? `<a class="website-open" href="${escapeAttr(bookmark.url)}" target="_blank" rel="noopener noreferrer">Open</a>`
