@@ -190,6 +190,7 @@
   .settings-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-muted); font-weight: 600; margin-bottom: 10px; }
   .settings-action-list { display: flex; flex-direction: column; gap: 6px; }
   .settings-action { border-color: var(--border); border-radius: 10px; }
+  .settings-action[hidden] { display: none; }
   .text-color-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
   .text-color-btn { height: 44px; border-radius: 10px; border: 2px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
   .text-color-btn.selected { border-color: var(--accent); border-width: 3px; }
@@ -987,13 +988,6 @@
       </section>
     </section>
 
-    <div class="top-bar">
-      <div class="title-wrap">
-        <div class="subtitle" data-i18n="subtitle">Klikni na ime za detalje • ⭐ za favorite • drag & drop da reorders listu</div>
-      </div>
-    </div>
-
-    <div class="stats-grid">
     <section id="quickNotesWorkspace" aria-labelledby="quickNotesTitle">
       <header class="bookmarks-page-header">
         <div>
@@ -1002,7 +996,6 @@
           <p class="bookmarks-page-subtitle">Your saved notes</p>
         </div>
         <div class="bookmarks-page-actions">
-      <iframe class="quick-note-frame" src="https://share.evernote.com/note/3dc3c371-3ea0-1925-0df9-9409fee7899b" title="Evernote note" loading="lazy"></iframe>
           <button class="btn secondary" id="quickNotesBackBtn" type="button">← <span data-i18n="navContacts">Contacts</span></button>
         </div>
       </header>
@@ -1010,6 +1003,7 @@
         <strong>Evernote note</strong>
         <span>Open in Evernote ↗</span>
       </a>
+      <iframe class="quick-note-frame" src="https://share.evernote.com/note/3dc3c371-3ea0-1925-0df9-9409fee7899b" title="Evernote note" loading="lazy"></iframe>
       <form class="quick-note-form" id="quickNoteForm">
         <label for="quickNoteInput">Quick note</label>
         <textarea id="quickNoteInput" placeholder="Write a note..."></textarea>
@@ -1020,6 +1014,13 @@
       </form>
     </section>
 
+    <div class="top-bar">
+      <div class="title-wrap">
+        <div class="subtitle" data-i18n="subtitle">Klikni na ime za detalje • ⭐ za favorite • drag & drop da reorders listu</div>
+      </div>
+    </div>
+
+    <div class="stats-grid">
       <div class="stat-card">
         <div class="stat-meta">
           <span class="stat-label" data-i18n="statTotal">Ukupno</span>
@@ -1160,6 +1161,7 @@
     <div class="settings-action-list">
       <button class="nav-item settings-action" id="cloudSyncBtn" type="button"><span class="nav-icon">☁️</span> <span data-cloud-action data-i18n="cloudConnect">Connect cloud backup</span></button>
       <small class="cloud-sync-status" id="cloudSyncStatus" aria-live="polite">Not connected</small>
+      <button class="nav-item settings-action" id="restoreLocalBackupBtn" type="button" hidden><span class="nav-icon">↩</span> <span data-i18n="restoreLocalBackup">Vrati lokalnu kopiju</span></button>
       <button class="nav-item settings-action" id="sidebarPinBtn" type="button"><span class="nav-icon">🔒</span> <span data-i18n="actionPin">PIN lock</span></button>
       <button class="nav-item settings-action" id="sidebarPwaBtn" type="button" style="display:none;"><span class="nav-icon">📱</span> <span data-i18n="actionInstall">Install app</span></button>
     </div>
@@ -1360,6 +1362,8 @@ const I18N = {
     navFamilies: 'Families', navNotes: 'Quick notes', navWebsites: 'Bookmarks', navActions: 'Actions',
     websitesSubtitle: 'Sačuvane internet stranice', bookmarkStarred: 'Samo označeni',
     navSettings: 'Settings', settingsAccount: 'Račun i uređaj', cloudConnect: 'Poveži cloud sigurnosnu kopiju',
+    restoreLocalBackup: 'Vrati lokalnu kopiju', restoreLocalBackupConfirm: 'Vratiti podatke spremljene prije posljednje cloud sinkronizacije? Time će se zamijeniti trenutne lokalne liste i favoriti, a cloud se neće mijenjati.',
+    restoreLocalBackupDone: 'Lokalna kopija je vraćena. Cloud nije mijenjan.', restoreLocalBackupError: 'Lokalnu kopiju nije moguće vratiti.', recoverySaveError: 'Cloud kopija nije primijenjena jer lokalna sigurnosna kopija nije mogla biti spremljena.',
     createListTitle: 'Nova lista', listNameLabel: 'Naziv liste', cancel: 'Odustani', create: 'Kreiraj',
     duplicateListName: 'Lista s tim nazivom već postoji.', listSaveError: 'Lista se nije mogla spremiti.',
     deleteSelectedList: '🗑 Obriši odabranu listu',
@@ -1395,6 +1399,8 @@ const I18N = {
     navFamilies: 'Families', navNotes: 'Quick notes', navWebsites: 'Bookmarks', navActions: 'Actions',
     websitesSubtitle: 'Your saved browser bookmarks', bookmarkStarred: 'Starred only',
     navSettings: 'Settings', settingsAccount: 'Account & device', cloudConnect: 'Connect cloud backup',
+    restoreLocalBackup: 'Restore local backup', restoreLocalBackupConfirm: 'Restore the data saved before the last cloud sync? This replaces current local lists and favorites; it does not change the cloud copy.',
+    restoreLocalBackupDone: 'Local backup restored. The cloud copy was not changed.', restoreLocalBackupError: 'The local backup could not be restored.', recoverySaveError: 'Cloud backup was not applied because a local recovery copy could not be saved.',
     createListTitle: 'New list', listNameLabel: 'List name', cancel: 'Cancel', create: 'Create',
     duplicateListName: 'A list with that name already exists.', listSaveError: 'The list could not be saved.',
     deleteSelectedList: '🗑 Delete selected list',
@@ -1430,6 +1436,8 @@ const I18N = {
     navFamilies: 'Porodice', navNotes: 'Brze beleške', navWebsites: 'Obeleživači', navActions: 'Radnje',
     websitesSubtitle: 'Sačuvani internet sajtovi', bookmarkStarred: 'Samo označeni',
     navSettings: 'Podešavanja', settingsAccount: 'Nalog i uređaj', cloudConnect: 'Poveži rezervnu kopiju u oblaku',
+    restoreLocalBackup: 'Vrati lokalnu kopiju', restoreLocalBackupConfirm: 'Vratiti podatke sačuvane pre poslednje sinhronizacije? Ovo menja lokalne liste i omiljene kontakte, ali ne menja kopiju u oblaku.',
+    restoreLocalBackupDone: 'Lokalna kopija je vraćena. Kopija u oblaku nije menjana.', restoreLocalBackupError: 'Lokalnu kopiju nije moguće vratiti.', recoverySaveError: 'Kopija iz oblaka nije primenjena jer lokalna sigurnosna kopija nije mogla biti sačuvana.',
     createListTitle: 'Nova lista', listNameLabel: 'Naziv liste', cancel: 'Otkaži', create: 'Napravi',
     duplicateListName: 'Lista sa ovim nazivom već postoji.', listSaveError: 'Listu nije moguće sačuvati.',
     deleteSelectedList: '🗑 Obriši izabranu listu',
@@ -1923,7 +1931,7 @@ function switchLocalList(listId) {
     contacts.splice(0, contacts.length);
     localStorage.setItem(`contacts-list-${activeLocalListId}`, '[]');
   }
-  favorites = new Set(); selectedContacts.clear(); applyFilters();
+  selectedContacts.clear(); applyFilters();
   recordAnalytics('list_switched');
   notifyCloudBackup();
 }
@@ -1972,7 +1980,6 @@ createListForm.addEventListener('submit', event => {
   renderLocalLists();
   listSelect.value = id;
   contacts.splice(0, contacts.length);
-  favorites = new Set();
   selectedContacts.clear();
   applyFilters();
   recordAnalytics('list_switched');
@@ -2034,7 +2041,6 @@ deleteListForm.addEventListener('submit', event => {
   renderLocalLists();
   const mainList = JSON.parse(localStorage.getItem('contacts-list-default') || 'null');
   if (Array.isArray(mainList)) contacts.splice(0, contacts.length, ...mainList);
-  favorites = new Set();
   selectedContacts.clear();
   applyFilters();
   recordAnalytics('list_deleted');
@@ -2207,6 +2213,11 @@ const familiesNavBtn = $('familiesNavBtn');
 const notesNavBtn = $('notesNavBtn');
 const websitesNavBtn = $('websitesNavBtn');
 const personalWebsitesNavBtn = $('personalWebsitesNavBtn');
+const quickNotesBackBtn = $('quickNotesBackBtn');
+const quickNoteForm = $('quickNoteForm');
+const quickNoteInput = $('quickNoteInput');
+const quickNoteStatus = $('quickNoteStatus');
+const QUICK_NOTE_STORAGE_KEY = 'contacts-quick-note-v1';
 const bookmarksTopBtn = $('bookmarksTopBtn');
 const bookmarksWorkspace = $('bookmarksWorkspace');
 const bookmarksBackBtn = $('bookmarksBackBtn');
@@ -2214,11 +2225,6 @@ const personalWebsiteShelf = $('personalWebsiteShelf');
 const bookmarkSidebarSites = $('bookmarkSidebarSites');
 const personalWebsiteSidebarSites = $('personalWebsiteSidebarSites');
 const websiteDirectory = $('websiteDirectory');
-const quickNotesBackBtn = $('quickNotesBackBtn');
-const quickNoteForm = $('quickNoteForm');
-const quickNoteInput = $('quickNoteInput');
-const quickNoteStatus = $('quickNoteStatus');
-const QUICK_NOTE_STORAGE_KEY = 'contacts-quick-note-v1';
 const websiteSearch = $('websiteSearch');
 const websiteFolderFilter = $('websiteFolderFilter');
 const websiteStarredOnly = $('websiteStarredOnly');
@@ -2300,6 +2306,7 @@ function resetNavSearch() {
 }
 window.activateSidebarTab = tab => {
   document.querySelector('.app-shell').classList.remove('bookmarks-open');
+  document.querySelector('.app-shell').classList.remove('quick-notes-open');
   resetNavSearch();
   showFavOnly = false;
   favFilterBtn.classList.remove('active');
@@ -2323,7 +2330,6 @@ window.activateSidebarTab = tab => {
   applyFilters();
   document.querySelector('.table-wrap')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   showToast(tab === 'favorites' ? '⭐ Favorites' : tab === 'families' ? '👨‍👩‍👧‍👦 Families' : tab === 'notes' ? '⚡ Quick notes' : '📞 Contacts');
-  document.querySelector('.app-shell').classList.remove('quick-notes-open');
 };
 contactsNavBtn.addEventListener('click', () => {
   activateSidebarTab('contacts');
@@ -2352,6 +2358,7 @@ quickNoteForm.addEventListener('submit', event => {
   }
 });
 function openWebsites(view = 'all') {
+  document.querySelector('.app-shell').classList.remove('quick-notes-open');
   document.querySelector('.app-shell').classList.add('bookmarks-open');
   websiteView = view;
   websiteFolderFilter.value = view === 'personal' ? 'My websites' : '';
@@ -2391,7 +2398,6 @@ function editWebsiteBookmark(websiteIndex) {
   bookmarkAddForm.hidden = false;
   bookmarkTitleInput.focus();
 }
-  document.querySelector('.app-shell').classList.remove('quick-notes-open');
 function renderBookmarkSidebarSites() {
   bookmarkSidebarSites.innerHTML = websiteBookmarks.map(({ title, url, folder }, index) => `
     <div class="bookmark-sidebar-entry"><a href="${escapeAttr(url)}" target="_blank" rel="noopener noreferrer" title="${escapeAttr(title)}">${escapeHtml(title)} <small>${escapeHtml(folder || 'Other')}</small></a><button class="bookmark-sidebar-delete" type="button" data-delete-website="${index}" aria-label="Delete ${escapeAttr(title)}" title="Delete bookmark">✕</button></div>`).join('');
@@ -4073,6 +4079,76 @@ setInterval(checkBirthdayNotifications, 60 * 60 * 1000);
 syncGoogleCalendar();
 setInterval(syncGoogleCalendar, 60 * 60 * 1000);
 
+const LOCAL_RECOVERY_KEY = 'contacts-pre-cloud-recovery-v1';
+const restoreLocalBackupBtn = $('restoreLocalBackupBtn');
+function isLocalRecoveryDataKey(key) {
+  return key === STORAGE_KEY || key === DELETED_STORAGE_KEY || key === 'contacts_favorites'
+    || key === LOCAL_LISTS_KEY || key.startsWith('contacts-list-') || key.startsWith('internet-bookmark-');
+}
+function saveLocalRecoverySnapshot() {
+  const values = {};
+  for (let index = 0; index < localStorage.length; index++) {
+    const key = localStorage.key(index);
+    if (isLocalRecoveryDataKey(key)) values[key] = localStorage.getItem(key);
+  }
+  if (!Object.keys(values).length) return false;
+  const snapshot = { version: 1, savedAt: new Date().toISOString(), currentList: activeLocalListId, values };
+  try {
+    localStorage.setItem(LOCAL_RECOVERY_KEY, JSON.stringify(snapshot));
+    restoreLocalBackupBtn.hidden = false;
+  } catch (error) {
+    showToast(I18N[currentLang].recoverySaveError);
+    throw new Error(I18N[currentLang].recoverySaveError);
+  }
+  return true;
+}
+function restoreLocalRecoverySnapshot() {
+  let snapshot;
+  try { snapshot = JSON.parse(localStorage.getItem(LOCAL_RECOVERY_KEY) || 'null'); } catch (error) { return false; }
+  if (snapshot?.version !== 1 || !snapshot.values || typeof snapshot.values !== 'object') return false;
+
+  for (let index = localStorage.length - 1; index >= 0; index--) {
+    const key = localStorage.key(index);
+    if (isLocalRecoveryDataKey(key)) localStorage.removeItem(key);
+  }
+  Object.entries(snapshot.values).forEach(([key, value]) => {
+    if (isLocalRecoveryDataKey(key) && typeof value === 'string') localStorage.setItem(key, value);
+  });
+
+  const lists = loadLocalLists();
+  activeLocalListId = snapshot.currentList in lists ? snapshot.currentList : 'default';
+  renderLocalLists();
+  listSelect.value = activeLocalListId;
+  deleteListBtn.disabled = activeLocalListId === 'default';
+  const savedList = JSON.parse(localStorage.getItem(`contacts-list-${activeLocalListId}`) || 'null');
+  const savedContacts = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+  const restoredContacts = Array.isArray(savedList) ? savedList : (Array.isArray(savedContacts) ? savedContacts : []);
+  contacts.splice(0, contacts.length, ...restoredContacts);
+  favorites = new Set(UrlStorage.getFavorites());
+  deletedNames.clear();
+  loadDeletedNames().forEach(name => deletedNames.add(name));
+
+  userWebsiteBookmarks = loadUserWebsiteBookmarks();
+  try {
+    const deletedWebsites = JSON.parse(localStorage.getItem(DELETED_WEBSITE_BOOKMARKS_KEY) || '[]');
+    deletedWebsiteBookmarks = new Set(Array.isArray(deletedWebsites) ? deletedWebsites : []);
+    const savedWebsiteFavorites = JSON.parse(localStorage.getItem(WEBSITE_FAVORITES_KEY) || '[]');
+    websiteFavorites = new Set(Array.isArray(savedWebsiteFavorites) ? savedWebsiteFavorites : []);
+  } catch (error) {
+    deletedWebsiteBookmarks = new Set();
+    websiteFavorites = new Set();
+  }
+  websiteBookmarks = getWebsiteBookmarks();
+  refreshWebsiteFolderOptions();
+  renderPersonalWebsiteShelf();
+  renderBookmarkSidebarSites();
+  renderPersonalWebsiteSidebarSites();
+  renderWebsiteDirectory();
+  updateFavBadge();
+  applyFilters();
+  return true;
+}
+
 window.ContactCloudBridge = {
   readBackup() {
     const lists = {};
@@ -4095,6 +4171,7 @@ window.ContactCloudBridge = {
     };
   },
   applyBackup(backup) {
+    saveLocalRecoverySnapshot();
     const localPhotos = new Map();
     const rememberPhoto = contact => {
       if (contact?.photoId && contact.photoData) localPhotos.set(contact.photoId, contact.photoData);
@@ -4150,10 +4227,24 @@ window.ContactCloudBridge = {
     updateFavBadge();
     applyFilters();
   },
+  restoreLocalBackup() {
+    return restoreLocalRecoverySnapshot();
+  },
   loadProfilePhoto(photoId) {
     return profilePhotosReady.then(() => readProfilePhoto(photoId));
   }
 };
+
+try { restoreLocalBackupBtn.hidden = !localStorage.getItem(LOCAL_RECOVERY_KEY); } catch (error) {}
+restoreLocalBackupBtn.addEventListener('click', () => {
+  if (!confirm(I18N[currentLang].restoreLocalBackupConfirm)) return;
+  try {
+    if (!window.ContactCloudBridge.restoreLocalBackup()) throw new Error('No recovery snapshot');
+    showToast(I18N[currentLang].restoreLocalBackupDone);
+  } catch (error) {
+    showToast(I18N[currentLang].restoreLocalBackupError);
+  }
+});
 
 window.addEventListener('hashchange', () => {
   favorites = new Set(UrlStorage.getFavorites());
