@@ -16,6 +16,7 @@ h2{margin:16px 0 6px;font-size:18px}
 .top{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
 .tag{font-size:12px;font-weight:700;border-radius:6px;padding:2px 6px;border:1px solid var(--line)}
 .arr{color:var(--ok);border-color:var(--ok)}.dep{color:#58a6ff;border-color:#58a6ff}.gnd{color:var(--warn);border-color:var(--warn)}
+.logo{width:20px;height:20px;border-radius:4px;vertical-align:-4px;margin-right:6px;background:#fff}
 .c small{color:var(--mut)}
 .c a{color:#58a6ff;text-decoration:none}
 details{margin-top:6px}summary{cursor:pointer;color:var(--mut);font-size:13px}
@@ -33,13 +34,14 @@ nav#pages a.on{background:var(--acc);border-color:var(--acc)}
   <button data-f="arr">Arriving</button>
   <button data-f="dep">Departing</button>
   <button data-f="gnd">On ground</button>
+  <input id="q" type="search" placeholder="Search flight, airline, city, tail…" style="flex:1;min-width:160px;font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px">
   <button id="go">↻ Refresh</button>
   <label style="color:var(--mut);font-size:13px"><input type="checkbox" id="auto" checked> auto 20 s</label>
 </header>
 <div id="status">Loading…</div>
 <main>
   <div id="list"></div>
-  <p style="color:var(--mut);font-size:13px">Live ADS-B data from aircraft within 25 nm of each airport. Arriving/departing is estimated from altitude, climb rate and heading, because this feed has no flight schedules or origin/destination. For schedules open
+  <p style="color:var(--mut);font-size:13px">Live ADS-B data from aircraft within 25 nm of each airport. Airline and route (from → to) come from a public route database and may occasionally be wrong or missing, especially for small planes and charters. Arriving/departing uses the route when known, otherwise it is estimated from altitude, climb rate and heading. <b>Delays are not available</b>: that needs schedule data from a paid service. For delays and schedules open
     <a style="color:#58a6ff" href="https://www.flightaware.com/live/airport/CYYZ" target="_blank" rel="noopener noreferrer">YYZ board ↗</a> ·
     <a style="color:#58a6ff" href="https://www.flightaware.com/live/airport/CYHM" target="_blank" rel="noopener noreferrer">YHM board ↗</a>.
     Aircraft that don't broadcast ADS-B (some military) are not shown.</p>
@@ -53,8 +55,16 @@ const toRad=x=>x*Math.PI/180;
 const bearing=(a,b)=>{const y=Math.sin(toRad(b.lon-a.lon))*Math.cos(toRad(b.lat)),x=Math.cos(toRad(a.lat))*Math.sin(toRad(b.lat))-Math.sin(toRad(a.lat))*Math.cos(toRad(b.lat))*Math.cos(toRad(b.lon-a.lon));return (Math.atan2(y,x)*180/Math.PI+360)%360;};
 const angDiff=(a,b)=>Math.abs(((a-b+540)%360)-180);
 
-function classify(p,ap){
-  if(p.alt_baro==='ground')return (p.gs||0)>2?'gnd':'gnd';
+const IATA={YYZ:'CYYZ',YHM:'CYHM'};
+function classify(p,ap,code){
+  const rt=p.route;
+  if(rt&&rt.length>=2&&p.alt_baro!=='ground'){
+    const icao=IATA[code];
+    if(rt[rt.length-1].icao===icao&&rt[0].icao!==icao)return 'arr';
+    if(rt[0].icao===icao&&rt[rt.length-1].icao!==icao)return 'dep';
+  }
+
+  if(p.alt_baro==='ground')return 'gnd';
   const alt=+p.alt_baro,rate=p.baro_rate??p.geom_rate??0;
   if(!Number.isFinite(alt))return 'other';
   if(alt>14000)return 'other';
@@ -68,11 +78,13 @@ function classify(p,ap){
 }
 const LABEL={arr:'ARRIVING',dep:'DEPARTING',gnd:'ON GROUND',other:'NEARBY'};
 const fmt=(v,u='')=>v===undefined||v===null?'–':v+u;
-const FIELDS=[['Hex (ICAO)','hex'],['Registration','r'],['Type code','t'],['Description','desc'],['Operator','ownOp'],['Year','year'],['Category','category'],
+const FIELDS=[['Airline','airline'],['Hex (ICAO)','hex'],['Registration','r'],['Type code','t'],['Description','desc'],['Operator','ownOp'],['Year','year'],['Category','category'],
  ['Baro altitude','alt_baro',' ft'],['Geom altitude','alt_geom',' ft'],['Selected altitude','nav_altitude_mcp',' ft'],['Ground speed','gs',' kt'],['IAS','ias',' kt'],['TAS','tas',' kt'],['Mach','mach'],
  ['Track','track','°'],['Heading','true_heading','°'],['Baro rate','baro_rate',' ft/min'],['Geom rate','geom_rate',' ft/min'],['Squawk','squawk'],['Emergency','emergency'],
  ['Outside air temp','oat',' °C'],['Total air temp','tat',' °C'],['Wind speed','ws',' kt'],['Wind direction','wd','°'],['QNH','nav_qnh',' hPa'],['Position','_pos'],['Last seen','seen',' s ago'],['Source type','type']];
 
+const routeText=p=>p.route?p.route.map(a=>`${a.city||a.name} (${a.iata||a.icao})`).join(' → '):'';
+const searchText=p=>[p.flight,p.r,p.t,p.desc,p.ownOp,p.airline,p.hex,routeText(p)].join(' ').toLowerCase();
 function card(p,ap){
   const k=p._k,call=(p.flight||'').trim()||p.r||p.hex;
   const alt=p.alt_baro==='ground'?'ground':(p.alt_baro!=null?Math.round(p.alt_baro).toLocaleString()+' ft':'–');
@@ -81,7 +93,10 @@ function card(p,ap){
     let v=key==='_pos'?(p.lat!=null?p.lat.toFixed(4)+', '+p.lon.toFixed(4):undefined):p[key];
     return v===undefined?'':`<dt>${l}</dt><dd>${esc(v)}${v!==undefined&&u&&key!=='_pos'?esc(u):''}</dd>`;
   }).join('');
-  return `<div class="c"><div class="top"><div><b>${esc(call)}</b> <span class="tag ${k}">${LABEL[k]}</span></div><small>${p.dst!=null?(+p.dst*1.852).toFixed(1)+' km from '+esc(ap):''}</small></div>
+  const logo=p.airlineDomain?`<img class="logo" src="https://www.google.com/s2/favicons?domain=${encodeURIComponent(p.airlineDomain)}&sz=64" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none'">`:'✈ ';
+  const rt=routeText(p);
+  return `<div class="c"><div class="top"><div>${logo}<b>${esc(call)}</b>${p.airline?' · '+esc(p.airline):''} <span class="tag ${k}">${LABEL[k]}</span></div><small>${p.dst!=null?(+p.dst*1.852).toFixed(1)+' km from '+esc(ap):''}</small></div>
+  ${rt?`<div style="margin:4px 0"><b>${esc(rt)}</b></div>`:''}
   <small>${esc(p.t||'?')}${p.desc?' · '+esc(p.desc):''}${p.r?' · '+esc(p.r):''}${p.ownOp?' · '+esc(p.ownOp):''}</small><br>
   <small>${esc(alt)} · ${fmt(p.gs!=null?Math.round(p.gs):null,' kt')} · ${p.baro_rate!=null?(p.baro_rate>0?'▲':'▼')+Math.abs(p.baro_rate)+' ft/min':''}${p.squawk?' · squawk '+esc(p.squawk):''}</small>
   <details><summary>All data</summary><dl>${rows}</dl>${link?`<a href="${esc(link)}" target="_blank" rel="noopener noreferrer">Track on ADS-B Exchange ↗</a>`:''}</details></div>`;
@@ -91,8 +106,10 @@ function render(){
   if(!data)return;
   let html='',total=0;
   for(const [code,ap] of Object.entries(data.airports)){
-    const list=ap.aircraft.map(p=>({...p,_k:classify(p,ap)}))
+    const q=$('#q').value.trim().toLowerCase();
+    const list=ap.aircraft.map(p=>({...p,_k:classify(p,ap,code)}))
       .filter(p=>filter==='all'||p._k===filter)
+      .filter(p=>!q||searchText(p).includes(q))
       .sort((a,b)=>(a.dst??999)-(b.dst??999));
     total+=list.length;
     html+=`<h2>${esc(code)} · ${esc(ap.name)} <small style="color:var(--mut);font-weight:400">${list.length} aircraft</small></h2>`+(list.map(p=>card(p,code)).join('')||'<p style="color:var(--mut)">None right now.</p>');
@@ -112,7 +129,7 @@ async function load(){
 }
 function schedule(){clearInterval(timer);if($('#auto').checked)timer=setInterval(()=>{if(!document.hidden)load();},20000);}
 document.querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>{filter=b.dataset.f;document.querySelectorAll('[data-f]').forEach(x=>x.classList.toggle('on',x===b));render();});
-$('#go').onclick=load;$('#auto').onchange=schedule;
+$('#q').oninput=render;$('#go').onclick=load;$('#auto').onchange=schedule;
 load();schedule();
 </script>
 </body>
