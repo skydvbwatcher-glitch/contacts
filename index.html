@@ -2287,6 +2287,10 @@ function getWebsiteBookmarks() {
     .filter(bookmark => !deletedWebsiteBookmarks.has(getWebsiteBookmarkKey(bookmark)));
 }
 let websiteBookmarks = getWebsiteBookmarks();
+function writeBookmarkSyncMirror() {
+  try { localStorage.setItem('bookmarks-sync-v1', JSON.stringify({ ts: Date.now(), bookmarks: websiteBookmarks.map(b => ({ title: b.title, url: b.url, folder: b.folder || 'Other' })) })); } catch(e) {}
+}
+writeBookmarkSyncMirror();
 const WEBSITE_FAVORITES_KEY = 'internet-bookmark-favorites-v1';
 let websiteFavorites = new Set();
 try {
@@ -2558,6 +2562,7 @@ bookmarkAddForm.addEventListener('submit', event => {
   deletedWebsiteBookmarks = nextDeletedWebsiteBookmarks;
   websiteFavorites = new Set(nextWebsiteFavorites);
   websiteBookmarks = nextWebsiteBookmarks;
+  writeBookmarkSyncMirror();
   refreshWebsiteFolderOptions(folder);
   websiteView = keepPersonalView ? 'personal' : 'all';
   websiteSearch.value = '';
@@ -2590,6 +2595,7 @@ function deleteWebsiteBookmark(websiteIndex) {
   deletedWebsiteBookmarks = nextDeletedWebsiteBookmarks;
   websiteFavorites = new Set(nextWebsiteFavorites);
   websiteBookmarks = getWebsiteBookmarks();
+  writeBookmarkSyncMirror();
   refreshWebsiteFolderOptions();
   renderPersonalWebsiteShelf();
   renderBookmarkSidebarSites();
@@ -4144,6 +4150,7 @@ function restoreLocalRecoverySnapshot() {
     websiteFavorites = new Set();
   }
   websiteBookmarks = getWebsiteBookmarks();
+  writeBookmarkSyncMirror();
   refreshWebsiteFolderOptions();
   renderPersonalWebsiteShelf();
   renderBookmarkSidebarSites();

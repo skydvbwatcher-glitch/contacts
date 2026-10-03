@@ -75,7 +75,7 @@ const tx=(store,mode,fn)=>new Promise((res,rej)=>{
   t.oncomplete=()=>res(out&&out.result!==undefined?out.result:undefined);t.onerror=t.onabort=()=>rej(t.error);
 });
 const loadAll=async()=>{items=await tx('items','readonly',s=>s.getAll());};
-const norm=b=>({id:b.id||crypto.randomUUID(),title:b.title||'',url:b.url||'',folder:'My websites'});
+const norm=b=>({id:b.id||crypto.randomUUID(),title:b.title||'',url:b.url||'',folder:'My websites',...(b.src?{src:b.src}:{})});
 const setStatus=m=>{$('#status').textContent=m};
 
 async function snapshot(reason){
@@ -187,6 +187,36 @@ $('#gdn').onclick=async()=>{
   }catch(err){alert('Restore failed: '+err.message);}
 };
 
+// One-way sync: the original page mirrors its list to localStorage; items it owns are marked src:'old'
+async function syncFromOld(){
+  let m;try{m=JSON.parse(localStorage.getItem('bookmarks-sync-v1')||'null');}catch(e){}
+  if(!m||!Array.isArray(m.bookmarks)||!m.bookmarks.length)return;
+  const last=await tx('meta','readonly',s=>s.get('syncTs'));
+  if(last&&last.v>=m.ts)return;
+  await loadAll();
+  const key=b=>b.title+'|'+b.url;
+  const mine=new Map(items.filter(b=>b.src==='old').map(b=>[key(b),b]));
+  const free=new Map(items.filter(b=>!b.src).map(b=>[key(b),b]));
+  const seen=new Set(),out=[];
+  for(const b of (l=>l.filter(b=>b.folder==="My websites"))(m.bookmarks)){
+    if(!b||!b.title||!b.url)continue;seen.add(key(b));
+    const ex=mine.get(key(b))||free.get(key(b));
+    out.push(norm({...b,id:ex?ex.id:undefined,src:'old'}));
+  }
+  const gone=items.filter(b=>b.src==='old'&&!seen.has(key(b)));
+  const have=new Map(items.map(b=>[b.id,b]));
+  const changed=gone.length||out.some(o=>!have.has(o.id)||JSON.stringify(norm(have.get(o.id)))!==JSON.stringify(o));
+  if(changed){
+    await snapshot('before-sync');
+    await tx('items','readwrite',s=>{gone.forEach(b=>s.delete(b.id));out.forEach(b=>s.put(b));});
+    await loadAll();render();
+  }
+  await tx('meta','readwrite',s=>s.put({k:'syncTs',v:m.ts}));
+  setStatus(items.length+' · synced from the old page '+new Date(m.ts).toLocaleTimeString());
+}
+addEventListener('storage',e=>{if(e.key==='bookmarks-sync-v1')syncFromOld();});
+addEventListener('focus',()=>syncFromOld());
+
 (async()=>{
   try{navigator.storage&&navigator.storage.persist&&await navigator.storage.persist();}catch(e){}
   db=await open();await loadAll();
@@ -196,6 +226,7 @@ $('#gdn').onclick=async()=>{
     await importOld();await tx('meta','readwrite',s=>s.put({k:'seeded',v:1}));await snapshot('initial-import');
   }
   render();
+  await syncFromOld();
 })();
 </script>
 </body>
