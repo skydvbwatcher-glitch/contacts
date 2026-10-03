@@ -7,8 +7,29 @@
     "ignore": [
       "firebase.json",
       "**/.*",
-      "**/node_modules/**"
+      "**/node_modules/**",
+      "functions/**"
     ],
-    "cleanUrls": true
-  }
+    "cleanUrls": true,
+    "rewrites": [
+      {
+        "source": "/api/planes",
+        "function": {
+          "functionId": "planes",
+          "region": "us-central1"
+        }
+      }
+    ]
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log"
+      ]
+    }
+  ]
 }

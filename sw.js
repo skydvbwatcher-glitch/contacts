@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kontakti-v27';
+const CACHE_NAME = 'kontakti-v28';
 const ASSETS = ['./', './index.html', './contacts-data.js', './internet-bookmarks-data.js', './events-data.js', './src/firebase.js', './manifest.json', './icon-192.png', './icon-512.png'];
 
  self.addEventListener('install', event => {
@@ -17,6 +17,7 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET' || !event.request.url.startsWith(self.location.origin)) return;
+  if (new URL(event.request.url).pathname.startsWith('/api/')) return;
   const isPage = event.request.mode === 'navigate' || /\.html?$/.test(new URL(event.request.url).pathname);
   if (isPage) {
     event.respondWith(fetch(event.request).then(response => {
