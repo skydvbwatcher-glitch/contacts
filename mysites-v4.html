@@ -17,9 +17,14 @@ dialog{background:var(--card);color:var(--fg);border:1px solid var(--line);borde
 dialog::backdrop{background:#0009}label{display:block;margin:8px 0 2px;color:var(--mut);font-size:13px}
 dialog input{width:100%}.row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
 #status{padding:6px 10px;color:var(--mut);font-size:13px}
+nav#pages{display:flex;gap:6px;padding:8px 10px;background:#010409;border-bottom:1px solid var(--line);overflow-x:auto;white-space:nowrap}
+nav#pages a{color:var(--fg);text-decoration:none;padding:6px 10px;border-radius:8px;border:1px solid var(--line);font-size:14px}
+nav#pages a.on{background:var(--acc);border-color:var(--acc)}
 </style>
 </head>
 <body>
+<nav id="pages"><a href="contacts-v2.html" data-p="contacts-v2">👤 Kontakti</a><a href="bookmarks-v3.html" data-p="bookmarks-v3">🔖 Bookmarks</a><a href="mysites-v4.html" data-p="mysites-v4">🌐 Moje web stranice</a><a href="./">🏠 Stara</a></nav>
+<script>document.querySelectorAll('#pages a').forEach(a=>{if(location.pathname.endsWith('/'+a.dataset.p+'.html'))a.className='on'})</script>
 <header>
   <input id="q" type="search" placeholder="Traži…">
     <button id="add">+ Add</button>
