@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Cheapest Gas</title>
 <style>
+.logo{width:20px;height:20px;border-radius:4px;vertical-align:-4px;margin-right:6px;background:#fff}
 :root{--bg:#0d1117;--card:#161b22;--line:#30363d;--fg:#e6edf3;--mut:#8b949e;--acc:#1f6feb;--ok:#3fb950}
 *{box-sizing:border-box}body{margin:0;font:16px system-ui,sans-serif;background:var(--bg);color:var(--fg)}
 header{position:sticky;top:0;background:var(--card);border-bottom:1px solid var(--line);padding:10px;display:flex;gap:8px;flex-wrap:wrap;z-index:2;align-items:center}
@@ -152,6 +153,13 @@ async function loadGoogle(key,maxKm){
   }
 }
 
+const BRANDS=[['petro-canada','petro-canada.ca'],['petro canada','petro-canada.ca'],['esso','esso.ca'],['shell','shell.ca'],['pioneer','pioneer.ca'],['costco','costco.ca'],['canadian tire','canadiantire.ca'],['husky','husky.ca'],['mobil','mobil.com'],['sunoco','sunoco.ca'],['ultramar','ultramar.ca'],['circle k','circlek.com'],['macewen','macewen.ca'],['7-eleven','7-eleven.ca'],['7 eleven','7-eleven.ca'],['bp','bp.com'],['chevron','chevron.com'],['wholesale club','wholesaleclub.ca'],['pioneer','pioneer.ca'],['racetrac','racetrac.com'],['fas gas','fasgas.ca'],['gulf','gulfcanada.ca'],['safeway','safeway.ca'],['domo','domogas.ca'],['xtr','xtrfuel.ca'],['otr','otr.ca']];
+function logo(n){
+  const l=n.toLowerCase();
+  const b=BRANDS.find(([k])=>k==='bp'?/(^|[^a-z])bp([^a-z]|$)/.test(l):l.includes(k));
+  const d=b?b[1]:'';
+  return d?`<img class="logo" src="https://www.google.com/s2/favicons?domain=${d}&sz=64" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none'">`:'⛽ ';
+}
 function render(){
   const priced=eff;
   const rows=[...stations].sort((a,b)=>{
@@ -166,7 +174,7 @@ function render(){
     const p=prices[x.id]||gprices[x.id],has=eff(x.id)!=null,fromG=has&&prices[x.id]?.p==null,cls=has&&best?' best':'';if(has)best=false;
     const maps='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(x.name+' '+(x.addr||x.pos.lat+','+x.pos.lng));
     return `<div class="c${cls}"><div class="rank">${i+1}</div>
-      <div class="grow"><b>${esc(x.name)}</b><small>${esc(x.addr||'')}</small>
+      <div class="grow"><b>${logo(x.name)}${esc(x.name)}</b><small>${esc(x.addr||'')}</small>
       <small>${x.dist.toFixed(1)} km · <a href="${esc(maps)}" target="_blank" rel="noopener noreferrer">Map / directions</a>${has?(fromG?' · Google price ':' · set ')+esc(new Date(p.t).toLocaleDateString()):''}</small></div>
       <div><input class="pin" type="number" step="0.1" min="0" inputmode="decimal" placeholder="¢/L" data-id="${esc(x.id)}" value="${has?eff(x.id):''}" aria-label="Price in cents per litre for ${esc(x.name)}"></div></div>`;
   }).join('')||'<p style="color:var(--mut)">No stations found.</p>';
