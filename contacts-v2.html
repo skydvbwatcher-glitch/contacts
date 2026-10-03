@@ -22,6 +22,7 @@ dialog input,dialog textarea,dialog select{width:100%}.row{display:flex;gap:8px;
 <body>
 <header>
   <input id="q" type="search" placeholder="Search…">
+  <button class="g" id="tc">Contacts</button><button class="g" id="tb">Bookmarks</button>
   <button id="add">+ Add</button>
   <button class="g" id="bk">Backup ⚙</button>
 </header>
@@ -40,13 +41,22 @@ dialog input,dialog textarea,dialog select{width:100%}.row{display:flex;gap:8px;
   <div class="row"><button value="save">Save</button><button type="button" class="g" id="cx">Cancel</button><button type="button" class="d" id="del">Delete</button></div>
 </form></dialog>
 
+<dialog id="be"><form method="dialog" id="bf">
+  <h3>Bookmark</h3>
+  <label>Title</label><input name="title" required>
+  <label>URL</label><input name="url" type="url" required>
+  <label>Folder</label><input name="folder" list="folders">
+  <datalist id="folders"></datalist>
+  <div class="row"><button value="save">Save</button><button type="button" class="g" id="bcx">Cancel</button><button type="button" class="d" id="bdel">Delete</button></div>
+</form></dialog>
+
 <dialog id="bd">
   <h3>Backup &amp; Restore</h3>
   <p style="color:var(--mut);font-size:14px">Your data lives only in this browser's IndexedDB. Nothing ever overwrites it automatically. Every restore/import first saves a snapshot.</p>
   <div class="row">
     <button id="exp">Download backup (.json)</button>
     <button class="g" id="imp">Restore from file…</button>
-    <button class="g" id="old">Import old list (merge)</button>
+    <button class="g" id="old">Import old list + bookmarks (merge)</button>
   </div>
   <input type="file" id="file" accept=".json" hidden>
   <h4>Local snapshots</h4>
@@ -63,43 +73,55 @@ dialog input,dialog textarea,dialog select{width:100%}.row{display:flex;gap:8px;
 <script>
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-let db,contacts=[],editing=null;
+let db,contacts=[],bookmarks=[],editing=null,editingB=null,view='c';
 
 const open=()=>new Promise((res,rej)=>{
-  const r=indexedDB.open('contacts-v2',1);
-  r.onupgradeneeded=()=>{const d=r.result;d.createObjectStore('contacts',{keyPath:'id'});d.createObjectStore('snaps',{keyPath:'ts'});};
+  const r=indexedDB.open('contacts-v2',2);
+  r.onupgradeneeded=()=>{const d=r.result;for(const n of ['contacts','bookmarks'])if(!d.objectStoreNames.contains(n))d.createObjectStore(n,{keyPath:'id'});if(!d.objectStoreNames.contains('snaps'))d.createObjectStore('snaps',{keyPath:'ts'});if(!d.objectStoreNames.contains('meta'))d.createObjectStore('meta',{keyPath:'k'});};
   r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);
 });
 const tx=(store,mode,fn)=>new Promise((res,rej)=>{
   const t=db.transaction(store,mode),s=t.objectStore(store);let out;
   out=fn(s);t.oncomplete=()=>res(out&&out.result!==undefined?out.result:undefined);t.onerror=t.onabort=()=>rej(t.error);
 });
-const loadAll=async()=>{contacts=await tx('contacts','readonly',s=>s.getAll());};
+const loadAll=async()=>{contacts=await tx('contacts','readonly',s=>s.getAll());bookmarks=await tx('bookmarks','readonly',s=>s.getAll());};
 const put=c=>tx('contacts','readwrite',s=>s.put(c));
 const remove=id=>tx('contacts','readwrite',s=>s.delete(id));
 const setStatus=m=>{$('#status').textContent=m};
 
 async function snapshot(reason){
   await loadAll();
-  if(!contacts.length&&reason!=='manual')return;
-  await tx('snaps','readwrite',s=>s.put({ts:Date.now(),reason,data:contacts}));
+  if(!contacts.length&&!bookmarks.length&&reason!=='manual')return;
+  await tx('snaps','readwrite',s=>s.put({ts:Date.now(),reason,data:contacts,bookmarks}));
   const all=await tx('snaps','readonly',s=>s.getAll());
   for(const o of all.slice(0,-15))await tx('snaps','readwrite',s=>s.delete(o.ts));
 }
-const payload=()=>JSON.stringify({app:'contacts-v2',version:1,exported:new Date().toISOString(),contacts},null,1);
+const payload=()=>JSON.stringify({app:'contacts-v2',version:2,exported:new Date().toISOString(),contacts,bookmarks},null,1);
 
-async function replaceAll(list,reason){
+async function replaceAll(list,reason,bm){
   await snapshot('before-'+reason);
   await tx('contacts','readwrite',s=>{s.clear();list.forEach(c=>s.put(norm(c)));});
+  if(bm)await tx('bookmarks','readwrite',s=>{s.clear();bm.forEach(b=>s.put(normB(b)));});
   await loadAll();render();
 }
 const norm=c=>({id:c.id||crypto.randomUUID(),name:c.name||'',phone:c.phone||'',email:c.email||'',address:c.address||'',org:c.org||'',notes:c.notes||'',category:c.category||'personal'});
+const normB=b=>({id:b.id||crypto.randomUUID(),title:b.title||'',url:b.url||'',folder:b.folder||'Other'});
 function parse(text){
   const j=JSON.parse(text);const l=Array.isArray(j)?j:j.contacts;
-  if(!Array.isArray(l))throw new Error('Not a contacts backup');return l;
+  if(!Array.isArray(l))throw new Error('Not a contacts backup');
+  return {list:l,bm:Array.isArray(j.bookmarks)?j.bookmarks:null};
 }
 
+function renderB(){
+  const q=$('#q').value.toLowerCase();
+  const l=bookmarks.filter(b=>!q||(b.title+' '+b.url+' '+b.folder).toLowerCase().includes(q));
+  const g={};l.forEach(b=>(g[b.folder]=g[b.folder]||[]).push(b));
+  $('#list').innerHTML=Object.keys(g).sort((a,b)=>a.localeCompare(b)).map(f=>`<h4 style="margin:14px 0 6px;color:var(--mut)">${esc(f)} (${g[f].length})</h4>`+g[f].sort((a,b)=>a.title.localeCompare(b.title)).map(b=>`<div class="c" data-id="${b.id}"><div><b>${esc(b.title)}</b><small><a href="${/^https?:/i.test(b.url)?esc(b.url):'#'}" target="_blank" rel="noopener">${esc(b.url)}</a></small></div><button class="g edit">Edit</button></div>`).join('')).join('')||'<p style="color:var(--mut)">No bookmarks.</p>';
+  setStatus(`${bookmarks.length} bookmarks · saved on this device`);
+}
 function render(){
+  $('#tc').style.background=view==='c'?'var(--acc)':'';$('#tb').style.background=view==='b'?'var(--acc)':'';
+  if(view==='b')return renderB();
   const q=$('#q').value.toLowerCase();
   const l=contacts.filter(c=>!q||Object.values(c).join(' ').toLowerCase().includes(q)).sort((a,b)=>a.name.localeCompare(b.name));
   $('#list').innerHTML=l.map(c=>`<div class="c" data-id="${c.id}"><div><b>${esc(c.name)}</b>
@@ -116,9 +138,25 @@ function edit(c){
   for(const k of ['name','phone','email','address','org','category','notes'])f.elements[k].value=c?c[k]:(k==='category'?'personal':'');
   $('#del').style.display=c?'':'none';$('#ed').showModal();
 }
-$('#add').onclick=()=>edit(null);
+$('#add').onclick=()=>view==='b'?editB(null):edit(null);
+$('#tc').onclick=()=>{view='c';render();};$('#tb').onclick=()=>{view='b';render();};
+function editB(b){
+  editingB=b;const f=$('#bf').elements;
+  for(const k of ['title','url','folder'])f[k].value=b?b[k]:'';
+  $('#folders').innerHTML=[...new Set(bookmarks.map(x=>x.folder))].map(x=>`<option value="${esc(x)}">`).join('');
+  $('#bdel').style.display=b?'':'none';$('#be').showModal();
+}
+$('#bcx').onclick=()=>$('#be').close();
+$('#bf').onsubmit=async e=>{
+  const f=e.target.elements;
+  await tx('bookmarks','readwrite',s=>s.put(normB({...(editingB||{}),title:f.title.value.trim(),url:f.url.value.trim(),folder:f.folder.value.trim()||'Other'})));
+  await loadAll();render();
+};
+$('#bdel').onclick=async()=>{
+  if(editingB&&confirm('Delete '+editingB.title+'?')){await snapshot('before-delete');await tx('bookmarks','readwrite',s=>s.delete(editingB.id));await loadAll();render();$('#be').close();}
+};
 $('#cx').onclick=()=>$('#ed').close();
-$('#list').onclick=e=>{const d=e.target.closest('.c');if(d&&e.target.classList.contains('edit'))edit(contacts.find(c=>c.id===d.dataset.id));};
+$('#list').onclick=e=>{const d=e.target.closest('.c');if(d&&e.target.classList.contains('edit'))view==='b'?editB(bookmarks.find(b=>b.id===d.dataset.id)):edit(contacts.find(c=>c.id===d.dataset.id));};
 $('#q').oninput=render;
 $('#f').onsubmit=async e=>{
   const f=e.target.elements;
@@ -132,7 +170,7 @@ $('#del').onclick=async()=>{
 const download=(name,text)=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:'application/json'}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);};
 async function renderSnaps(){
   const all=(await tx('snaps','readonly',s=>s.getAll())).reverse();
-  $('#snaps').innerHTML=all.map(s=>`<div class="row" style="margin:4px 0;align-items:center"><span style="flex:1;font-size:13px">${new Date(s.ts).toLocaleString()} · ${s.data.length} · ${esc(s.reason)}</span><button class="g" data-r="${s.ts}">Restore</button></div>`).join('')||'<small>None yet.</small>';
+  $('#snaps').innerHTML=all.map(s=>`<div class="row" style="margin:4px 0;align-items:center"><span style="flex:1;font-size:13px">${new Date(s.ts).toLocaleString()} · ${s.data.length} contacts${s.bookmarks?', '+s.bookmarks.length+' bookmarks':''} · ${esc(s.reason)}</span><button class="g" data-r="${s.ts}">Restore</button></div>`).join('')||'<small>None yet.</small>';
 }
 $('#bk').onclick=async()=>{
   $('#gr').value=localStorage.getItem('gh_repo')||'';$('#gp').value=localStorage.getItem('gh_path')||'backups/contacts-backup.json';$('#gt').value=localStorage.getItem('gh_token')||'';
@@ -143,8 +181,8 @@ $('#exp').onclick=()=>download(`contacts-backup-${new Date().toISOString().slice
 $('#imp').onclick=()=>$('#file').click();
 $('#file').onchange=async e=>{
   const f=e.target.files[0];if(!f)return;
-  try{const l=parse(await f.text());
-    if(confirm(`Replace current ${contacts.length} contacts with ${l.length} from file? A snapshot is saved first.`)){await replaceAll(l,'file-restore');$('#bd').close();}
+  try{const {list:l,bm}=parse(await f.text());
+    if(confirm(`Replace current data with ${l.length} contacts${bm?' and '+bm.length+' bookmarks':''} from file? A snapshot is saved first.`)){await replaceAll(l,'file-restore',bm);$('#bd').close();}
   }catch(err){alert('Failed: '+err.message);}
   e.target.value='';
 };
@@ -152,20 +190,33 @@ $('#snapnow').onclick=async()=>{await snapshot('manual');await renderSnaps();};
 $('#snaps').onclick=async e=>{
   const ts=e.target.dataset.r;if(!ts)return;
   const s=await tx('snaps','readonly',st=>st.get(+ts));
-  if(confirm('Restore snapshot with '+s.data.length+' contacts?')){await replaceAll(s.data,'snapshot-restore');await renderSnaps();}
+  if(confirm('Restore snapshot with '+s.data.length+' contacts?')){await replaceAll(s.data,'snapshot-restore',s.bookmarks);await renderSnaps();}
 };
-$('#old').onclick=()=>{
-  const sc=document.createElement('script');sc.src='contacts-data.js';
-  sc.onload=async()=>{
-    await snapshot('before-old-import');
-    const have=new Set(contacts.map(c=>(c.name+'|'+c.phone).toLowerCase()));
-    const add=(window.CONTACTS||[]).filter(c=>!have.has((c.name+'|'+c.phone).toLowerCase())).map(norm);
-    await tx('contacts','readwrite',s=>add.forEach(c=>s.put(c)));
-    await loadAll();render();alert(add.length+' contacts added (existing ones untouched).');
-  };
-  sc.onerror=()=>alert('contacts-data.js not found next to this page.');
-  document.head.appendChild(sc);
-};
+const PERSONAL=[['Imenik','https://sites.google.com/view/telefonskipretrazivac/imenik'],['Vipers Elite','https://sites.google.com/view/viperselite/home'],['Obiteljska Web Stranica','https://sites.google.com/view/radujkovic/home?authuser=0'],['Italo Disco Muzika','http://radiomaxitalo.com/'],['Twitch','https://www.twitch.tv/newxsound'],['Radio u Boji','http://www.radiouboji.com/'],['Radio u Boji Mobile','https://radiouboji.nicepage.io/'],['Contact List Book','https://skydvbwatcher-glitch.github.io/contacts/'],['Elite Security','https://sites.google.com/view/idchek/home'],['NewXSound','http://newxsound.blogspot.com/']];
+const loadScript=src=>new Promise(r=>{const sc=document.createElement('script');sc.src=src;sc.onload=()=>r(true);sc.onerror=()=>r(false);document.head.appendChild(sc);});
+const ls=k=>{try{return JSON.parse(localStorage.getItem(k)||'null');}catch(e){return null;}};
+// Rebuilds the old page's lists: built-in data + the old page's saved edits/additions/deletions (same-origin localStorage)
+async function importOld(){
+  await loadScript('contacts-data.js');await loadScript('internet-bookmarks-data.js');
+  const deleted=new Set(ls('contacts-deleted-v1')||[]);
+  const saved=(ls('contacts-address-book-v1')||[]).filter(c=>c&&c.name);
+  const byName=new Map(saved.map(c=>[c.name,c]));const builtIn=new Set((window.CONTACTS||[]).map(c=>c.name));
+  const cl=(window.CONTACTS||[]).filter(c=>!deleted.has(c.name)).map(c=>({...c,...(byName.get(c.name)||{})}));
+  saved.forEach(c=>{if(!builtIn.has(c.name))cl.push(c);});
+  const have=new Set(contacts.map(c=>(c.name+'|'+c.phone).toLowerCase()));
+  const addC=cl.filter(c=>!have.has((c.name+'|'+(c.phone||'')).toLowerCase())).map(norm);
+  const delB=new Set(ls('internet-bookmark-deleted-items-v1')||[]);
+  const keyB=b=>JSON.stringify([b.title,b.url,b.folder||'Other']);
+  const bl=[...(window.INTERNET_BOOKMARKS||[]),...PERSONAL.map(([title,url])=>({title,url,folder:'My websites'})),...(ls('internet-bookmark-user-items-v1')||[])].filter(b=>b&&b.title&&b.url&&!delB.has(keyB(b)));
+  const haveB=new Set(bookmarks.map(b=>b.title+'|'+b.url));
+  const addB=bl.filter(b=>!haveB.has(b.title+'|'+b.url)).map(normB);
+  await snapshot('before-old-import');
+  await tx('contacts','readwrite',s=>addC.forEach(c=>s.put(c)));
+  await tx('bookmarks','readwrite',s=>addB.forEach(b=>s.put(b)));
+  await loadAll();render();
+  return [addC.length,addB.length];
+}
+$('#old').onclick=async()=>{const [c,b]=await importOld();alert(c+' contacts and '+b+' bookmarks added (existing ones untouched).');};
 
 const ghSave=()=>{localStorage.setItem('gh_repo',$('#gr').value.trim());localStorage.setItem('gh_path',$('#gp').value.trim());localStorage.setItem('gh_token',$('#gt').value.trim());};
 const ghUrl=()=>`https://api.github.com/repos/${$('#gr').value.trim()}/contents/${$('#gp').value.trim().split('/').map(encodeURIComponent).join('/')}`;
@@ -187,8 +238,8 @@ $('#gdn').onclick=async()=>{
   ghSave();
   try{
     const r=await fetch(ghUrl(),{headers:ghHead()});if(!r.ok)throw new Error('GitHub '+r.status);
-    const l=parse(unb64((await r.json()).content));
-    if(confirm(`Replace current ${contacts.length} contacts with ${l.length} from GitHub? A snapshot is saved first.`)){await replaceAll(l,'github-restore');$('#bd').close();}
+    const {list:l,bm}=parse(unb64((await r.json()).content));
+    if(confirm(`Replace current data with ${l.length} contacts${bm?' and '+bm.length+' bookmarks':''} from GitHub? A snapshot is saved first.`)){await replaceAll(l,'github-restore',bm);$('#bd').close();}
   }catch(err){alert('Restore failed: '+err.message);}
 };
 
@@ -198,7 +249,12 @@ $('#gdn').onclick=async()=>{
   const last=(await tx('snaps','readonly',s=>s.getAll())).pop();
   if(contacts.length&&(!last||Date.now()-last.ts>864e5))await snapshot('daily');
   render();
-  if(!contacts.length)setStatus('Empty. Open Backup ⚙ to restore a file or import your old list.');
+  const seeded=await tx('meta','readonly',s=>s.get('seeded'));
+  if(!seeded&&!contacts.length&&!bookmarks.length){
+    await importOld();await tx('meta','readwrite',s=>s.put({k:'seeded',v:1}));
+    await snapshot('initial-import');
+  }
+  if(!contacts.length&&!bookmarks.length)setStatus('Empty. Open Backup ⚙ to restore a file.');
 })();
 </script>
 </body>
