@@ -1789,12 +1789,17 @@ function loadSavedContacts() {
   } catch (e) {}
 }
 loadSavedContacts();
+function writeSyncMirror() {
+  try { localStorage.setItem('contacts-sync-v1', JSON.stringify({ ts: Date.now(), contacts: contactsWithoutPhotoData(contacts) })); } catch(e) {}
+}
 function persistContacts() {
+  writeSyncMirror();
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(contactsWithoutPhotoData(contacts))); }
   catch(e) { showToast('⚠️ Kontakti se ne mogu spremiti. Oslobodi prostor u pregledniku.'); }
   notifyCloudBackup();
 }
 profilePhotosReady = migrateProfilePhotos();
+writeSyncMirror();
 
 let currentTheme = 'dark', headerColor = 'blue', textColor = 'default',
     textSize = 'medium', textStyle = 'normal', showFavOnly = false,

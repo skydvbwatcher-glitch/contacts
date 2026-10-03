@@ -109,7 +109,7 @@ async function replaceAll(list,reason,bm){
   if(bm)await tx('bookmarks','readwrite',s=>{s.clear();bm.forEach(b=>s.put(normB(b)));});
   await loadAll();render();
 }
-const norm=c=>({id:c.id||crypto.randomUUID(),name:c.name||'',phone:c.phone||'',email:c.email||'',address:c.address||'',org:c.org||'',notes:c.notes||'',category:c.category||'personal'});
+const norm=c=>({id:c.id||crypto.randomUUID(),name:c.name||'',phone:c.phone||'',email:c.email||'',address:c.address||'',org:c.org||'',notes:c.notes||'',category:c.category||'personal',...(c.src?{src:c.src}:{})});
 const normB=b=>({id:b.id||crypto.randomUUID(),title:b.title||'',url:b.url||'',folder:b.folder||'Other'});
 function parse(text){
   const j=JSON.parse(text);const l=Array.isArray(j)?j:j.contacts;
@@ -248,6 +248,34 @@ $('#gdn').onclick=async()=>{
   }catch(err){alert('Restore failed: '+err.message);}
 };
 
+// One-way sync: the original page mirrors its list to localStorage; contacts it owns are marked src:'old'
+async function syncFromOld(){
+  let m;try{m=JSON.parse(localStorage.getItem('contacts-sync-v1')||'null');}catch(e){}
+  if(!m||!Array.isArray(m.contacts)||!m.contacts.length)return;
+  const last=await tx('meta','readonly',s=>s.get('syncTs'));
+  if(last&&last.v>=m.ts)return;
+  await loadAll();
+  const mine=new Map(contacts.filter(c=>c.src==='old').map(c=>[c.name,c]));
+  const free=new Map(contacts.filter(c=>!c.src).map(c=>[c.name+'|'+c.phone,c]));
+  const seen=new Set(),out=[];
+  for(const c of m.contacts){
+    if(!c||!c.name)continue;seen.add(c.name);
+    const ex=mine.get(c.name)||free.get(c.name+'|'+(c.phone||''));
+    out.push(norm({...c,id:ex?ex.id:undefined,src:'old'}));
+  }
+  const gone=contacts.filter(c=>c.src==='old'&&!seen.has(c.name));
+  const changed=out.length!==mine.size||gone.length||out.some(o=>{const e=contacts.find(c=>c.id===o.id);return !e||JSON.stringify(norm(e))!==JSON.stringify(o);});
+  if(changed){
+    await snapshot('before-sync');
+    await tx('contacts','readwrite',s=>{gone.forEach(c=>s.delete(c.id));out.forEach(c=>s.put(c));});
+    await loadAll();render();
+  }
+  await tx('meta','readwrite',s=>s.put({k:'syncTs',v:m.ts}));
+  setStatus(contacts.length+' contacts · synced from the old page '+new Date(m.ts).toLocaleTimeString());
+}
+addEventListener('storage',e=>{if(e.key==='contacts-sync-v1')syncFromOld();});
+addEventListener('focus',()=>syncFromOld());
+
 (async()=>{
   try{navigator.storage&&navigator.storage.persist&&await navigator.storage.persist();}catch(e){}
   db=await open();await loadAll();
@@ -259,6 +287,7 @@ $('#gdn').onclick=async()=>{
     await importOld();await tx('meta','readwrite',s=>s.put({k:'seeded',v:1}));
     await snapshot('initial-import');
   }
+  await syncFromOld();
   if(!contacts.length&&!bookmarks.length)setStatus('Empty. Open Backup ⚙ to restore a file.');
 })();
 </script>
