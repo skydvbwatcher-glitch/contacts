@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Contacts v2</title>
+<style>
+:root{--bg:#0d1117;--card:#161b22;--line:#30363d;--fg:#e6edf3;--mut:#8b949e;--acc:#1f6feb}
+*{box-sizing:border-box}body{margin:0;font:16px system-ui,sans-serif;background:var(--bg);color:var(--fg)}
+header{position:sticky;top:0;background:var(--card);border-bottom:1px solid var(--line);padding:10px;display:flex;gap:8px;flex-wrap:wrap;z-index:2}
+input,textarea,select,button{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px}
+button{cursor:pointer;background:var(--acc);border-color:var(--acc)}button.g{background:var(--bg);border-color:var(--line)}button.d{background:#b62324;border-color:#b62324}
+#q{flex:1;min-width:140px}main{max-width:800px;margin:auto;padding:10px}
+.c{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px;display:flex;justify-content:space-between;gap:8px}
+.c small{color:var(--mut);display:block}.c a{color:#58a6ff}
+dialog{background:var(--card);color:var(--fg);border:1px solid var(--line);border-radius:12px;width:min(480px,95vw)}
+dialog::backdrop{background:#0009}label{display:block;margin:8px 0 2px;color:var(--mut);font-size:13px}
+dialog input,dialog textarea,dialog select{width:100%}.row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+#status{padding:6px 10px;color:var(--mut);font-size:13px}
+</style>
+</head>
+<body>
+<header>
+  <input id="q" type="search" placeholder="Search…">
+  <button id="add">+ Add</button>
+  <button class="g" id="bk">Backup ⚙</button>
+</header>
+<div id="status"></div>
+<main id="list"></main>
+
+<dialog id="ed"><form method="dialog" id="f">
+  <h3 id="edt">Contact</h3>
+  <label>Name</label><input name="name" required>
+  <label>Phone</label><input name="phone" type="tel">
+  <label>Email</label><input name="email" type="email">
+  <label>Address</label><input name="address">
+  <label>Organization</label><input name="org">
+  <label>Category</label><select name="category"><option>personal</option><option>work</option><option>family</option><option>other</option></select>
+  <label>Notes</label><textarea name="notes" rows="3"></textarea>
+  <div class="row"><button value="save">Save</button><button type="button" class="g" id="cx">Cancel</button><button type="button" class="d" id="del">Delete</button></div>
+</form></dialog>
+
+<dialog id="bd">
+  <h3>Backup &amp; Restore</h3>
+  <p style="color:var(--mut);font-size:14px">Your data lives only in this browser's IndexedDB. Nothing ever overwrites it automatically. Every restore/import first saves a snapshot.</p>
+  <div class="row">
+    <button id="exp">Download backup (.json)</button>
+    <button class="g" id="imp">Restore from file…</button>
+    <button class="g" id="old">Import old list (merge)</button>
+  </div>
+  <input type="file" id="file" accept=".json" hidden>
+  <h4>Local snapshots</h4>
+  <div id="snaps"></div>
+  <button class="g" id="snapnow">Take snapshot now</button>
+  <h4>GitHub backup</h4>
+  <label>Repo (owner/name)</label><input id="gr" placeholder="skydvbwatcher-glitch/contacts">
+  <label>Path in repo</label><input id="gp" value="backups/contacts-backup.json">
+  <label>Token (fine-grained, Contents: read/write; stored only on this device)</label><input id="gt" type="password">
+  <div class="row"><button id="gup">Upload to GitHub</button><button class="g" id="gdn">Restore from GitHub</button></div>
+  <div class="row"><button class="g" id="close">Close</button></div>
+</dialog>
+
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let db,contacts=[],editing=null;
+
+const open=()=>new Promise((res,rej)=>{
+  const r=indexedDB.open('contacts-v2',1);
+  r.onupgradeneeded=()=>{const d=r.result;d.createObjectStore('contacts',{keyPath:'id'});d.createObjectStore('snaps',{keyPath:'ts'});};
+  r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);
+});
+const tx=(store,mode,fn)=>new Promise((res,rej)=>{
+  const t=db.transaction(store,mode),s=t.objectStore(store);let out;
+  out=fn(s);t.oncomplete=()=>res(out&&out.result!==undefined?out.result:undefined);t.onerror=t.onabort=()=>rej(t.error);
+});
+const loadAll=async()=>{contacts=await tx('contacts','readonly',s=>s.getAll());};
+const put=c=>tx('contacts','readwrite',s=>s.put(c));
+const remove=id=>tx('contacts','readwrite',s=>s.delete(id));
+const setStatus=m=>{$('#status').textContent=m};
+
+async function snapshot(reason){
+  await loadAll();
+  if(!contacts.length&&reason!=='manual')return;
+  await tx('snaps','readwrite',s=>s.put({ts:Date.now(),reason,data:contacts}));
+  const all=await tx('snaps','readonly',s=>s.getAll());
+  for(const o of all.slice(0,-15))await tx('snaps','readwrite',s=>s.delete(o.ts));
+}
+const payload=()=>JSON.stringify({app:'contacts-v2',version:1,exported:new Date().toISOString(),contacts},null,1);
+
+async function replaceAll(list,reason){
+  await snapshot('before-'+reason);
+  await tx('contacts','readwrite',s=>{s.clear();list.forEach(c=>s.put(norm(c)));});
+  await loadAll();render();
+}
+const norm=c=>({id:c.id||crypto.randomUUID(),name:c.name||'',phone:c.phone||'',email:c.email||'',address:c.address||'',org:c.org||'',notes:c.notes||'',category:c.category||'personal'});
+function parse(text){
+  const j=JSON.parse(text);const l=Array.isArray(j)?j:j.contacts;
+  if(!Array.isArray(l))throw new Error('Not a contacts backup');return l;
+}
+
+function render(){
+  const q=$('#q').value.toLowerCase();
+  const l=contacts.filter(c=>!q||Object.values(c).join(' ').toLowerCase().includes(q)).sort((a,b)=>a.name.localeCompare(b.name));
+  $('#list').innerHTML=l.map(c=>`<div class="c" data-id="${c.id}"><div><b>${esc(c.name)}</b>
+    <small>${esc(c.org)} ${c.category?'· '+esc(c.category):''}</small>
+    ${c.phone?`<small><a href="tel:${esc(c.phone.split('/')[0].replace(/[^+\d]/g,''))}">${esc(c.phone)}</a></small>`:''}
+    ${c.email?`<small><a href="mailto:${esc(c.email)}">${esc(c.email)}</a></small>`:''}
+    ${c.address?`<small>${esc(c.address)}</small>`:''}${c.notes?`<small>${esc(c.notes)}</small>`:''}</div>
+    <button class="g edit">Edit</button></div>`).join('')||'<p style="color:var(--mut)">No contacts.</p>';
+  setStatus(`${contacts.length} contacts · saved on this device`);
+}
+
+function edit(c){
+  editing=c;const f=$('#f');
+  for(const k of ['name','phone','email','address','org','category','notes'])f.elements[k].value=c?c[k]:(k==='category'?'personal':'');
+  $('#del').style.display=c?'':'none';$('#ed').showModal();
+}
+$('#add').onclick=()=>edit(null);
+$('#cx').onclick=()=>$('#ed').close();
+$('#list').onclick=e=>{const d=e.target.closest('.c');if(d&&e.target.classList.contains('edit'))edit(contacts.find(c=>c.id===d.dataset.id));};
+$('#q').oninput=render;
+$('#f').onsubmit=async e=>{
+  const f=e.target.elements;
+  const c=norm({...(editing||{}),name:f.name.value.trim(),phone:f.phone.value.trim(),email:f.email.value.trim(),address:f.address.value.trim(),org:f.org.value.trim(),category:f.category.value,notes:f.notes.value});
+  await put(c);await loadAll();render();
+};
+$('#del').onclick=async()=>{
+  if(editing&&confirm('Delete '+editing.name+'?')){await snapshot('before-delete');await remove(editing.id);await loadAll();render();$('#ed').close();}
+};
+
+const download=(name,text)=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:'application/json'}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);};
+async function renderSnaps(){
+  const all=(await tx('snaps','readonly',s=>s.getAll())).reverse();
+  $('#snaps').innerHTML=all.map(s=>`<div class="row" style="margin:4px 0;align-items:center"><span style="flex:1;font-size:13px">${new Date(s.ts).toLocaleString()} · ${s.data.length} · ${esc(s.reason)}</span><button class="g" data-r="${s.ts}">Restore</button></div>`).join('')||'<small>None yet.</small>';
+}
+$('#bk').onclick=async()=>{
+  $('#gr').value=localStorage.getItem('gh_repo')||'';$('#gp').value=localStorage.getItem('gh_path')||'backups/contacts-backup.json';$('#gt').value=localStorage.getItem('gh_token')||'';
+  await renderSnaps();$('#bd').showModal();
+};
+$('#close').onclick=()=>$('#bd').close();
+$('#exp').onclick=()=>download(`contacts-backup-${new Date().toISOString().slice(0,10)}.json`,payload());
+$('#imp').onclick=()=>$('#file').click();
+$('#file').onchange=async e=>{
+  const f=e.target.files[0];if(!f)return;
+  try{const l=parse(await f.text());
+    if(confirm(`Replace current ${contacts.length} contacts with ${l.length} from file? A snapshot is saved first.`)){await replaceAll(l,'file-restore');$('#bd').close();}
+  }catch(err){alert('Failed: '+err.message);}
+  e.target.value='';
+};
+$('#snapnow').onclick=async()=>{await snapshot('manual');await renderSnaps();};
+$('#snaps').onclick=async e=>{
+  const ts=e.target.dataset.r;if(!ts)return;
+  const s=await tx('snaps','readonly',st=>st.get(+ts));
+  if(confirm('Restore snapshot with '+s.data.length+' contacts?')){await replaceAll(s.data,'snapshot-restore');await renderSnaps();}
+};
+$('#old').onclick=()=>{
+  const sc=document.createElement('script');sc.src='contacts-data.js';
+  sc.onload=async()=>{
+    await snapshot('before-old-import');
+    const have=new Set(contacts.map(c=>(c.name+'|'+c.phone).toLowerCase()));
+    const add=(window.CONTACTS||[]).filter(c=>!have.has((c.name+'|'+c.phone).toLowerCase())).map(norm);
+    await tx('contacts','readwrite',s=>add.forEach(c=>s.put(c)));
+    await loadAll();render();alert(add.length+' contacts added (existing ones untouched).');
+  };
+  sc.onerror=()=>alert('contacts-data.js not found next to this page.');
+  document.head.appendChild(sc);
+};
+
+const ghSave=()=>{localStorage.setItem('gh_repo',$('#gr').value.trim());localStorage.setItem('gh_path',$('#gp').value.trim());localStorage.setItem('gh_token',$('#gt').value.trim());};
+const ghUrl=()=>`https://api.github.com/repos/${$('#gr').value.trim()}/contents/${$('#gp').value.trim().split('/').map(encodeURIComponent).join('/')}`;
+const ghHead=()=>({Authorization:'Bearer '+$('#gt').value.trim(),Accept:'application/vnd.github+json'});
+const b64=s=>{let b='';new TextEncoder().encode(s).forEach(x=>b+=String.fromCharCode(x));return btoa(b);};
+const unb64=s=>new TextDecoder().decode(Uint8Array.from(atob(s.replace(/\s/g,'')),c=>c.charCodeAt(0)));
+$('#gup').onclick=async()=>{
+  ghSave();
+  try{
+    const g=await fetch(ghUrl(),{headers:ghHead()});
+    const sha=g.ok?(await g.json()).sha:undefined;
+    if(!g.ok&&g.status!==404)throw new Error('GitHub '+g.status);
+    const r=await fetch(ghUrl(),{method:'PUT',headers:ghHead(),body:JSON.stringify({message:'Contacts backup '+new Date().toISOString(),content:b64(payload()),sha})});
+    if(!r.ok)throw new Error('GitHub '+r.status+' '+(await r.text()));
+    alert('Uploaded '+contacts.length+' contacts.');
+  }catch(err){alert('Upload failed: '+err.message);}
+};
+$('#gdn').onclick=async()=>{
+  ghSave();
+  try{
+    const r=await fetch(ghUrl(),{headers:ghHead()});if(!r.ok)throw new Error('GitHub '+r.status);
+    const l=parse(unb64((await r.json()).content));
+    if(confirm(`Replace current ${contacts.length} contacts with ${l.length} from GitHub? A snapshot is saved first.`)){await replaceAll(l,'github-restore');$('#bd').close();}
+  }catch(err){alert('Restore failed: '+err.message);}
+};
+
+(async()=>{
+  try{navigator.storage&&navigator.storage.persist&&await navigator.storage.persist();}catch(e){}
+  db=await open();await loadAll();
+  const last=(await tx('snaps','readonly',s=>s.getAll())).pop();
+  if(contacts.length&&(!last||Date.now()-last.ts>864e5))await snapshot('daily');
+  render();
+  if(!contacts.length)setStatus('Empty. Open Backup ⚙ to restore a file or import your old list.');
+})();
+</script>
+</body>
+</html>
