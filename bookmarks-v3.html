@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bookmarks v3</title>
+<style>
+:root{--bg:#0d1117;--card:#161b22;--line:#30363d;--fg:#e6edf3;--mut:#8b949e;--acc:#1f6feb}
+*{box-sizing:border-box}body{margin:0;font:16px system-ui,sans-serif;background:var(--bg);color:var(--fg)}
+header{position:sticky;top:0;background:var(--card);border-bottom:1px solid var(--line);padding:10px;display:flex;gap:8px;flex-wrap:wrap;z-index:2}
+input,select,button{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px}
+button{cursor:pointer;background:var(--acc);border-color:var(--acc)}button.g{background:var(--bg);border-color:var(--line)}button.d{background:#b62324;border-color:#b62324}
+#q{flex:1;min-width:140px}main{max-width:800px;margin:auto;padding:10px}
+.c{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px;display:flex;justify-content:space-between;gap:8px;overflow-wrap:anywhere}
+.c small{color:var(--mut);display:block}.c a{color:#58a6ff}
+dialog{background:var(--card);color:var(--fg);border:1px solid var(--line);border-radius:12px;width:min(480px,95vw)}
+dialog::backdrop{background:#0009}label{display:block;margin:8px 0 2px;color:var(--mut);font-size:13px}
+dialog input{width:100%}.row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+#status{padding:6px 10px;color:var(--mut);font-size:13px}
+</style>
+</head>
+<body>
+<header>
+  <input id="q" type="search" placeholder="Search bookmarks…">
+  <select id="ff"></select>
+  <button id="add">+ Add</button>
+  <button class="g" id="bk">Backup ⚙</button>
+</header>
+<div id="status"></div>
+<main id="list"></main>
+
+<dialog id="ed"><form method="dialog" id="f">
+  <h3>Bookmark</h3>
+  <label>Title</label><input name="title" required>
+  <label>URL</label><input name="url" type="url" required>
+  <label>Folder</label><input name="folder" list="folders">
+  <datalist id="folders"></datalist>
+  <div class="row"><button value="save">Save</button><button type="button" class="g" id="cx">Cancel</button><button type="button" class="d" id="del">Delete</button></div>
+</form></dialog>
+
+<dialog id="bd">
+  <h3>Backup &amp; Restore</h3>
+  <p style="color:var(--mut);font-size:14px">Data lives only in this browser's IndexedDB. Nothing overwrites it automatically. Every restore/import first saves a snapshot.</p>
+  <div class="row">
+    <button id="exp">Download backup (.json)</button>
+    <button class="g" id="imp">Restore from file…</button>
+    <button class="g" id="old">Import old bookmarks (merge)</button>
+  </div>
+  <input type="file" id="file" accept=".json" hidden>
+  <h4>Local snapshots</h4>
+  <div id="snaps"></div>
+  <button class="g" id="snapnow">Take snapshot now</button>
+  <h4>GitHub backup</h4>
+  <label>Repo (owner/name)</label><input id="gr" placeholder="owner/private-repo">
+  <label>Path in repo</label><input id="gp">
+  <label>Token (fine-grained, Contents: read/write; stored only on this device)</label><input id="gt" type="password">
+  <div class="row"><button id="gup">Upload to GitHub</button><button class="g" id="gdn">Restore from GitHub</button></div>
+  <div class="row"><button class="g" id="close">Close</button></div>
+</dialog>
+
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let db,items=[],editing=null;
+
+const open=()=>new Promise((res,rej)=>{
+  const r=indexedDB.open('bookmarks-v3',1);
+  r.onupgradeneeded=()=>{const d=r.result;d.createObjectStore('items',{keyPath:'id'});d.createObjectStore('snaps',{keyPath:'ts'});d.createObjectStore('meta',{keyPath:'k'});};
+  r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);
+});
+const tx=(store,mode,fn)=>new Promise((res,rej)=>{
+  const t=db.transaction(store,mode),s=t.objectStore(store);const out=fn(s);
+  t.oncomplete=()=>res(out&&out.result!==undefined?out.result:undefined);t.onerror=t.onabort=()=>rej(t.error);
+});
+const loadAll=async()=>{items=await tx('items','readonly',s=>s.getAll());};
+const norm=b=>({id:b.id||crypto.randomUUID(),title:b.title||'',url:b.url||'',folder:b.folder||'Other'});
+const setStatus=m=>{$('#status').textContent=m};
+
+async function snapshot(reason){
+  await loadAll();
+  if(!items.length&&reason!=='manual')return;
+  await tx('snaps','readwrite',s=>s.put({ts:Date.now(),reason,data:items}));
+  const all=await tx('snaps','readonly',s=>s.getAll());
+  for(const o of all.slice(0,-15))await tx('snaps','readwrite',s=>s.delete(o.ts));
+}
+const payload=()=>JSON.stringify({app:'bookmarks-v3',version:1,exported:new Date().toISOString(),bookmarks:items},null,1);
+async function replaceAll(list,reason){
+  await snapshot('before-'+reason);
+  await tx('items','readwrite',s=>{s.clear();list.forEach(b=>s.put(norm(b)));});
+  await loadAll();render();
+}
+function parse(text){
+  const j=JSON.parse(text);const l=Array.isArray(j)?j:j.bookmarks;
+  if(!Array.isArray(l))throw new Error('Not a bookmarks backup');return l;
+}
+
+function render(){
+  const folders=[...new Set(items.map(b=>b.folder))].sort((a,b)=>a.localeCompare(b));
+  const cur=$('#ff').value;
+  $('#ff').innerHTML='<option value="">All folders</option>'+folders.map(f=>`<option value="${esc(f)}">${esc(f)}</option>`).join('');
+  $('#ff').value=folders.includes(cur)?cur:'';
+  const q=$('#q').value.toLowerCase(),ff=$('#ff').value;
+  const l=items.filter(b=>(!ff||b.folder===ff)&&(!q||(b.title+' '+b.url+' '+b.folder).toLowerCase().includes(q)));
+  const g={};l.forEach(b=>(g[b.folder]=g[b.folder]||[]).push(b));
+  $('#list').innerHTML=Object.keys(g).sort((a,b)=>a.localeCompare(b)).map(f=>`<h4 style="margin:14px 0 6px;color:var(--mut)">${esc(f)} (${g[f].length})</h4>`+g[f].sort((a,b)=>a.title.localeCompare(b.title)).map(b=>`<div class="c" data-id="${b.id}"><div><b>${esc(b.title)}</b><small><a href="${/^https?:/i.test(b.url)?esc(b.url):'#'}" target="_blank" rel="noopener">${esc(b.url)}</a></small></div><button class="g edit">Edit</button></div>`).join('')).join('')||'<p style="color:var(--mut)">No bookmarks.</p>';
+  setStatus(`${items.length} bookmarks · saved on this device`);
+}
+function edit(b){
+  editing=b;const f=$('#f').elements;
+  for(const k of ['title','url','folder'])f[k].value=b?b[k]:'';
+  $('#folders').innerHTML=[...new Set(items.map(x=>x.folder))].map(x=>`<option value="${esc(x)}">`).join('');
+  $('#del').style.display=b?'':'none';$('#ed').showModal();
+}
+$('#add').onclick=()=>edit(null);
+$('#cx').onclick=()=>$('#ed').close();
+$('#q').oninput=render;$('#ff').onchange=render;
+$('#list').onclick=e=>{const d=e.target.closest('.c');if(d&&e.target.classList.contains('edit'))edit(items.find(b=>b.id===d.dataset.id));};
+$('#f').onsubmit=async e=>{
+  const f=e.target.elements;
+  await tx('items','readwrite',s=>s.put(norm({...(editing||{}),title:f.title.value.trim(),url:f.url.value.trim(),folder:f.folder.value.trim()||'Other'})));
+  await loadAll();render();
+};
+$('#del').onclick=async()=>{
+  if(editing&&confirm('Delete '+editing.title+'?')){await snapshot('before-delete');await tx('items','readwrite',s=>s.delete(editing.id));await loadAll();render();$('#ed').close();}
+};
+
+const download=(name,text)=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:'application/json'}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);};
+async function renderSnaps(){
+  const all=(await tx('snaps','readonly',s=>s.getAll())).reverse();
+  $('#snaps').innerHTML=all.map(s=>`<div class="row" style="margin:4px 0;align-items:center"><span style="flex:1;font-size:13px">${new Date(s.ts).toLocaleString()} · ${s.data.length} · ${esc(s.reason)}</span><button class="g" data-r="${s.ts}">Restore</button></div>`).join('')||'<small>None yet.</small>';
+}
+$('#bk').onclick=async()=>{
+  $('#gr').value=localStorage.getItem('bm_gh_repo')||'';$('#gp').value=localStorage.getItem('bm_gh_path')||'backups/bookmarks-backup.json';$('#gt').value=localStorage.getItem('gh_token')||'';
+  await renderSnaps();$('#bd').showModal();
+};
+$('#close').onclick=()=>$('#bd').close();
+$('#exp').onclick=()=>download(`bookmarks-backup-${new Date().toISOString().slice(0,10)}.json`,payload());
+$('#imp').onclick=()=>$('#file').click();
+$('#file').onchange=async e=>{
+  const f=e.target.files[0];if(!f)return;
+  try{const l=parse(await f.text());
+    if(confirm(`Replace current ${items.length} bookmarks with ${l.length} from file? A snapshot is saved first.`)){await replaceAll(l,'file-restore');$('#bd').close();}
+  }catch(err){alert('Failed: '+err.message);}
+  e.target.value='';
+};
+$('#snapnow').onclick=async()=>{await snapshot('manual');await renderSnaps();};
+$('#snaps').onclick=async e=>{
+  const ts=e.target.dataset.r;if(!ts)return;
+  const s=await tx('snaps','readonly',st=>st.get(+ts));
+  if(confirm('Restore snapshot with '+s.data.length+' bookmarks?')){await replaceAll(s.data,'snapshot-restore');await renderSnaps();}
+};
+
+const PERSONAL=[['Imenik','https://sites.google.com/view/telefonskipretrazivac/imenik'],['Vipers Elite','https://sites.google.com/view/viperselite/home'],['Obiteljska Web Stranica','https://sites.google.com/view/radujkovic/home?authuser=0'],['Italo Disco Muzika','http://radiomaxitalo.com/'],['Twitch','https://www.twitch.tv/newxsound'],['Radio u Boji','http://www.radiouboji.com/'],['Radio u Boji Mobile','https://radiouboji.nicepage.io/'],['Contact List Book','https://skydvbwatcher-glitch.github.io/contacts/'],['Elite Security','https://sites.google.com/view/idchek/home'],['NewXSound','http://newxsound.blogspot.com/']];
+const loadScript=src=>new Promise(r=>{const sc=document.createElement('script');sc.src=src;sc.onload=()=>r(true);sc.onerror=()=>r(false);document.head.appendChild(sc);});
+const ls=k=>{try{return JSON.parse(localStorage.getItem(k)||'null');}catch(e){return null;}};
+async function importOld(){
+  await loadScript('internet-bookmarks-data.js');
+  const delB=new Set(ls('internet-bookmark-deleted-items-v1')||[]);
+  const keyB=b=>JSON.stringify([b.title,b.url,b.folder||'Other']);
+  const bl=[...(window.INTERNET_BOOKMARKS||[]),...PERSONAL.map(([title,url])=>({title,url,folder:'My websites'})),...(ls('internet-bookmark-user-items-v1')||[])].filter(b=>b&&b.title&&b.url&&!delB.has(keyB(b)));
+  const have=new Set(items.map(b=>b.title+'|'+b.url));
+  const add=bl.filter(b=>!have.has(b.title+'|'+b.url)).map(norm);
+  await snapshot('before-old-import');
+  await tx('items','readwrite',s=>add.forEach(b=>s.put(b)));
+  await loadAll();render();
+  return add.length;
+}
+$('#old').onclick=async()=>alert((await importOld())+' bookmarks added (existing ones untouched).');
+
+const ghSave=()=>{localStorage.setItem('bm_gh_repo',$('#gr').value.trim());localStorage.setItem('bm_gh_path',$('#gp').value.trim());localStorage.setItem('gh_token',$('#gt').value.trim());};
+const ghUrl=()=>`https://api.github.com/repos/${$('#gr').value.trim()}/contents/${$('#gp').value.trim().split('/').map(encodeURIComponent).join('/')}`;
+const ghHead=()=>({Authorization:'Bearer '+$('#gt').value.trim(),Accept:'application/vnd.github+json'});
+const b64=s=>{let b='';new TextEncoder().encode(s).forEach(x=>b+=String.fromCharCode(x));return btoa(b);};
+const unb64=s=>new TextDecoder().decode(Uint8Array.from(atob(s.replace(/\s/g,'')),c=>c.charCodeAt(0)));
+$('#gup').onclick=async()=>{
+  ghSave();
+  try{
+    const g=await fetch(ghUrl(),{headers:ghHead()});
+    const sha=g.ok?(await g.json()).sha:undefined;
+    if(!g.ok&&g.status!==404)throw new Error('GitHub '+g.status);
+    const r=await fetch(ghUrl(),{method:'PUT',headers:ghHead(),body:JSON.stringify({message:'Bookmarks backup '+new Date().toISOString(),content:b64(payload()),sha})});
+    if(!r.ok)throw new Error('GitHub '+r.status+' '+(await r.text()));
+    alert('Uploaded '+items.length+' bookmarks.');
+  }catch(err){alert('Upload failed: '+err.message);}
+};
+$('#gdn').onclick=async()=>{
+  ghSave();
+  try{
+    const r=await fetch(ghUrl(),{headers:ghHead()});if(!r.ok)throw new Error('GitHub '+r.status);
+    const l=parse(unb64((await r.json()).content));
+    if(confirm(`Replace current ${items.length} bookmarks with ${l.length} from GitHub? A snapshot is saved first.`)){await replaceAll(l,'github-restore');$('#bd').close();}
+  }catch(err){alert('Restore failed: '+err.message);}
+};
+
+(async()=>{
+  try{navigator.storage&&navigator.storage.persist&&await navigator.storage.persist();}catch(e){}
+  db=await open();await loadAll();
+  const last=(await tx('snaps','readonly',s=>s.getAll())).pop();
+  if(items.length&&(!last||Date.now()-last.ts>864e5))await snapshot('daily');
+  if(!(await tx('meta','readonly',s=>s.get('seeded')))&&!items.length){
+    await importOld();await tx('meta','readwrite',s=>s.put({k:'seeded',v:1}));await snapshot('initial-import');
+  }
+  render();
+})();
+</script>
+</body>
+</html>
