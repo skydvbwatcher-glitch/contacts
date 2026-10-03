@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cheapest Gas</title>
+<style>
+:root{--bg:#0d1117;--card:#161b22;--line:#30363d;--fg:#e6edf3;--mut:#8b949e;--acc:#1f6feb;--ok:#3fb950}
+*{box-sizing:border-box}body{margin:0;font:16px system-ui,sans-serif;background:var(--bg);color:var(--fg)}
+header{position:sticky;top:0;background:var(--card);border-bottom:1px solid var(--line);padding:10px;display:flex;gap:8px;flex-wrap:wrap;z-index:2;align-items:center}
+input,select,button{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px}
+button{cursor:pointer;background:var(--acc);border-color:var(--acc)}button.g{background:var(--bg);border-color:var(--line)}
+main{max-width:800px;margin:auto;padding:10px}
+.c{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px;display:flex;justify-content:space-between;gap:10px;align-items:center}
+.c.best{border-color:var(--ok)}
+.c small{color:var(--mut);display:block}.c a{color:#58a6ff;text-decoration:none}
+.price{font-size:22px;font-weight:800;white-space:nowrap;text-align:right}.price small{font-weight:400}
+.rank{color:var(--mut);width:24px;flex:0 0 24px}
+.grow{flex:1;min-width:0;overflow-wrap:anywhere}
+#status{padding:6px 10px;color:var(--mut);font-size:13px}
+dialog{background:var(--card);color:var(--fg);border:1px solid var(--line);border-radius:12px;width:min(480px,95vw)}
+dialog::backdrop{background:#0009}dialog input{width:100%}label{display:block;margin:8px 0 2px;color:var(--mut);font-size:13px}
+nav#pages{display:flex;gap:6px;padding:8px 10px;background:#010409;border-bottom:1px solid var(--line);overflow-x:auto;white-space:nowrap}
+nav#pages a{color:var(--fg);text-decoration:none;padding:6px 10px;border-radius:8px;border:1px solid var(--line);font-size:14px}
+nav#pages a.on{background:var(--acc);border-color:var(--acc)}
+</style>
+</head>
+<body>
+<nav id="pages"><a href="contacts-v2.html">👤 Kontakti</a><a href="bookmarks-v3.html">🔖 Bookmarks</a><a href="mysites-v4.html">🌐 Moje web stranice</a><a href="gas.html" class="on">⛽ Gas</a><a href="./">🏠 Stara</a></nav>
+<header>
+  <select id="fuel">
+    <option value="REGULAR_UNLEADED">Regular</option>
+    <option value="MIDGRADE">Midgrade</option>
+    <option value="PREMIUM">Premium</option>
+    <option value="DIESEL">Diesel</option>
+  </select>
+  <label style="margin:0">Radius <input id="radius" type="number" min="1" max="50" value="50" style="width:70px"> km</label>
+  <button id="go">Find cheapest</button>
+  <button class="g" id="loc">📍 My location</button>
+  <button class="g" id="cfg">⚙ Settings</button>
+</header>
+<div id="status"></div>
+<main id="list"></main>
+
+<dialog id="sd"><form method="dialog">
+  <h3>Settings</h3>
+  <p style="color:var(--mut);font-size:13px">Needs a Google Maps Platform API key with <b>Places API (New)</b> enabled. Stored only in this browser. Restrict the key to your site's URL in Google Cloud.</p>
+  <label>Google API key</label><input id="key" type="password" autocomplete="off">
+  <label>Start latitude</label><input id="lat" type="number" step="any">
+  <label>Start longitude</label><input id="lng" type="number" step="any">
+  <div style="display:flex;gap:8px;margin-top:12px"><button value="save" id="save">Save</button><button value="cancel" class="g">Cancel</button></div>
+</form></dialog>
+
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+// Approximate position of 21 Monte Court, Hamilton ON L8G 4M3; editable in Settings or replaced via "My location"
+const HOME={lat:43.2325,lng:-79.7610};
+const store={get:(k,d)=>{try{return localStorage.getItem(k)??d}catch(e){return d}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}}};
+let origin={lat:+store.get('gas_lat',HOME.lat),lng:+store.get('gas_lng',HOME.lng)};
+const setStatus=m=>{$('#status').textContent=m};
+
+const km=(a,b)=>{
+  const R=6371,r=x=>x*Math.PI/180,dLa=r(b.lat-a.lat),dLo=r(b.lng-a.lng);
+  const h=Math.sin(dLa/2)**2+Math.cos(r(a.lat))*Math.cos(r(b.lat))*Math.sin(dLo/2)**2;
+  return 2*R*Math.asin(Math.sqrt(h));
+};
+const offset=(p,dN,dE)=>({lat:p.lat+dN/111,lng:p.lng+dE/(111*Math.cos(p.lat*Math.PI/180))});
+const money=m=>m?Number(m.units||0)+(m.nanos||0)/1e9:null;
+
+async function search(key,center,radiusM){
+  const r=await fetch('https://places.googleapis.com/v1/places:searchNearby',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','X-Goog-Api-Key':key,
+      'X-Goog-FieldMask':'places.id,places.displayName,places.formattedAddress,places.location,places.fuelOptions,places.googleMapsUri'},
+    body:JSON.stringify({includedTypes:['gas_station'],maxResultCount:20,rankPreference:'DISTANCE',
+      locationRestriction:{circle:{center:{latitude:center.lat,longitude:center.lng},radius:radiusM}}})
+  });
+  if(!r.ok){const t=await r.json().catch(()=>({}));throw new Error(t.error?.message||('HTTP '+r.status));}
+  return (await r.json()).places||[];
+}
+
+async function run(){
+  const key=store.get('gas_key','');
+  if(!key){setStatus('Add your Google API key in Settings first.');$('#sd').showModal();return;}
+  const maxKm=Math.min(50,Math.max(1,+$('#radius').value||50)),fuel=$('#fuel').value;
+  $('#go').disabled=true;setStatus('Searching…');$('#list').innerHTML='';
+  try{
+    // Each search returns at most 20 stations, so cover the radius with several overlapping circles
+    const centers=[origin];
+    if(maxKm>15)for(const [n,e] of [[1,0],[-1,0],[0,1],[0,-1]])centers.push(offset(origin,n*maxKm*.6,e*maxKm*.6));
+    const radiusM=Math.min(50000,(maxKm>15?maxKm*.55:maxKm)*1000);
+    const results=await Promise.all(centers.map(c=>search(key,c,radiusM)));
+    const seen=new Map();results.flat().forEach(p=>seen.set(p.id,p));
+    const rows=[...seen.values()].map(p=>{
+      const fp=(p.fuelOptions?.fuelPrices||[]).find(x=>x.type===fuel);
+      return {p,price:fp?money(fp.price):null,dist:km(origin,{lat:p.location.latitude,lng:p.location.longitude}),updated:fp?.updateTime};
+    }).filter(x=>x.dist<=maxKm);
+    const priced=rows.filter(x=>x.price!=null).sort((a,b)=>a.price-b.price||a.dist-b.dist);
+    $('#list').innerHTML=priced.map((x,i)=>`<div class="c${i===0?' best':''}"><div class="rank">${i+1}</div>
+      <div class="grow"><b>${esc(x.p.displayName?.text)}</b><small>${esc(x.p.formattedAddress)}</small>
+      <small>${x.dist.toFixed(1)} km · <a href="${esc(x.p.googleMapsUri||'#')}" target="_blank" rel="noopener">Directions</a>${x.updated?' · updated '+esc(new Date(x.updated).toLocaleString()):''}</small></div>
+      <div class="price">${(x.price*100).toFixed(1)}<small> ¢/L</small></div></div>`).join('')
+      ||'<p style="color:var(--mut)">No prices found for this fuel type in the radius.</p>';
+    setStatus(`${priced.length} stations with prices of ${rows.length} found within ${maxKm} km`);
+  }catch(e){setStatus('Error: '+e.message);}
+  $('#go').disabled=false;
+}
+
+$('#go').onclick=run;
+$('#loc').onclick=()=>{
+  if(!navigator.geolocation)return setStatus('Geolocation is not supported.');
+  navigator.geolocation.getCurrentPosition(p=>{origin={lat:p.coords.latitude,lng:p.coords.longitude};run();},e=>setStatus('Location error: '+e.message));
+};
+$('#cfg').onclick=()=>{$('#key').value=store.get('gas_key','');$('#lat').value=origin.lat;$('#lng').value=origin.lng;$('#sd').showModal();};
+$('#save').onclick=()=>{
+  store.set('gas_key',$('#key').value.trim());
+  const la=parseFloat($('#lat').value),lo=parseFloat($('#lng').value);
+  if(Number.isFinite(la)&&Number.isFinite(lo)){origin={lat:la,lng:lo};store.set('gas_lat',la);store.set('gas_lng',lo);}
+};
+setStatus(`Start point: ${origin.lat.toFixed(4)}, ${origin.lng.toFixed(4)} (Hamilton). Press “Find cheapest”.`);
+</script>
+</body>
+</html>
