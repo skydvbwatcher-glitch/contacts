@@ -399,14 +399,29 @@ function evernoteDate(value,fallback){
 }
 function parseEvernoteContent(enml){
   const document=new DOMParser().parseFromString(enml,'text/html');
-  document.querySelectorAll('script,style').forEach(element=>element.remove());
   const attachments=[...document.querySelectorAll('en-media,img')];
+  const blockTags=new Set(['address','blockquote','div','dl','dt','dd','h1','h2','h3','h4','h5','h6','li','ol','p','pre','table','tr','ul']);
+  const extractText=node=>{
+    if(node.nodeType===Node.TEXT_NODE)return node.nodeValue||'';
+    if(node.nodeType!==Node.ELEMENT_NODE)return '';
+    const tag=node.localName.toLowerCase();
+    if(tag==='script'||tag==='style')return '';
+    if(tag==='br')return '\n';
+    if(tag==='en-media'||tag==='img') {
+      const mime=node.getAttribute('type')||node.getAttribute('alt')||'file';
+      return `\n[Attachment not imported: ${mime}]\n`;
+    }
+    const content=[...node.childNodes].map(extractText).join('');
+    if(tag==='li')return `\n- ${content.trim()}`;
+    if(tag==='td'||tag==='th')return `${content}\t`;
+    return blockTags.has(tag)?`\n${content}\n`:content;
+  };
   attachments.forEach(element=>{
     const mime=element.getAttribute('type')||element.getAttribute('alt')||'file';
-    element.replaceWith(document.createTextNode(`[Attachment not imported: ${mime}]`));
+    element.replaceWith(document.createTextNode(`\n[Attachment not imported: ${mime}]\n`));
   });
   return {
-    body:(document.body.innerText||document.body.textContent||'').replace(/\r\n?/g,'\n').replace(/[ \t]+\n/g,'\n').replace(/\n{3,}/g,'\n\n').trim(),
+    body:[...document.body.childNodes].map(extractText).join('').replace(/\r\n?/g,'\n').replace(/[ \t]+\n/g,'\n').replace(/\n[ \t]+/g,'\n').replace(/\n{3,}/g,'\n\n').trim(),
     attachmentCount:attachments.length
   };
 }
