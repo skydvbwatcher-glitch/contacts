@@ -21,6 +21,13 @@ nav#pages{display:flex;gap:6px;padding:8px 10px;background:#010409;border-bottom
 nav#pages a{color:var(--fg);text-decoration:none;padding:6px 10px;border-radius:8px;border:1px solid var(--line);font-size:14px}
 nav#pages a.on{background:var(--acc);border-color:var(--acc)}
 nav#pages button{margin-left:auto}
+#manageEditors{margin-left:0!important}
+#editorAccessDialog{width:min(460px,94vw);padding:20px}
+#editorAccessDialog p,#editorAccessStatus{color:var(--mut)}
+#editorAccessForm{display:flex;gap:8px;flex-wrap:wrap}
+#editorEmail{flex:1;min-width:190px}
+#editorAccessList{padding-left:20px}
+#editorAccessList li{display:flex;justify-content:space-between;gap:12px;align-items:center;margin:8px 0;overflow-wrap:anywhere}
 #authGate{position:fixed;inset:0;z-index:10000;display:grid;place-items:center;padding:20px;background:var(--bg)}
 #authGate[hidden]{display:none}
 #authCard{width:min(440px,100%);padding:24px;border:1px solid var(--line);border-radius:12px;background:var(--card)}
@@ -30,7 +37,7 @@ nav#pages button{margin-left:auto}
 </style>
 </head>
 <body>
-<nav id="pages"><a href="contacts-v2.html" data-p="contacts-v2">👤 Kontakti</a><a href="bookmarks-v3.html" data-p="bookmarks-v3">🔖 Bookmarks</a><a href="mysites-v4.html" data-p="mysites-v4">🌐 Moje web stranice</a><a href="notes.html">📝 Notes</a><a href="planes.html">✈ Planes</a><a href="./">🏠 Stara</a><button class="g" id="signOut" type="button" hidden>Sign out</button></nav>
+<nav id="pages"><a href="contacts-v2.html" data-p="contacts-v2">👤 Kontakti</a><a href="bookmarks-v3.html" data-p="bookmarks-v3">🔖 Bookmarks</a><a href="mysites-v4.html" data-p="mysites-v4">🌐 Moje web stranice</a><a href="notes.html">📝 Notes</a><a href="planes.html">✈ Planes</a><a href="./">🏠 Stara</a><button class="g" id="manageEditors" type="button" hidden>Manage editors</button><button class="g" id="signOut" type="button" hidden>Sign out</button></nav>
 <script>document.querySelectorAll('#pages a').forEach(a=>{if(location.pathname.endsWith('/'+a.dataset.p+'.html'))a.className='on'})</script>
 <header>
   <input id="q" type="search" placeholder="Search…">
@@ -50,6 +57,18 @@ nav#pages button{margin-left:auto}
     <a id="mainContactsLink" href="./" hidden>Open main Contacts page to initialize the private list.</a>
   </div>
 </section>
+<dialog id="editorAccessDialog" aria-labelledby="editorAccessTitle">
+  <h3 id="editorAccessTitle">Manage contact editors</h3>
+  <p>Approved users can view and edit the shared contacts using their verified Google account.</p>
+  <form id="editorAccessForm">
+    <label for="editorEmail">Google account email</label>
+    <input id="editorEmail" type="email" autocomplete="email" required>
+    <button type="submit">Add editor</button>
+  </form>
+  <p id="editorAccessStatus" role="status"></p>
+  <ul id="editorAccessList"></ul>
+  <button class="g" id="closeEditorAccess" type="button">Close</button>
+</dialog>
 
 <dialog id="ed"><form method="dialog" id="f">
   <h3 id="edt">Contact</h3>
@@ -246,9 +265,11 @@ $('#old').onclick=async()=>{const [c,b]=await importOld();alert(c+' contacts and
 const authGate=$('#authGate'),authStatus=$('#authStatus'),authError=$('#authError');
 const signInButton=$('#signIn'),retryButton=$('#retry'),signOutButton=$('#signOut'),mainContactsLink=$('#mainContactsLink');
 let authLoadVersion=0;
+let editorAccessUnsubscribe=null;
 function clearContacts(){privateContactsUser=null;contacts=[];}
 async function loadPrivateContacts(user){
   const version=++authLoadVersion;
+  editorAccessUnsubscribe?.();editorAccessUnsubscribe=null;
   clearContacts();authGate.hidden=false;signInButton.hidden=true;retryButton.hidden=true;
   signOutButton.hidden=false;mainContactsLink.hidden=true;authError.textContent='';
   authStatus.textContent='Loading private contacts…';
@@ -262,8 +283,19 @@ async function loadPrivateContacts(user){
       render();
       return;
     }
+    privateContactsApi.setupEditorManager(user);
     contacts=saved.map(contact=>({...contact,id:contact.id||crypto.randomUUID()}));
     await tx('contacts','readwrite',s=>{s.clear();contacts.forEach(c=>s.put(c));});
+    editorAccessUnsubscribe=privateContactsApi.observeEditorAccess(user,()=>{
+      editorAccessUnsubscribe?.();editorAccessUnsubscribe=null;
+      authLoadVersion++;clearContacts();authGate.hidden=false;signOutButton.hidden=true;
+      authStatus.textContent='Editor access was revoked.';
+      authError.textContent='The contact owner removed your access.';
+      privateContactsApi.signOutUser().catch(error=>{
+        console.error('Revoked editor could not be signed out.',error);
+        authError.textContent=error.message||'Sign out to clear this session.';
+      });
+    });
     authGate.hidden=true;render();
   }catch(error){
     if(version!==authLoadVersion)return;
@@ -293,8 +325,9 @@ retryButton.onclick=()=>{if(privateContactsUser)loadPrivateContacts(privateConta
     privateContactsApi=await import('./src/private-contacts.js');
     privateContactsApi.observeAuth(user=>{
       if(user){loadPrivateContacts(user);return;}
-      authLoadVersion++;clearContacts();authGate.hidden=false;signInButton.hidden=false;
+      authLoadVersion++;editorAccessUnsubscribe?.();editorAccessUnsubscribe=null;clearContacts();authGate.hidden=false;signInButton.hidden=false;
       retryButton.hidden=true;signOutButton.hidden=true;mainContactsLink.hidden=true;
+      $('#manageEditors').hidden=true;
       authStatus.textContent='Sign in to access your private contacts.';authError.textContent='';render();
     });
   }catch(error){

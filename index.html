@@ -863,11 +863,19 @@
   #authGateCard button:disabled { opacity: .6; cursor: wait; }
   #authGateError { color: #ff7b72 !important; }
   #signOutContactButton { color: #e6edf3; text-decoration: none; padding: 6px 10px; border-radius: 8px; border: 1px solid #30363d; font: 14px system-ui, sans-serif; background: transparent; cursor: pointer; }
+  #manageEditors { color: #e6edf3; padding: 6px 10px; border-radius: 8px; border: 1px solid #30363d; font: 14px system-ui, sans-serif; background: transparent; cursor: pointer; }
+  #editorAccessDialog { width: min(460px, 94vw); padding: 20px; border: 1px solid #30363d; border-radius: 12px; background: #161b22; color: #e6edf3; font: 15px/1.5 system-ui, sans-serif; }
+  #editorAccessDialog::backdrop { background: #0009; }
+  #editorAccessDialog input, #editorAccessDialog button { padding: 8px 10px; border: 1px solid #30363d; border-radius: 8px; background: #0d1117; color: #e6edf3; font: inherit; }
+  #editorAccessDialog button { cursor: pointer; }
+  #editorAccessList { padding-left: 20px; }
+  #editorAccessList li { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin: 8px 0; overflow-wrap: anywhere; }
+  #editorAccessStatus { color: #8b949e; }
 </style>
 </head>
 <body>
 <style>#pagesNav{display:flex;gap:6px;padding:8px 10px;background:#010409;border-bottom:1px solid #30363d;overflow-x:auto;white-space:nowrap;font-family:system-ui,sans-serif}#pagesNav a{color:#e6edf3;text-decoration:none;padding:6px 10px;border-radius:8px;border:1px solid #30363d;font-size:14px}#pagesNav a.on{background:#1f6feb;border-color:#1f6feb}</style>
-<nav id="pagesNav"><a href="contacts-v2.html">👤 Kontakti v2</a><a href="bookmarks-v3.html">🔖 Bookmarks</a><a href="mysites-v4.html">🌐 Moje web stranice</a><a href="notes.html">📝 Notes</a><a href="planes.html">✈ Planes</a><a href="./" class="on">🏠 Stara</a><button id="signOutContactButton" type="button" hidden>Sign out</button></nav>
+<nav id="pagesNav"><a href="contacts-v2.html">👤 Kontakti v2</a><a href="bookmarks-v3.html">🔖 Bookmarks</a><a href="mysites-v4.html">🌐 Moje web stranice</a><a href="notes.html">📝 Notes</a><a href="planes.html">✈ Planes</a><a href="./" class="on">🏠 Stara</a><button id="manageEditors" type="button" hidden>Manage editors</button><button id="signOutContactButton" type="button" hidden>Sign out</button></nav>
 
 <!-- PIN LOCK -->
 <div class="pin-lock" id="pinLock">
@@ -893,6 +901,18 @@
     <button id="emptyContactsButton" type="button" hidden>Start with an empty list</button>
   </div>
 </section>
+<dialog id="editorAccessDialog" aria-labelledby="editorAccessTitle">
+  <h2 id="editorAccessTitle">Manage contact editors</h2>
+  <p>Approved users can view and edit the shared contacts using their verified Google account.</p>
+  <form id="editorAccessForm">
+    <label for="editorEmail">Google account email</label>
+    <input id="editorEmail" type="email" autocomplete="email" required>
+    <button type="submit">Add editor</button>
+  </form>
+  <p id="editorAccessStatus" role="status"></p>
+  <ul id="editorAccessList"></ul>
+  <button id="closeEditorAccess" type="button">Close</button>
+</dialog>
 
 <div class="container workspace-layout">
   <aside class="sidebar">
@@ -4305,6 +4325,7 @@ const contactsImportLabel = $('contactsImportLabel');
 const contactsImportFile = $('contactsImportFile');
 const emptyContactsButton = $('emptyContactsButton');
 let authLoadVersion = 0;
+let editorAccessUnsubscribe = null;
 
 function updateAuthGate(status, error = '') {
   authGateStatus.textContent = status;
@@ -4322,6 +4343,8 @@ function clearPrivateContacts() {
 
 async function loadPrivateContacts(user) {
   const version = ++authLoadVersion;
+  editorAccessUnsubscribe?.();
+  editorAccessUnsubscribe = null;
   clearPrivateContacts();
   authGate.hidden = false;
   googleSignInButton.hidden = true;
@@ -4330,11 +4353,6 @@ async function loadPrivateContacts(user) {
   contactsImportLabel.hidden = true;
   emptyContactsButton.hidden = true;
   updateAuthGate('Loading private contacts…');
-
-  if (user.email?.toLowerCase() !== 'skydvbwatcher@gmail.com' || !user.emailVerified) {
-    updateAuthGate('This Google account is not authorized to view these contacts.', 'Sign out and use the approved Google account.');
-    return;
-  }
 
   try {
     privateContactsApi = await window.privateContactsModule;
@@ -4357,6 +4375,18 @@ async function loadPrivateContacts(user) {
     profilePhotosReady = migrateProfilePhotos();
     await profilePhotosReady;
     if (version !== authLoadVersion) return;
+    privateContactsApi.setupEditorManager(user);
+    editorAccessUnsubscribe = privateContactsApi.observeEditorAccess(user, () => {
+      editorAccessUnsubscribe?.();
+      editorAccessUnsubscribe = null;
+      clearPrivateContacts();
+      authGate.hidden = false;
+      updateAuthGate('Editor access was revoked.', 'The contact owner removed your access.');
+      privateContactsApi.signOutUser().catch(error => {
+        console.error('Revoked editor could not be signed out.', error);
+        updateAuthGate('Editor access was revoked.', error.message || 'Sign out to clear this session.');
+      });
+    });
     authGate.hidden = true;
     signOutContactButton.hidden = false;
     applyFilters();
@@ -4376,6 +4406,8 @@ window.privateContactsModule.then(api => {
       return;
     }
     authLoadVersion++;
+    editorAccessUnsubscribe?.();
+    editorAccessUnsubscribe = null;
     clearPrivateContacts();
     authGate.hidden = false;
     googleSignInButton.hidden = false;
@@ -4383,6 +4415,7 @@ window.privateContactsModule.then(api => {
     retryContactsButton.hidden = true;
     googleSignOutButton.hidden = true;
     signOutContactButton.hidden = true;
+    $('manageEditors').hidden = true;
     contactsImportLabel.hidden = true;
     emptyContactsButton.hidden = true;
     updateAuthGate('Sign in to access your private contacts.');

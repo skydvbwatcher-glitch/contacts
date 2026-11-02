@@ -1,17 +1,54 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    function isOwner(userId) {
+    function isVerifiedUser() {
       return request.auth != null
-        && request.auth.uid == userId
-        && request.auth.token.email == 'skydvbwatcher@gmail.com'
+        && request.auth.token.email is string
         && request.auth.token.email_verified == true;
     }
 
+    function isOwner() {
+      return isVerifiedUser()
+        && request.auth.token.email == 'skydvbwatcher@gmail.com';
+    }
+
+    function accessConfig() {
+      return get(/databases/$(database)/documents/contactAccess/config).data;
+    }
+
+    function isApprovedEditor() {
+      return isVerifiedUser()
+        && exists(/databases/$(database)/documents/contactAccess/$(request.auth.token.email))
+        && get(/databases/$(database)/documents/contactAccess/$(request.auth.token.email)).data.email == request.auth.token.email
+        && get(/databases/$(database)/documents/contactAccess/$(request.auth.token.email)).data.enabled == true;
+    }
+
+    match /contactAccess/config {
+      allow get: if isVerifiedUser();
+      allow list: if false;
+      allow create: if isOwner()
+        && request.resource.data.keys().hasOnly(['ownerUid'])
+        && request.resource.data.ownerUid == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    match /contactAccess/{email} {
+      allow get: if isOwner() || (isVerifiedUser() && email == request.auth.token.email);
+      allow list: if isOwner();
+      allow create, update: if isOwner()
+        && request.resource.data.keys().hasOnly(['email', 'enabled', 'updatedAt'])
+        && request.resource.data.email == email
+        && request.resource.data.enabled is bool;
+      allow delete: if isOwner();
+    }
+
     match /users/{userId}/privateData/{documentId} {
-      allow read: if isOwner(userId) && documentId == 'contacts';
-      allow create, update: if isOwner(userId)
-        && documentId == 'contacts'
+      allow read: if documentId == 'contacts'
+        && ((isOwner() && request.auth.uid == userId)
+          || (isApprovedEditor() && userId == accessConfig().ownerUid));
+      allow create, update: if documentId == 'contacts'
+        && ((isOwner() && request.auth.uid == userId)
+          || (isApprovedEditor() && userId == accessConfig().ownerUid))
         && request.resource.data.keys().hasOnly(['contacts', 'updatedAt'])
         && request.resource.data.contacts is list;
       allow delete: if false;
