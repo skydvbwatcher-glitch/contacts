@@ -854,64 +854,20 @@
     .modal-close, .modal-fav, .modal-color, .modal-edit, .modal-delete, .modal-vcard, .modal-print { width: 36px; height: 36px; }
   }
   body.modal-open { overflow: hidden; }
+  #authGate { position: fixed; inset: 0; z-index: 100000; display: grid; place-items: center; padding: 20px; background: #0d1117; }
+  #authGate[hidden] { display: none; }
+  #authGateCard { width: min(460px, 100%); padding: 28px; border: 1px solid #30363d; border-radius: 14px; background: #161b22; color: #e6edf3; font: 15px/1.5 system-ui, sans-serif; }
+  #authGateCard h1 { margin-bottom: 10px; font-size: 24px; }
+  #authGateCard p { margin: 8px 0; color: #8b949e; }
+  #authGateCard button, #authGateCard input { margin-top: 12px; padding: 10px 14px; border: 1px solid #30363d; border-radius: 8px; background: #1f6feb; color: white; font: inherit; cursor: pointer; }
+  #authGateCard button:disabled { opacity: .6; cursor: wait; }
+  #authGateError { color: #ff7b72 !important; }
+  #signOutContactButton { color: #e6edf3; text-decoration: none; padding: 6px 10px; border-radius: 8px; border: 1px solid #30363d; font: 14px system-ui, sans-serif; background: transparent; cursor: pointer; }
 </style>
 </head>
 <body>
 <style>#pagesNav{display:flex;gap:6px;padding:8px 10px;background:#010409;border-bottom:1px solid #30363d;overflow-x:auto;white-space:nowrap;font-family:system-ui,sans-serif}#pagesNav a{color:#e6edf3;text-decoration:none;padding:6px 10px;border-radius:8px;border:1px solid #30363d;font-size:14px}#pagesNav a.on{background:#1f6feb;border-color:#1f6feb}</style>
-<nav id="pagesNav"><a href="contacts-v2.html">👤 Kontakti v2</a><a href="bookmarks-v3.html">🔖 Bookmarks</a><a href="mysites-v4.html">🌐 Moje web stranice</a><a href="gas.html">⛽ Gas</a><a href="notes.html">📝 Notes</a><a href="planes.html">✈ Planes</a><a href="./" class="on">🏠 Stara</a><a href="#" id="ghAutoBtn">☁ GitHub: …</a></nav>
-<script>
-(function(){
-  const L=k=>localStorage.getItem(k)||'', btn=document.getElementById('ghAutoBtn');
-  const cfg=()=>({repo:L('gh_repo'),path:L('gh_path')||'backups/contacts-backup.json',token:L('gh_token')});
-  const ok=()=>{const c=cfg();return c.repo&&c.token;};
-  const show=t=>{btn.textContent='☁ GitHub: '+t;};
-  const b64=s=>{let b='';new TextEncoder().encode(s).forEach(x=>b+=String.fromCharCode(x));return btoa(b);};
-  const read=k=>{try{return JSON.parse(localStorage.getItem(k)||'null');}catch(e){return null;}};
-  function data(){
-    const c=read('contacts-sync-v1'),b=read('bookmarks-sync-v1');
-    if(!c||!c.contacts||!c.contacts.length)return null;
-    return {app:'contacts-v2',version:2,exported:new Date().toISOString(),contacts:c.contacts,bookmarks:b&&b.bookmarks||[]};
-  }
-  let busy=false;
-  async function upload(force){
-    if(busy||!ok())return;
-    const d=data();if(!d)return;
-    const hash=JSON.stringify([d.contacts,d.bookmarks]);
-    if(!force&&hash===L('gh_last_hash'))return;
-    busy=true;show('šaljem…');
-    try{
-      const c=cfg(),url='https://api.github.com/repos/'+c.repo+'/contents/'+c.path.split('/').map(encodeURIComponent).join('/');
-      const h={Authorization:'Bearer '+c.token,Accept:'application/vnd.github+json'};
-      const g=await fetch(url,{headers:h});
-      if(!g.ok&&g.status!==404)throw new Error(g.status);
-      const sha=g.ok?(await g.json()).sha:undefined;
-      const r=await fetch(url,{method:'PUT',headers:h,body:JSON.stringify({message:'Auto backup '+new Date().toISOString(),content:b64(JSON.stringify(d,null,1)),sha})});
-      if(!r.ok)throw new Error(r.status);
-      localStorage.setItem('gh_last_hash',hash);localStorage.setItem('gh_last_ok',new Date().toLocaleString());
-      show('OK '+new Date().toLocaleTimeString());
-    }catch(e){show('greška '+e.message);}
-    busy=false;
-  }
-  btn.addEventListener('click',e=>{
-    e.preventDefault();
-    const c=cfg();
-    const repo=prompt('GitHub repo (vlasnik/ime). Preporuka: PRIVATNI repo.',c.repo||'');
-    if(repo===null)return;
-    const path=prompt('Putanja datoteke u repo-u:',c.path);
-    if(path===null)return;
-    const token=prompt('GitHub token (fine-grained, Contents: read/write). Prazno = isključi automatski backup. Ostaje samo na ovom uređaju.',c.token?'(zadržati postojeći: ostavi prazno za isključivanje)':'');
-    if(token===null)return;
-    localStorage.setItem('gh_repo',repo.trim());localStorage.setItem('gh_path',path.trim()||'backups/contacts-backup.json');
-    if(token.trim()&&!token.startsWith('(zadržati'))localStorage.setItem('gh_token',token.trim());
-    else if(!token.trim())localStorage.removeItem('gh_token');
-    localStorage.removeItem('gh_last_hash');
-    if(ok()){show('uključeno');upload(true);}else show('isključeno');
-  });
-  show(ok()?'uključeno'+(L('gh_last_ok')?' (zadnji: '+L('gh_last_ok')+')':''):'isključeno (klikni za postavke)');
-  setInterval(()=>upload(false),20000);
-  setTimeout(()=>upload(false),5000);
-})();
-</script>
+<nav id="pagesNav"><a href="contacts-v2.html">👤 Kontakti v2</a><a href="bookmarks-v3.html">🔖 Bookmarks</a><a href="mysites-v4.html">🌐 Moje web stranice</a><a href="notes.html">📝 Notes</a><a href="planes.html">✈ Planes</a><a href="./" class="on">🏠 Stara</a><button id="signOutContactButton" type="button" hidden>Sign out</button></nav>
 
 <!-- PIN LOCK -->
 <div class="pin-lock" id="pinLock">
@@ -924,6 +880,19 @@
     <div class="pin-error" id="pinError"></div>
   </div>
 </div>
+<section id="authGate" role="dialog" aria-modal="true" aria-labelledby="authGateTitle">
+  <div id="authGateCard">
+    <h1 id="authGateTitle">Private contacts</h1>
+    <p id="authGateStatus">Checking sign-in…</p>
+    <p id="authGateError" role="alert"></p>
+    <button id="googleSignInButton" type="button" hidden>Sign in with Google</button>
+    <button id="retryContactsButton" type="button" hidden>Retry loading contacts</button>
+    <button id="googleSignOutButton" type="button" hidden>Sign out</button>
+    <label id="contactsImportLabel" hidden for="contactsImportFile">Import your existing contacts file (.js or .json)</label>
+    <input id="contactsImportFile" type="file" accept=".js,.json,application/json,text/javascript" hidden>
+    <button id="emptyContactsButton" type="button" hidden>Start with an empty list</button>
+  </div>
+</section>
 
 <div class="container workspace-layout">
   <aside class="sidebar">
@@ -1411,9 +1380,16 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" crossorigin="anonymous"></script>
-<script src="contacts-data.js"></script>
 <script src="internet-bookmarks-data.js"></script>
 <script src="events-data.js"></script>
+<script>
+try {
+  ['contacts-sync-v1', 'gh_token', 'gh_repo', 'gh_path', 'gh_last_hash', 'gh_last_ok'].forEach(key => localStorage.removeItem(key));
+} catch (error) {
+  console.error('Legacy public backup settings could not be cleared.', error);
+}
+window.privateContactsModule = import('./src/private-contacts.js');
+</script>
 <script>
 window.CALENDAR_EVENTS = window.CALENDAR_EVENTS || [];
 
@@ -1708,27 +1684,20 @@ const UrlStorage = {
         if (Array.isArray(parsed)) return parsed.filter(n => typeof n === 'string' && n.length > 0);
       }
     } catch(e) {}
-    try {
-      const hash = window.location.hash;
-      const match = hash.match(/fav=([^&]*)/);
-      if (!match) return [];
-      return decodeURIComponent(match[1]).split('|').filter(x => x.length > 0);
-    } catch(e) { return []; }
+    return [];
   },
   setFavorites(arr) {
     try { localStorage.setItem('contacts_favorites', JSON.stringify(arr)); } catch(e) {}
-    try {
-      const encoded = arr.map(n => encodeURIComponent(n)).join('|');
-      const hash = window.location.hash.replace(/fav=[^&]*/g, '').replace(/^#|#$/, '');
-      const newHash = (hash ? hash + '&' : '') + 'fav=' + encoded;
-      history.replaceState(null, '', '#' + newHash);
-    } catch(e) {}
     notifyCloudBackup();
   }
 };
 
-let contacts = Array.isArray(window.CONTACTS) ? window.CONTACTS : [];
+let contacts = [];
 let contactsDataMissing = true;
+let privateContactsApi = null;
+let privateContactsUser = null;
+let privateContactsLoaded = false;
+let privateContactsWriteQueue = Promise.resolve();
 
 const STORAGE_KEY = 'contacts-address-book-v1';
 const DELETED_STORAGE_KEY = 'contacts-deleted-v1';
@@ -1737,7 +1706,7 @@ const ANALYTICS_KEY = 'contacts-local-analytics-v1';
 const PROFILE_PHOTO_DB = 'contacts-profile-photos-v1';
 let profilePhotoDbPromise;
 let profilePhotosReady = Promise.resolve();
-let favorites = new Set(UrlStorage.getFavorites());
+let favorites = new Set();
 
 function openProfilePhotoDb() {
   if (!window.indexedDB) return Promise.reject(new Error('Ovaj preglednik ne podržava trajnu pohranu slika.'));
@@ -1832,37 +1801,26 @@ function clearDeletedContactName(name) {
     if (deletedName.trim().toLowerCase() === normalized) deletedNames.delete(deletedName);
   });
 }
-const deletedNames = loadDeletedNames();
-const builtInContactNames = new Set(contacts.map(c => c.name));
+const deletedNames = new Set();
 
-function loadSavedContacts() {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (!saved) return;
-    const parsed = JSON.parse(saved);
-    if (Array.isArray(parsed) && parsed.length) {
-      const savedByName = new Map(parsed.filter(c => c && c.name).map(c => [c.name, c]));
-      const builtInNames = new Set(contacts.map(c => c.name));
-      const merged = contacts
-        .filter(c => !deletedNames.has(c.name))
-        .map(c => ({ ...c, ...(savedByName.get(c.name) || {}) }));
-      parsed.forEach(c => { if (c && c.name && !builtInNames.has(c.name)) merged.push(c); });
-      contacts.splice(0, contacts.length, ...merged);
-    }
-  } catch (e) {}
-}
-loadSavedContacts();
-function writeSyncMirror() {
-  try { localStorage.setItem('contacts-sync-v1', JSON.stringify({ ts: Date.now(), contacts: contactsWithoutPhotoData(contacts) })); } catch(e) {}
-}
 function persistContacts() {
-  writeSyncMirror();
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(contactsWithoutPhotoData(contacts))); }
   catch(e) { showToast('⚠️ Kontakti se ne mogu spremiti. Oslobodi prostor u pregledniku.'); }
+  if (!privateContactsLoaded || !privateContactsApi || !privateContactsUser) {
+    showToast('⚠️ Sign in before saving contacts.');
+    return Promise.reject(new Error('Private contacts are not loaded.'));
+  }
+  const user = privateContactsUser;
+  const savedContacts = JSON.parse(JSON.stringify(contactsWithoutPhotoData(contacts)));
+  const save = privateContactsWriteQueue.then(() => privateContactsApi.saveContacts(user, savedContacts));
+  privateContactsWriteQueue = save.catch(error => {
+    console.error('Private contacts could not be saved to Firestore.', error);
+    showToast('⚠️ Contacts could not be saved to Firestore. Check your connection and try again.');
+  });
   notifyCloudBackup();
+  return save;
 }
-profilePhotosReady = migrateProfilePhotos();
-writeSyncMirror();
+profilePhotosReady = Promise.resolve();
 
 let currentTheme = 'dark', headerColor = 'blue', textColor = 'default',
     textSize = 'medium', textStyle = 'normal', showFavOnly = false,
@@ -1934,7 +1892,7 @@ async function saveContactProfilePhoto(contact, file) {
   await saveProfilePhoto(photoId, photoData);
   contact.photoData = photoData;
   contact.photoId = photoId;
-  persistContacts();
+  await persistContacts();
   persistLocalList();
   applyFilters();
   showToast('✅ Profilna slika spremljena');
@@ -2000,6 +1958,7 @@ function switchLocalList(listId) {
     localStorage.setItem(`contacts-list-${activeLocalListId}`, '[]');
   }
   selectedContacts.clear(); applyFilters();
+  persistContacts();
   recordAnalytics('list_switched');
   notifyCloudBackup();
 }
@@ -2050,6 +2009,7 @@ createListForm.addEventListener('submit', event => {
   contacts.splice(0, contacts.length);
   selectedContacts.clear();
   applyFilters();
+  persistContacts();
   recordAnalytics('list_switched');
   notifyCloudBackup();
   closeCreateLocalListDialog();
@@ -2111,6 +2071,7 @@ deleteListForm.addEventListener('submit', event => {
   if (Array.isArray(mainList)) contacts.splice(0, contacts.length, ...mainList);
   selectedContacts.clear();
   applyFilters();
+  persistContacts();
   recordAnalytics('list_deleted');
   notifyCloudBackup();
   closeDeleteLocalListDialog();
@@ -2148,7 +2109,7 @@ bulkFavoriteBtn.addEventListener('click', () => {
   showToast(make ? '⭐ Dodani u favorite' : '☆ Uklonjeni');
 });
 
-bulkDeleteBtn.addEventListener('click', () => {
+bulkDeleteBtn.addEventListener('click', async () => {
   if (!selectedContacts.size || !confirm(`Obrisati ${selectedContacts.size}?`)) return;
   for (let i = contacts.length - 1; i >= 0; i--) {
     if (selectedContacts.has(contacts[i].name)) {
@@ -2157,7 +2118,7 @@ bulkDeleteBtn.addEventListener('click', () => {
     }
   }
   selectedContacts.clear();
-  persistContacts(); persistDeletedNames(deletedNames); saveFavorites(); applyFilters();
+  await persistContacts(); persistDeletedNames(deletedNames); saveFavorites(); applyFilters();
   showToast('🗑 Obrisano');
 });
 
@@ -2860,7 +2821,7 @@ function parseCsvLine(line) {
 importCsvInput.addEventListener('change', event => {
   const file = event.target.files[0]; if (!file) return;
   const reader = new FileReader();
-  reader.onload = e => {
+  reader.onload = async e => {
     const lines = String(e.target.result).split(/\r?\n/).filter(l => l.trim());
     if (lines.length < 2) { showToast('⚠️ Prazan CSV'); return; }
     const headers = parseCsvLine(lines[0]).map(h => h.toLowerCase().replace(/^\uFEFF/, ''));
@@ -2883,7 +2844,7 @@ importCsvInput.addEventListener('change', event => {
     });
     contactsDataMissing = false;
     contacts.push(...additions);
-    persistContacts(); applyFilters();
+    await persistContacts(); applyFilters();
     showToast(`📥 Dodano ${additions.length}`);
     importCsvInput.value = '';
   };
@@ -3335,11 +3296,11 @@ function render(data) {
   });
 }
 
-function reorderContacts(from, to) {
+async function reorderContacts(from, to) {
   if (from == null || to == null || from < 0 || to < 0 || from === to) return;
   const [m] = contacts.splice(from, 1);
   contacts.splice(to, 0, m);
-  persistContacts(); sortKey = 'manual'; applyFilters();
+  await persistContacts(); sortKey = 'manual'; applyFilters();
   showToast('↕️ Poredak');
 }
 
@@ -3891,7 +3852,7 @@ function openEditor(contact = null) {
         if (oldN !== next.name && favorites.has(oldN)) {
           favorites.delete(oldN); favorites.add(next.name);
         }
-        persistContacts(); persistDeletedNames(deletedNames); saveFavorites(); applyFilters();
+        await persistContacts(); persistDeletedNames(deletedNames); saveFavorites(); applyFilters();
         showToast('✅ Ažurirano');
       }
     } else {
@@ -3901,7 +3862,7 @@ function openEditor(contact = null) {
       clearDeletedContactName(next.name);
       persistDeletedNames(deletedNames);
       contactsDataMissing = false;
-      contacts.push(next); persistContacts(); applyFilters();
+      contacts.push(next); await persistContacts(); applyFilters();
       showToast('✅ Dodano');
     }
     closeModal();
@@ -3954,7 +3915,7 @@ modalEdit.addEventListener('click', e => {
     if (c) openEditor(c);
   }
 });
-modalDelete.addEventListener('click', e => {
+modalDelete.addEventListener('click', async e => {
   e.stopPropagation();
   if (!currentModalContactId) return;
   if (!confirm(`Obrisati "${currentModalContactId}"?`)) return;
@@ -3963,7 +3924,7 @@ modalDelete.addEventListener('click', e => {
     const [r] = contacts.splice(i, 1);
     if (r && favorites.has(r.name)) favorites.delete(r.name);
     if (r) deletedNames.add(r.name);
-    persistContacts(); persistDeletedNames(deletedNames); saveFavorites(); applyFilters(); closeModal();
+    await persistContacts(); persistDeletedNames(deletedNames); saveFavorites(); applyFilters(); closeModal();
     showToast('🗑️ Obrisano');
   }
 });
@@ -4208,6 +4169,7 @@ function restoreLocalRecoverySnapshot() {
   const savedContacts = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
   const restoredContacts = Array.isArray(savedList) ? savedList : (Array.isArray(savedContacts) ? savedContacts : []);
   contacts.splice(0, contacts.length, ...restoredContacts);
+  persistContacts();
   favorites = new Set(UrlStorage.getFavorites());
   deletedNames.clear();
   loadDeletedNames().forEach(name => deletedNames.add(name));
@@ -4301,6 +4263,7 @@ window.ContactCloudBridge = {
     deleteListBtn.disabled = activeLocalListId === 'default';
     const activeContacts = Array.isArray(lists[listSelect.value]) ? lists[listSelect.value] : backupContacts;
     contacts.splice(0, contacts.length, ...(Array.isArray(activeContacts) ? activeContacts : []));
+    persistContacts();
     localStorage.setItem(STORAGE_KEY, JSON.stringify(contactsWithoutPhotoData(contacts)));
     localStorage.setItem(`contacts-list-${listSelect.value}`, JSON.stringify(contactsWithoutPhotoData(contacts)));
 
@@ -4331,10 +4294,205 @@ restoreLocalBackupBtn.addEventListener('click', () => {
   }
 });
 
-window.addEventListener('hashchange', () => {
-  favorites = new Set(UrlStorage.getFavorites());
-  updateFavBadge(); applyFilters();
+const authGate = $('authGate');
+const authGateStatus = $('authGateStatus');
+const authGateError = $('authGateError');
+const googleSignInButton = $('googleSignInButton');
+const retryContactsButton = $('retryContactsButton');
+const googleSignOutButton = $('googleSignOutButton');
+const signOutContactButton = $('signOutContactButton');
+const contactsImportLabel = $('contactsImportLabel');
+const contactsImportFile = $('contactsImportFile');
+const emptyContactsButton = $('emptyContactsButton');
+let authLoadVersion = 0;
+
+function updateAuthGate(status, error = '') {
+  authGateStatus.textContent = status;
+  authGateError.textContent = error;
+}
+
+function clearPrivateContacts() {
+  privateContactsUser = null;
+  privateContactsLoaded = false;
+  contactsDataMissing = true;
+  contacts.splice(0, contacts.length);
+  favorites.clear();
+  deletedNames.clear();
+}
+
+async function loadPrivateContacts(user) {
+  const version = ++authLoadVersion;
+  clearPrivateContacts();
+  authGate.hidden = false;
+  googleSignInButton.hidden = true;
+  retryContactsButton.hidden = true;
+  googleSignOutButton.hidden = false;
+  contactsImportLabel.hidden = true;
+  emptyContactsButton.hidden = true;
+  updateAuthGate('Loading private contacts…');
+
+  if (user.email?.toLowerCase() !== 'skydvbwatcher@gmail.com' || !user.emailVerified) {
+    updateAuthGate('This Google account is not authorized to view these contacts.', 'Sign out and use the approved Google account.');
+    return;
+  }
+
+  try {
+    privateContactsApi = await window.privateContactsModule;
+    privateContactsUser = user;
+    const savedContacts = await privateContactsApi.loadContacts(user);
+    if (version !== authLoadVersion) return;
+    if (savedContacts === null) {
+      updateAuthGate('No private contacts have been imported yet.');
+      contactsImportLabel.hidden = false;
+      emptyContactsButton.hidden = false;
+      return;
+    }
+
+    contacts.splice(0, contacts.length, ...savedContacts);
+    deletedNames.clear();
+    loadDeletedNames().forEach(name => deletedNames.add(name));
+    favorites = new Set(UrlStorage.getFavorites());
+    privateContactsLoaded = true;
+    contactsDataMissing = contacts.length === 0;
+    profilePhotosReady = migrateProfilePhotos();
+    await profilePhotosReady;
+    if (version !== authLoadVersion) return;
+    authGate.hidden = true;
+    signOutContactButton.hidden = false;
+    applyFilters();
+  } catch (error) {
+    if (version !== authLoadVersion) return;
+    console.error('Private contacts could not be loaded.', error);
+    updateAuthGate('Private contacts could not be loaded.', error.message || 'Check your connection and Firestore rules, then retry.');
+    retryContactsButton.hidden = false;
+  }
+}
+
+window.privateContactsModule.then(api => {
+  privateContactsApi = api;
+  api.observeAuth(user => {
+    if (user) {
+      loadPrivateContacts(user);
+      return;
+    }
+    authLoadVersion++;
+    clearPrivateContacts();
+    authGate.hidden = false;
+    googleSignInButton.hidden = false;
+    googleSignInButton.textContent = 'Sign in with Google';
+    retryContactsButton.hidden = true;
+    googleSignOutButton.hidden = true;
+    signOutContactButton.hidden = true;
+    contactsImportLabel.hidden = true;
+    emptyContactsButton.hidden = true;
+    updateAuthGate('Sign in to access your private contacts.');
+  });
+}).catch(error => {
+  console.error('Firebase authentication could not initialize.', error);
+  updateAuthGate('Firebase authentication could not initialize.', error.message || 'Reload the page and try again.');
 });
+
+googleSignInButton.addEventListener('click', async () => {
+  googleSignInButton.disabled = true;
+  authGateError.textContent = '';
+  try {
+    privateContactsApi = await window.privateContactsModule;
+    await privateContactsApi.signIn();
+  } catch (error) {
+    console.error('Google sign-in failed.', error);
+    updateAuthGate('Google sign-in failed.', error.message || 'Try again.');
+  } finally {
+    googleSignInButton.disabled = false;
+  }
+});
+
+googleSignOutButton.addEventListener('click', async () => {
+  try {
+    privateContactsApi = await window.privateContactsModule;
+    await privateContactsApi.signOutUser();
+  } catch (error) {
+    console.error('Google sign-out failed.', error);
+    updateAuthGate('Could not sign out.', error.message || 'Try again.');
+  }
+});
+
+retryContactsButton.addEventListener('click', () => {
+  if (privateContactsUser) loadPrivateContacts(privateContactsUser);
+});
+
+signOutContactButton.addEventListener('click', async () => {
+  try {
+    privateContactsApi = await window.privateContactsModule;
+    await privateContactsApi.signOutUser();
+  } catch (error) {
+    console.error('Google sign-out failed.', error);
+    showToast('⚠️ Could not sign out.');
+  }
+});
+
+contactsImportFile.addEventListener('change', async () => {
+  const file = contactsImportFile.files?.[0];
+  if (!file || !privateContactsUser) return;
+  try {
+    const text = await file.text();
+    let decoded;
+    try {
+      decoded = JSON.parse(text);
+    } catch (error) {
+      const prefix = 'window.CONTACTS = window.CONTACTS || ';
+      if (!text.startsWith(prefix)) throw error;
+      const expression = text.slice(prefix.length).trim().replace(/;$/, '');
+      decoded = JSON.parse(expression);
+    }
+    let imported = Array.isArray(decoded) ? decoded : decoded?.contacts;
+    if (!Array.isArray(imported) || imported.some(contact => !contact || typeof contact.name !== 'string' || !contact.name.trim())) {
+      throw new Error('The selected file must contain an array of contacts with names.');
+    }
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+    const savedByName = new Map((Array.isArray(saved) ? saved : []).filter(contact => contact?.name).map(contact => [contact.name, contact]));
+    const baseNames = new Set(imported.map(contact => contact.name));
+    const deleted = loadDeletedNames();
+    imported = imported.filter(contact => !deleted.has(contact.name))
+      .map(contact => ({ ...contact, ...(savedByName.get(contact.name) || {}) }));
+    (Array.isArray(saved) ? saved : []).forEach(contact => {
+      if (contact?.name && !baseNames.has(contact.name)) imported.push(contact);
+    });
+    await privateContactsApi.saveContacts(privateContactsUser, imported);
+    contacts.splice(0, contacts.length, ...imported);
+    favorites = new Set(UrlStorage.getFavorites());
+    deletedNames.clear();
+    deleted.forEach(name => deletedNames.add(name));
+    privateContactsLoaded = true;
+    contactsDataMissing = imported.length === 0;
+    profilePhotosReady = migrateProfilePhotos();
+    await profilePhotosReady;
+    authGate.hidden = true;
+    signOutContactButton.hidden = false;
+    applyFilters();
+  } catch (error) {
+    console.error('Contact import failed.', error);
+    updateAuthGate('Contact import failed.', error.message || 'Choose a valid contacts JSON or JavaScript file.');
+  } finally {
+    contactsImportFile.value = '';
+  }
+});
+
+emptyContactsButton.addEventListener('click', async () => {
+  if (!privateContactsUser) return;
+  try {
+    await privateContactsApi.saveContacts(privateContactsUser, []);
+    contacts.splice(0, contacts.length);
+    privateContactsLoaded = true;
+    contactsDataMissing = true;
+    authGate.hidden = true;
+    signOutContactButton.hidden = false;
+    applyFilters();
+  } catch (error) {
+    console.error('Empty contacts database could not be initialized.', error);
+    updateAuthGate('Could not initialize private contacts.', error.message || 'Check your connection and Firestore rules.');
+  }
+});
+
 </script>
 </body>
 </html>

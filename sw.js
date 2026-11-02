@@ -1,5 +1,5 @@
 const CACHE_NAME = 'kontakti-v29';
-const ASSETS = ['./', './index.html', './notes.html', './contacts-data.js', './internet-bookmarks-data.js', './events-data.js', './src/firebase.js', './manifest.json', './icon-192.png', './icon-512.png'];
+const ASSETS = ['./', './index.html', './notes.html', './internet-bookmarks-data.js', './events-data.js', './src/firebase.js', './src/private-contacts.js', './manifest.json', './icon-192.png', './icon-512.png'];
 
  self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS).catch(() => {})));

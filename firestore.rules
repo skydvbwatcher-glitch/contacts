@@ -1,5 +1,20 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    function isOwner(userId) {
+      return request.auth != null
+        && request.auth.uid == userId
+        && request.auth.token.email == 'skydvbwatcher@gmail.com'
+        && request.auth.token.email_verified == true;
+    }
+
+    match /users/{userId}/privateData/{documentId} {
+      allow read: if isOwner(userId) && documentId == 'contacts';
+      allow create, update: if isOwner(userId)
+        && documentId == 'contacts'
+        && request.resource.data.keys().hasOnly(['contacts', 'updatedAt'])
+        && request.resource.data.contacts is list;
+      allow delete: if false;
+    }
   }
 }

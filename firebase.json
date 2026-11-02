@@ -6,6 +6,7 @@
     "public": ".",
     "ignore": [
       "firebase.json",
+      "contacts-data.js",
       "**/.*",
       "**/node_modules/**",
       "functions/**"
