@@ -86,13 +86,13 @@ function classify(p,ap,code){
 const LABEL={arr:'ARRIVING',dep:'DEPARTING',gnd:'ON GROUND',other:'NEARBY'};
 const fmt=(v,u='')=>v===undefined||v===null?'–':v+u;
 const AIRCRAFT_NAMES={
-  A19N:'Airbus A319neo',A20N:'Airbus A320neo',A21N:'Airbus A321neo',A319:'Airbus A319',A320:'Airbus A320',A321:'Airbus A321',
+  A139:'Leonardo AW139 helicopter',A19N:'Airbus A319neo',A20N:'Airbus A320neo',A21N:'Airbus A321neo',A319:'Airbus A319',A320:'Airbus A320',A321:'Airbus A321',
   A333:'Airbus A330-300',A359:'Airbus A350-900',A388:'Airbus A380',BCS1:'Airbus A220-100',BCS3:'Airbus A220-300',
   B38M:'Boeing 737 MAX 8',B39M:'Boeing 737 MAX 9',B737:'Boeing 737',B738:'Boeing 737-800',B739:'Boeing 737-900',
   B752:'Boeing 757-200',B763:'Boeing 767-300',B772:'Boeing 777-200',B77W:'Boeing 777-300ER',B788:'Boeing 787-8',B789:'Boeing 787-9',
   C172:'Cessna 172',C182:'Cessna 182',C208:'Cessna 208 Caravan',CRJ2:'Bombardier CRJ-200',CRJ7:'Bombardier CRJ-700',CRJ9:'Bombardier CRJ-900',
   DH8D:'De Havilland Canada Dash 8 Q400',E170:'Embraer 170',E175:'Embraer 175',E190:'Embraer 190',E195:'Embraer 195',
-  PC12:'Pilatus PC-12',P28A:'Piper PA-28 Cherokee',PA32:'Piper PA-32 Cherokee Six'
+  BE33:'Beechcraft Bonanza',PC12:'Pilatus PC-12',P06T:'Tecnam P2006T',P28A:'Piper PA-28 Cherokee',PA32:'Piper PA-32 Cherokee Six'
 };
 const photoCache=new Map();
 function aircraftPhoto(type){
