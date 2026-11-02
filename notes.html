@@ -104,6 +104,8 @@ h1{font-size:19px;line-height:1;margin:0;font-weight:650;letter-spacing:0}
 #authCard button{margin:6px 6px 0 0}
 #authError{color:var(--danger)!important}
 #migrationActions{margin-top:12px}
+#migrationActions:not([hidden]){margin:14px 0 0;padding:14px 16px;border:1px solid var(--line);border-radius:9px;background:var(--surface)}
+#migrationActions p{margin:0 0 8px;color:var(--muted)}
 @media(max-width:760px){.shell{padding:0 14px}.topbar{height:64px}.local-label{display:none}.top-actions{gap:6px}.button{min-height:36px;padding:0 10px;font-size:13px}.toolbar{flex-wrap:wrap;gap:9px;padding:12px 0}.search-wrap{flex-basis:100%;max-width:none}.library-meta{margin-left:auto}.workspace{grid-template-columns:1fr;gap:10px;min-height:auto}.sidebar{max-height:37vh;min-height:200px}.detail{min-height:58vh}.editor{padding:20px 17px}.title-input{font-size:25px}.file-head{padding:20px 17px}.file-content{padding:18px 17px}.file-footer{padding:12px 17px}}
 @media(max-width:420px){.brand{gap:8px}.brand-mark{width:30px;height:30px}.topbar{gap:8px}.top-actions .button{padding:0 8px}.filter{padding:6px 8px;font-size:12px}.library-meta{font-size:11px}}
 </style>
@@ -131,6 +133,13 @@ h1{font-size:19px;line-height:1;margin:0;font-weight:650;letter-spacing:0}
       <button class="button primary" id="newButton" type="button">+ New note</button>
     </div>
   </header>
+  <section id="migrationActions" aria-labelledby="migrationTitle" hidden>
+    <strong id="migrationTitle">Import browser notes?</strong>
+    <p id="migrationStatus"></p>
+    <button class="button primary" id="migrateLocalNotes" type="button">Import this browser’s notes</button>
+    <button class="button" id="exportLocalNotes" type="button" hidden>Download local backup</button>
+    <button class="button" id="skipMigration" type="button">Not now</button>
+  </section>
   <section class="toolbar" aria-label="Search and filters">
     <div class="search-wrap"><input id="search" type="search" placeholder="Search notes and text files" autocomplete="off" aria-label="Search notes and text files"></div>
     <div class="filters" role="group" aria-label="Filter library">
@@ -183,12 +192,6 @@ h1{font-size:19px;line-height:1;margin:0;font-weight:650;letter-spacing:0}
     <p id="authError" role="alert"></p>
     <button class="button primary" id="authSignIn" type="button" hidden>Sign in with Google</button>
     <button class="button" id="retryNotes" type="button" hidden>Retry</button>
-    <div id="migrationActions" hidden>
-      <p id="migrationStatus"></p>
-      <button class="button primary" id="migrateLocalNotes" type="button">Import this browser’s notes</button>
-      <button class="button" id="exportLocalNotes" type="button" hidden>Download local backup</button>
-      <button class="button" id="skipMigration" type="button">Start with shared Notes</button>
-    </div>
   </div>
 </section>
 <script>
@@ -266,9 +269,15 @@ async function loadSharedNotes(user){
       migrationStatus.textContent=`Import ${migrationItems.length} local note${migrationItems.length===1?'':'s'} and text file${migrationItems.length===1?'':'s'} into the shared library? Approved Contacts users will be able to read and edit them.${oversizedLocalCount?` ${oversizedLocalCount} oversized item${oversizedLocalCount===1?' remains':'s remain'} only in this browser.`:''}`;
       migrationActions.hidden=false;
       $('#exportLocalNotes').hidden=!oversizedLocalCount;
+      authStatus.textContent='Shared Notes loaded.';
+      authGate.hidden=true;setLibraryControlsEnabled(true);
+      if(items.length){const recent=matchingItems()[0];if(recent)await openItem(recent);}
     }else if(isOwner&&oversizedLocalCount){
       migrationStatus.textContent=`${oversizedLocalCount} local item${oversizedLocalCount===1?' is':'s are'} too large for shared storage and will remain only in this browser.`;
       migrationActions.hidden=false;$('#migrateLocalNotes').hidden=true;$('#exportLocalNotes').hidden=false;
+      authStatus.textContent='Shared Notes loaded.';
+      authGate.hidden=true;setLibraryControlsEnabled(true);
+      if(items.length){const recent=matchingItems()[0];if(recent)await openItem(recent);}
     }else{
       authStatus.textContent='Shared Notes loaded.';
       authGate.hidden=true;setLibraryControlsEnabled(true);
@@ -558,7 +567,7 @@ $('#migrateLocalNotes').addEventListener('click',async event=>{
     for(const item of migrationItems)await privateContactsApi.saveNote(privateNotesUser,item);
     const migratedIds=new Set(migrationItems.map(item=>item.id));
     localItems=localItems.filter(item=>!migratedIds.has(item.id));
-    items=await privateContactsApi.loadNotes(privateNotesUser);migrationItems=[];
+    items=await privateContactsApi.loadNotes(privateNotesUser);migrationItems=[];migrationActions.hidden=true;
     authGate.hidden=true;setLibraryControlsEnabled(true);renderList();
     if(items.length){const recent=matchingItems()[0];if(recent)await openItem(recent);}
     notify(localItems.length
@@ -571,8 +580,7 @@ $('#migrateLocalNotes').addEventListener('click',async event=>{
   }
 });
 $('#skipMigration').addEventListener('click',async()=>{
-  migrationActions.hidden=true;authGate.hidden=true;setLibraryControlsEnabled(true);
-  if(items.length){const recent=matchingItems()[0];if(recent)await openItem(recent);}
+  migrationActions.hidden=true;
 });
 document.addEventListener('keydown',event=>{
   if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='k'){event.preventDefault();$('#search').focus();}
