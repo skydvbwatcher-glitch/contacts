@@ -113,6 +113,8 @@ h1{font-size:19px;line-height:1;margin:0;font-weight:650;letter-spacing:0}
       <button class="button" id="signOutButton" type="button" hidden>Sign out</button>
       <button class="button" id="importButton" type="button">Import .txt</button>
       <input class="file-input" id="fileInput" type="file" accept=".txt,text/plain" multiple>
+      <button class="button" id="importEvernoteButton" type="button">Import Evernote</button>
+      <input class="file-input" id="evernoteFileInput" type="file" accept=".enex,application/xml,text/xml">
       <button class="button" id="backupButton" type="button">Export backup</button>
       <button class="button primary" id="newButton" type="button">+ New note</button>
     </div>
@@ -218,7 +220,7 @@ const removeItem=id=>privateNotesUser?privateContactsApi.deleteNote(privateNotes
 const authGate=$('#authGate'),authStatus=$('#authStatus'),authError=$('#authError');
 const signInButton=$('#authSignIn'),signOutButton=$('#signOutButton');
 const migrationActions=$('#migrationActions'),migrationStatus=$('#migrationStatus');
-const libraryControls=['#newButton','#emptyNewButton','#importButton','#backupButton'];
+const libraryControls=['#newButton','#emptyNewButton','#importButton','#importEvernoteButton','#backupButton'];
 function setLibraryControlsEnabled(enabled){
   libraryControls.forEach(selector=>{const control=$(selector);if(control)control.disabled=!enabled;});
 }
@@ -386,6 +388,77 @@ async function importFiles(files){
   if(added){const newest=items.filter(item=>item.type==='file').sort((a,b)=>b.createdAt-a.createdAt)[0];if(newest)openItem(newest);}
   notify(`${added} file${added===1?'':'s'} imported${skipped?` · ${skipped} unsupported or over 850 KB skipped`:''}`);
 }
+function directChildText(element,name){
+  return [...element.children].find(child=>child.localName===name)?.textContent?.trim()||'';
+}
+function evernoteDate(value,fallback){
+  const match=String(value||'').match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})(?:\.\d+)?Z$/);
+  if(!match)return fallback;
+  const timestamp=Date.UTC(+match[1],+match[2]-1,+match[3],+match[4],+match[5],+match[6]);
+  return Number.isFinite(timestamp)?timestamp:fallback;
+}
+function parseEvernoteContent(enml){
+  const document=new DOMParser().parseFromString(enml,'text/html');
+  document.querySelectorAll('script,style').forEach(element=>element.remove());
+  const attachments=[...document.querySelectorAll('en-media,img')];
+  attachments.forEach(element=>{
+    const mime=element.getAttribute('type')||element.getAttribute('alt')||'file';
+    element.replaceWith(document.createTextNode(`[Attachment not imported: ${mime}]`));
+  });
+  return {
+    body:(document.body.innerText||document.body.textContent||'').replace(/\r\n?/g,'\n').replace(/[ \t]+\n/g,'\n').replace(/\n{3,}/g,'\n\n').trim(),
+    attachmentCount:attachments.length
+  };
+}
+async function importEvernote(file){
+  if(!file.name.toLowerCase().endsWith('.enex'))throw new Error('Choose an Evernote export file with the .enex extension.');
+  if(file.size>100*1024*1024)throw new Error('Evernote export files must be smaller than 100 MB.');
+  const xml=new DOMParser().parseFromString(await file.text(),'application/xml');
+  if(xml.querySelector('parsererror')||xml.documentElement.localName!=='en-export') {
+    throw new Error('This is not a valid Evernote .enex export file.');
+  }
+  const sourceNotes=[...xml.getElementsByTagName('note')];
+  if(!sourceNotes.length)throw new Error('The Evernote export contains no notes.');
+  let imported=0,skippedLarge=0,attachments=0;
+  const failures=[];
+  for(let index=0;index<sourceNotes.length;index++){
+    const source=sourceNotes[index];
+    const title=directChildText(source,'title')||'Untitled note';
+    const content=directChildText(source,'content');
+    const parsed=parseEvernoteContent(content);
+    attachments+=parsed.attachmentCount;
+    const sourceGuid=directChildText(source,'guid');
+    const note={
+      id:sourceGuid&&sourceGuid.length<=140&&/^[A-Za-z0-9_-]+$/.test(sourceGuid)?`evernote-${sourceGuid}`:crypto.randomUUID(),
+      type:'note',
+      title,
+      tags:[...source.children].filter(child=>child.localName==='tag').map(tag=>tag.textContent.trim()).filter(Boolean).join(', '),
+      body:parsed.body,
+      color:'none',
+      createdAt:evernoteDate(directChildText(source,'created'),Date.now()),
+      updatedAt:evernoteDate(directChildText(source,'updated'),Date.now())
+    };
+    if(new TextEncoder().encode(JSON.stringify((({id,...data})=>data)(note))).byteLength>900000){
+      skippedLarge++;
+      continue;
+    }
+    try{
+      await privateContactsApi.saveNote(privateNotesUser,note);
+      imported++;
+    }catch(error){
+      console.error(`Evernote note ${index+1} could not be imported.`,error);
+      failures.push(`${title}: ${error.message}`);
+    }
+  }
+  items=await privateContactsApi.loadNotes(privateNotesUser);
+  renderList();
+  if(items.length){const latest=matchingItems()[0];if(latest)await openItem(latest);}
+  const summary=[`${imported} of ${sourceNotes.length} notes imported.`];
+  if(skippedLarge)summary.push(`${skippedLarge} oversized notes skipped.`);
+  if(attachments)summary.push(`${attachments} attachments were not imported.`);
+  if(failures.length)summary.push(`${failures.length} notes failed; first error: ${failures[0]}`);
+  notify(summary.join(' '));
+}
 async function deleteActive(){
   if(!activeItem)return;
   const label=activeItem.type==='note'?'note':'imported file';
@@ -424,6 +497,15 @@ $('#downloadNote').addEventListener('click',()=>{if(activeItem?.type==='note')do
 $('#downloadFile').addEventListener('click',()=>{if(activeItem?.type==='file')downloadText(activeItem.fileName||`${activeItem.title}.txt`,activeItem.body||'');});
 $('#importButton').addEventListener('click',()=>$('#fileInput').click());
 $('#fileInput').addEventListener('change',async event=>{if(event.target.files.length)await importFiles([...event.target.files]);event.target.value='';});
+$('#importEvernoteButton').addEventListener('click',()=>$('#evernoteFileInput').click());
+$('#evernoteFileInput').addEventListener('change',async event=>{
+  const file=event.target.files?.[0];
+  if(!file)return;
+  const button=$('#importEvernoteButton');button.disabled=true;
+  try{await importEvernote(file);}
+  catch(error){console.error('Evernote import failed.',error);notify(`Evernote import failed: ${error.message}`);}
+  finally{button.disabled=false;event.target.value='';}
+});
 $('#backupButton').addEventListener('click',exportBackup);
 $('#retryNotes').addEventListener('click',()=>{
   if(privateNotesUser)void loadSharedNotes(privateNotesUser);
