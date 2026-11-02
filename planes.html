@@ -19,6 +19,10 @@ h2{margin:16px 0 6px;font-size:18px}
 .logo{width:20px;height:20px;border-radius:4px;vertical-align:-4px;margin-right:6px;background:#fff}
 .c small{color:var(--mut)}
 .c a{color:#58a6ff;text-decoration:none}
+.aircraft-photo{display:block;width:min(100%,520px);max-height:270px;object-fit:cover;margin:10px 0 4px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+.photo-credit,.photo-placeholder{display:block;margin:0 0 8px;color:var(--mut);font-size:11px}
+.photo-placeholder{padding:10px;border:1px dashed var(--line);border-radius:8px}
+.arrival-estimate{margin:5px 0;color:#9ac7ff;font-size:13px}
 details{margin-top:6px}summary{cursor:pointer;color:var(--mut);font-size:13px}
 dl{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;margin:6px 0 0;font-size:13px}dt{color:var(--mut)}dd{margin:0}
 #status{padding:6px 10px;color:var(--mut);font-size:13px}
@@ -41,7 +45,7 @@ nav#pages a.on{background:var(--acc);border-color:var(--acc)}
 <div id="status">Loading…</div>
 <main>
   <div id="list"></div>
-  <p style="color:var(--mut);font-size:13px">Live ADS-B data from aircraft within 25 nm of each airport. Airline and route (from → to) come from a public route database and may occasionally be wrong or missing, especially for small planes and charters. Arriving/departing uses the route when known, otherwise it is estimated from altitude, climb rate and heading. <b>Delays are not available</b>: that needs schedule data from a paid service. For delays and schedules open
+  <p style="color:var(--mut);font-size:13px">Live ADS-B data from aircraft within 25 nm of each airport. Aircraft photos are representative images of the same aircraft type, not necessarily the exact aircraft being tracked; photo credits and licenses link to Wikimedia Commons. Airline and route (from → to) come from a public route database and may occasionally be wrong or missing, especially for small planes and charters. Arriving/departing uses the route when known, otherwise it is estimated from altitude, climb rate and heading. Arrival estimates are based on current distance and speed, not an airline schedule. <b>Gate assignments, boarding times and schedule-based arrival times are not available</b> from ADS-B; those need a separate airline or airport schedule feed. For airport boards open
     <a style="color:#58a6ff" href="https://www.flightaware.com/live/airport/CYYZ" target="_blank" rel="noopener noreferrer">YYZ board ↗</a> ·
     <a style="color:#58a6ff" href="https://www.flightaware.com/live/airport/CYHM" target="_blank" rel="noopener noreferrer">YHM board ↗</a>.
     Aircraft that don't broadcast ADS-B (some military) are not shown.</p>
@@ -81,6 +85,40 @@ function classify(p,ap,code){
 }
 const LABEL={arr:'ARRIVING',dep:'DEPARTING',gnd:'ON GROUND',other:'NEARBY'};
 const fmt=(v,u='')=>v===undefined||v===null?'–':v+u;
+const AIRCRAFT_NAMES={
+  A19N:'Airbus A319neo',A20N:'Airbus A320neo',A21N:'Airbus A321neo',A319:'Airbus A319',A320:'Airbus A320',A321:'Airbus A321',
+  A333:'Airbus A330-300',A359:'Airbus A350-900',A388:'Airbus A380',BCS1:'Airbus A220-100',BCS3:'Airbus A220-300',
+  B38M:'Boeing 737 MAX 8',B39M:'Boeing 737 MAX 9',B737:'Boeing 737',B738:'Boeing 737-800',B739:'Boeing 737-900',
+  B752:'Boeing 757-200',B763:'Boeing 767-300',B772:'Boeing 777-200',B77W:'Boeing 777-300ER',B788:'Boeing 787-8',B789:'Boeing 787-9',
+  C172:'Cessna 172',C182:'Cessna 182',C208:'Cessna 208 Caravan',CRJ2:'Bombardier CRJ-200',CRJ7:'Bombardier CRJ-700',CRJ9:'Bombardier CRJ-900',
+  DH8D:'De Havilland Canada Dash 8 Q400',E170:'Embraer 170',E175:'Embraer 175',E190:'Embraer 190',E195:'Embraer 195',
+  PC12:'Pilatus PC-12',P28A:'Piper PA-28 Cherokee',PA32:'Piper PA-32 Cherokee Six'
+};
+const photoCache=new Map();
+function aircraftPhoto(type){
+  if(!type)return Promise.resolve(null);
+  if(photoCache.has(type))return Promise.resolve(photoCache.get(type));
+  const model=AIRCRAFT_NAMES[type];
+  if(!model){photoCache.set(type,null);return Promise.resolve(null);}
+  const params=new URLSearchParams({action:'query',generator:'search',gsrsearch:`intitle:"${model}"`,gsrnamespace:'6',gsrlimit:'8',prop:'imageinfo',iiprop:'url|extmetadata',iiurlwidth:'720',format:'json',origin:'*'});
+  const request=fetch(`https://commons.wikimedia.org/w/api.php?${params}`)
+    .then(response=>{if(!response.ok)throw new Error(`Wikimedia Commons returned HTTP ${response.status}`);return response.json();})
+    .then(result=>{
+      const pages=Object.values(result.query?.pages||{}).sort((a,b)=>a.index-b.index);
+      const page=pages.find(candidate=>candidate.imageinfo?.[0]?.thumburl&&/\.(?:jpe?g|png)$/i.test(candidate.title));
+      if(!page)return null;
+      const info=page.imageinfo[0],metadata=info.extmetadata||{};
+      const imageUrl=new URL(info.thumburl),filePage=new URL(info.descriptionurl);
+      if(imageUrl.protocol!=='https:'||!imageUrl.hostname.endsWith('wikimedia.org')||filePage.protocol!=='https:'||filePage.hostname!=='commons.wikimedia.org')return null;
+      const artist=new DOMParser().parseFromString(metadata.Artist?.value||'','text/html').body.textContent.trim();
+      const licenseUrl=metadata.LicenseUrl?.value||'';
+      return {url:imageUrl.href,page:filePage.href,title:page.title.replace(/^File:/,''),artist,license:metadata.LicenseShortName?.value||'license details',licenseUrl:/^https:\/\/creativecommons\.org\//.test(licenseUrl)?licenseUrl:''};
+    })
+    .catch(error=>{console.warn(`Aircraft photo lookup failed for ${type}.`,error);return null;})
+    .then(photo=>{photoCache.set(type,photo);render();return photo;});
+  photoCache.set(type,request);
+  return request;
+}
 const FIELDS=[['Airline','airline'],['Hex (ICAO)','hex'],['Registration','r'],['Type code','t'],['Description','desc'],['Operator','ownOp'],['Year','year'],['Category','category'],
  ['Baro altitude','alt_baro',' ft'],['Geom altitude','alt_geom',' ft'],['Selected altitude','nav_altitude_mcp',' ft'],['Ground speed','gs',' kt'],['IAS','ias',' kt'],['TAS','tas',' kt'],['Mach','mach'],
  ['Track','track','°'],['Heading','true_heading','°'],['Baro rate','baro_rate',' ft/min'],['Geom rate','geom_rate',' ft/min'],['Squawk','squawk'],['Emergency','emergency'],
@@ -90,8 +128,16 @@ const routeText=p=>p.route?p.route.map(a=>`${a.city||a.name} (${a.iata||a.icao})
 const searchText=p=>[p.flight,p.r,p.t,p.desc,p.ownOp,p.airline,p.hex,routeText(p)].join(' ').toLowerCase();
 function card(p,ap){
   const k=p._k,call=(p.flight||'').trim()||p.r||p.hex;
+  const photo=photoCache.get(p.t);
+  if(p.t&&!photoCache.has(p.t))void aircraftPhoto(p.t);
   const alt=p.alt_baro==='ground'?'ground':(p.alt_baro!=null?Math.round(p.alt_baro).toLocaleString()+' ft':'–');
   const link=p.hex?`https://globe.adsbexchange.com/?icao=${encodeURIComponent(p.hex)}`:'';
+  const estimate=k==='arr'&&Number.isFinite(+p.dst)&&Number.isFinite(+p.gs)&&+p.gs>30
+    ?(+p.dst<0.7?'Estimated arrival: near airport':`Estimated arrival near airport: ~${Math.max(1,Math.round(+p.dst/+p.gs*60))} min`)
+    :'';
+  const photoHtml=photo
+    ?`<a href="${esc(photo.page)}" target="_blank" rel="noopener noreferrer"><img class="aircraft-photo" src="${esc(photo.url)}" alt="Representative ${esc(AIRCRAFT_NAMES[p.t]||p.t)} aircraft photo" loading="lazy"></a><small class="photo-credit">Representative type photo · <a href="${esc(photo.page)}" target="_blank" rel="noopener noreferrer">${esc(photo.title)}</a>${photo.artist?' · '+esc(photo.artist):''}${photo.licenseUrl?' · License: <a href="'+esc(photo.licenseUrl)+'" target="_blank" rel="noopener noreferrer">'+esc(photo.license)+'</a>':' · '+esc(photo.license)}</small>`
+    :photo===null?'<small class="photo-placeholder">No representative photo found for this aircraft type.</small>':'';
   const rows=FIELDS.map(([l,key,u])=>{
     let v=key==='_pos'?(p.lat!=null?p.lat.toFixed(4)+', '+p.lon.toFixed(4):undefined):p[key];
     return v===undefined?'':`<dt>${l}</dt><dd>${esc(v)}${v!==undefined&&u&&key!=='_pos'?esc(u):''}</dd>`;
@@ -99,6 +145,8 @@ function card(p,ap){
   const logo=p.airlineDomain?`<img class="logo" src="https://www.google.com/s2/favicons?domain=${encodeURIComponent(p.airlineDomain)}&sz=64" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none'">`:'✈ ';
   const rt=routeText(p);
   return `<div class="c"><div class="top"><div>${logo}<b>${esc(call)}</b>${p.airline?' · '+esc(p.airline):''} <span class="tag ${k}">${LABEL[k]}</span></div><small>${p.dst!=null?(+p.dst*1.852).toFixed(1)+' km from '+esc(ap):''}</small></div>
+  ${photoHtml}
+  ${estimate?`<div class="arrival-estimate">${esc(estimate)} (estimate only)</div>`:''}
   ${rt?`<div style="margin:4px 0"><b>${esc(rt)}</b></div>`:''}
   <small>${esc(p.t||'?')}${p.desc?' · '+esc(p.desc):''}${p.r?' · '+esc(p.r):''}${p.ownOp?' · '+esc(p.ownOp):''}</small><br>
   <small>${esc(alt)} · ${fmt(p.gs!=null?Math.round(p.gs):null,' kt')} · ${p.baro_rate!=null?(p.baro_rate>0?'▲':'▼')+Math.abs(p.baro_rate)+' ft/min':''}${p.squawk?' · squawk '+esc(p.squawk):''}</small>

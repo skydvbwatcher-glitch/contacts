@@ -10,6 +10,11 @@ these permissions; do not make the database public.
 Notes can also import Evernote `.enex` exports. Titles, tags, dates, and readable text are
 preserved; embedded Evernote attachments are reported but not imported.
 
+The Planes page shows representative, type-matched aircraft photos from Wikimedia Commons
+with image credits and license links. Arrival estimates use live distance and speed;
+gate assignments, boarding times, and scheduled arrivals require a separate flight schedule
+provider and are not part of the ADS-B feed.
+
 The initial contacts can be imported from the existing contacts JavaScript/JSON file
 after signing in. The public contacts bundle is excluded from Hosting. Contacts
 recovery snapshots and bookmarks remain local to the browser unless explicitly exported.
