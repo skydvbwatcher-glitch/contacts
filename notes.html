@@ -12,6 +12,10 @@ body{margin:0;min-height:100vh;background:linear-gradient(145deg,#111a1b,#0d1213
 button,input,textarea{font:inherit}
 button{color:inherit}
 .shell{max-width:1440px;margin:0 auto;padding:0 28px}
+.page-nav{display:flex;gap:6px;padding:8px 0;border-bottom:1px solid var(--line);overflow-x:auto;white-space:nowrap}
+.page-nav a{flex:none;padding:6px 10px;border:1px solid var(--line);border-radius:7px;color:var(--text);text-decoration:none;font-size:13px}
+.page-nav a:hover{background:var(--raised);border-color:#61716f}
+.page-nav a[aria-current="page"]{background:#2b3a38;border-color:#53675d;color:var(--accent)}
 .topbar{height:74px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);gap:20px}
 .brand{display:flex;align-items:center;gap:12px;min-width:0}
 .brand-mark{display:grid;place-items:center;width:34px;height:34px;border-radius:9px;background:var(--accent);color:var(--accent-ink);font-weight:900;font-size:19px}
@@ -106,10 +110,18 @@ h1{font-size:19px;line-height:1;margin:0;font-weight:650;letter-spacing:0}
 </head>
 <body>
 <div class="shell">
+  <nav class="page-nav" aria-label="Main navigation">
+    <a href="contacts-v2.html">👤 Contacts</a>
+    <a href="bookmarks-v3.html">🔖 Bookmarks</a>
+    <a href="mysites-v4.html">🌐 My sites</a>
+    <a href="gas.html">⛽ Gas</a>
+    <a href="notes.html" aria-current="page">📝 Notes</a>
+    <a href="planes.html">✈ Planes</a>
+    <a href="./">🏠 Home</a>
+  </nav>
   <header class="topbar">
     <div class="brand"><div class="brand-mark" aria-hidden="true">N</div><h1>Notes</h1><span class="local-label">Shared with approved Contacts users</span></div>
     <div class="top-actions">
-      <a class="button" href="./">Contacts</a>
       <button class="button" id="signOutButton" type="button" hidden>Sign out</button>
       <button class="button" id="importButton" type="button">Import .txt</button>
       <input class="file-input" id="fileInput" type="file" accept=".txt,text/plain" multiple>
