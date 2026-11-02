@@ -858,7 +858,7 @@
 </head>
 <body>
 <style>#pagesNav{display:flex;gap:6px;padding:8px 10px;background:#010409;border-bottom:1px solid #30363d;overflow-x:auto;white-space:nowrap;font-family:system-ui,sans-serif}#pagesNav a{color:#e6edf3;text-decoration:none;padding:6px 10px;border-radius:8px;border:1px solid #30363d;font-size:14px}#pagesNav a.on{background:#1f6feb;border-color:#1f6feb}</style>
-<nav id="pagesNav"><a href="contacts-v2.html">👤 Kontakti v2</a><a href="bookmarks-v3.html">🔖 Bookmarks</a><a href="mysites-v4.html">🌐 Moje web stranice</a><a href="gas.html">⛽ Gas</a><a href="planes.html">✈ Planes</a><a href="./" class="on">🏠 Stara</a><a href="#" id="ghAutoBtn">☁ GitHub: …</a></nav>
+<nav id="pagesNav"><a href="contacts-v2.html">👤 Kontakti v2</a><a href="bookmarks-v3.html">🔖 Bookmarks</a><a href="mysites-v4.html">🌐 Moje web stranice</a><a href="gas.html">⛽ Gas</a><a href="notes.html">📝 Notes</a><a href="planes.html">✈ Planes</a><a href="./" class="on">🏠 Stara</a><a href="#" id="ghAutoBtn">☁ GitHub: …</a></nav>
 <script>
 (function(){
   const L=k=>localStorage.getItem(k)||'', btn=document.getElementById('ghAutoBtn');
@@ -1058,11 +1058,15 @@
           <button class="btn secondary" id="quickNotesBackBtn" type="button">← <span data-i18n="navContacts">Contacts</span></button>
         </div>
       </header>
+      <a class="quick-note-link" href="notes.html" target="_blank" rel="noopener noreferrer">
+        <strong>Notes library</strong>
+        <span>Open all notes ↗</span>
+      </a>
       <a class="quick-note-link" href="https://share.evernote.com/note/3dc3c371-3ea0-1925-0df9-9409fee7899b" target="_blank" rel="noopener noreferrer">
         <strong>Evernote note</strong>
         <span>Open in Evernote ↗</span>
       </a>
-      <iframe class="quick-note-frame" src="https://share.evernote.com/note/3dc3c371-3ea0-1925-0df9-9409fee7899b" title="Evernote note" loading="lazy"></iframe>
+      <iframe class="quick-note-frame" src="notes.html" title="Notes library" loading="lazy"></iframe>
       <form class="quick-note-form" id="quickNoteForm">
         <label for="quickNoteInput">Quick note</label>
         <textarea id="quickNoteInput" placeholder="Write a note..."></textarea>
