@@ -1408,7 +1408,7 @@ try {
 } catch (error) {
   console.error('Legacy public backup settings could not be cleared.', error);
 }
-window.privateContactsModule = import('./src/private-contacts.js');
+window.privateContactsModule = import('./src/private-contacts.js?v=editors-1');
 </script>
 <script>
 window.CALENDAR_EVENTS = window.CALENDAR_EVENTS || [];
@@ -1661,7 +1661,7 @@ let deferredPrompt = null;
 const sidebarPwaBtn = document.getElementById('sidebarPwaBtn');
 
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js?v=26').then(registration => registration.update()).catch(() => {});
+  navigator.serviceWorker.register('sw.js?v=27').then(registration => registration.update()).catch(() => {});
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     if (!window.__serviceWorkerReloaded) {
       window.__serviceWorkerReloaded = true;

@@ -307,7 +307,7 @@ async function loadPrivateContacts(user){
 }
 signInButton.onclick=async()=>{
   signInButton.disabled=true;authError.textContent='';
-  try{privateContactsApi=await import('./src/private-contacts.js');await privateContactsApi.signIn();}
+  try{privateContactsApi=await import('./src/private-contacts.js?v=editors-1');await privateContactsApi.signIn();}
   catch(error){console.error('Google sign-in failed.',error);authError.textContent=error.message||'Google sign-in failed.';}
   finally{signInButton.disabled=false;}
 };
@@ -322,7 +322,7 @@ retryButton.onclick=()=>{if(privateContactsUser)loadPrivateContacts(privateConta
     db=await open();await loadAll();render();
     const last=(await tx('snaps','readonly',s=>s.getAll())).pop();
     if(last&&Date.now()-last.ts>864e5)await snapshot('daily');
-    privateContactsApi=await import('./src/private-contacts.js');
+    privateContactsApi=await import('./src/private-contacts.js?v=editors-1');
     privateContactsApi.observeAuth(user=>{
       if(user){loadPrivateContacts(user);return;}
       authLoadVersion++;editorAccessUnsubscribe?.();editorAccessUnsubscribe=null;clearContacts();authGate.hidden=false;signInButton.hidden=false;
