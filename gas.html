@@ -70,21 +70,28 @@ const km=(a,b)=>{
   return 2*R*Math.asin(Math.sqrt(h));
 };
 
-const MIRRORS=['https://overpass-api.de/api/interpreter','https://overpass.kumi.systems/api/interpreter','https://overpass.private.coffee/api/interpreter'];
+const MIRRORS=['https://overpass.private.coffee/api/interpreter','https://overpass-api.de/api/interpreter'];
 const CACHE_MS=7*24*3600*1000;
 const GP_MS=3*3600*1000;
 const cacheKey=(maxKm)=>`gas_st_${origin.lat.toFixed(3)}_${origin.lng.toFixed(3)}_${maxKm}`;
 async function fetchOne(url,q){
   const ac=new AbortController(),t=setTimeout(()=>ac.abort(),20000);
   try{
-    const r=await fetch(url+'?data='+encodeURIComponent(q),{signal:ac.signal});
-    if(!r.ok)throw new Error('HTTP '+r.status);
-    return (await r.json()).elements;
+    const r=await fetch(url+'?data='+encodeURIComponent(q),{signal:ac.signal,headers:{Accept:'application/json'}});
+    if(!r.ok)throw new Error(`HTTP ${r.status}`);
+    const data=await r.json();
+    if(!Array.isArray(data.elements))throw new Error(data.remark||'Map server returned an invalid response');
+    return data.elements;
   }finally{clearTimeout(t);}
 }
 async function fetchStations(q){
-  try{return await Promise.any(MIRRORS.map(u=>fetchOne(u,q)));}
-  catch(e){throw new Error((e.errors?.[0]?.message||e.message)+' — the free map servers are busy, try again in a minute');}
+  const errors=[];
+  for(const [i,url] of MIRRORS.entries()){
+    setStatus(`Loading stations from OpenStreetMap… trying ${new URL(url).hostname} (${i+1}/${MIRRORS.length})`);
+    try{return await fetchOne(url,q);}
+    catch(e){errors.push(`${new URL(url).hostname}: ${e.message}`);}
+  }
+  throw new Error(`OpenStreetMap is temporarily unavailable (${errors.join('; ')}). Please try again in 30 seconds.`);
 }
 async function load(force){
   const maxKm=Math.min(50,Math.max(1,+$('#radius').value||50));
@@ -102,7 +109,7 @@ async function load(force){
           const t=e.tags||{},pos={lat:e.lat??e.center?.lat,lng:e.lon??e.center?.lon};
           const addr=[[t['addr:housenumber'],t['addr:street']].filter(Boolean).join(' '),t['addr:city']].filter(Boolean).join(', ');
           return {id:e.type+e.id,name:t.name||t.brand||t.operator||'Gas station',addr,pos,dist:km(origin,pos)};
-        }).filter(x=>Number.isFinite(x.pos.lat)&&x.dist<=maxKm);
+        }).filter(x=>Number.isFinite(x.pos.lat)&&Number.isFinite(x.pos.lng)&&Number.isFinite(x.dist)&&x.dist<=maxKm);
         store.set(ck,JSON.stringify({t:Date.now(),s:stations}));
       }catch(e){
         if(!cached)throw e;
@@ -110,7 +117,8 @@ async function load(force){
       }
     }
     gprices={};
-    const gk=ck+'_gp';let gc=null;try{gc=JSON.parse(store.get(gk,'null'))}catch(e){}
+    const fuel=store.get('gas_fuel','REGULAR_UNLEADED');
+    const gk=ck+'_gp_'+fuel;let gc=null;try{gc=JSON.parse(store.get(gk,'null'))}catch(e){}
     const key=store.get('gas_key','');
     const gFresh=!force&&gc&&Date.now()-gc.t<GP_MS;
     if(gFresh&&key){gprices=gc.g;stations=gc.s;}
@@ -200,7 +208,8 @@ $('#cfg').onclick=()=>{$('#lat').value=origin.lat;$('#lng').value=origin.lng;$('
 $('#save').onclick=()=>{
   store.set('gas_key',$('#key').value.trim());store.set('gas_fuel',$('#fuel').value);
   const la=parseFloat($('#lat').value),lo=parseFloat($('#lng').value);
-  if(Number.isFinite(la)&&Number.isFinite(lo)){origin={lat:la,lng:lo};store.set('gas_lat',la);store.set('gas_lng',lo);}
+  if(Number.isFinite(la)&&Number.isFinite(lo)&&la>=-90&&la<=90&&lo>=-180&&lo<=180){origin={lat:la,lng:lo};store.set('gas_lat',la);store.set('gas_lng',lo);}
+  load(false);
 };
 load(false);
 </script>
