@@ -190,7 +190,12 @@ function render(){
       <small>${x.dist.toFixed(1)} km · <a href="${esc(maps)}" target="_blank" rel="noopener noreferrer">Map / directions</a>${has?(fromG?' · Google price ':' · set ')+esc(new Date(p.t).toLocaleDateString()):''}</small></div>
       <div><input class="pin" type="number" step="0.1" min="0" inputmode="decimal" placeholder="¢/L" data-id="${esc(x.id)}" value="${has?eff(x.id):''}" aria-label="Price in cents per litre for ${esc(x.name)}"></div></div>`;
   }).join('')||'<p style="color:var(--mut)">No stations found.</p>';
-  setStatus(`${rows.length} stations within ${$('#radius').value} km · ${n} with prices · enter prices in ¢/L, cheapest goes to the top`);
+  const priceHint=n
+    ? 'enter missing prices in ¢/L, cheapest goes to the top'
+    : store.get('gas_key','')
+      ? 'Google returned no fuel prices; enter prices in ¢/L or check your API access in Settings'
+      : 'OpenStreetMap has no prices; add a Google Places API key in Settings for automatic prices, or enter ¢/L manually';
+  setStatus(`${rows.length} stations within ${$('#radius').value} km · ${n} with prices · ${priceHint}`);
 }
 
 $('#list').addEventListener('change',e=>{
