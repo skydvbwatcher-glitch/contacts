@@ -23,6 +23,37 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/contactAccess/$(request.auth.token.email)).data.enabled == true;
     }
 
+    function canAccessPrivateData(userId) {
+      return (isOwner() && request.auth.uid == userId)
+        || (isApprovedEditor() && userId == accessConfig().ownerUid);
+    }
+
+    function validNote(noteId) {
+      return request.resource.data.keys().hasOnly([
+          'type', 'title', 'tags', 'body', 'color', 'fileName',
+          'byteSize', 'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.keys().hasAll([
+          'type', 'title', 'tags', 'body', 'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.type in ['note', 'file']
+        && request.resource.data.title is string
+        && request.resource.data.tags is string
+        && request.resource.data.body is string
+        && request.resource.data.body.size() <= 900000
+        && request.resource.data.createdAt is int
+        && request.resource.data.updatedAt is int
+        && (request.resource.data.type != 'note'
+          || (request.resource.data.keys().hasAll(['color'])
+            && request.resource.data.color in ['none', 'rose', 'amber', 'lemon', 'mint', 'sky', 'lilac']))
+        && (request.resource.data.type != 'file'
+          || (request.resource.data.keys().hasAll(['fileName', 'byteSize'])
+            && request.resource.data.fileName is string
+            && request.resource.data.byteSize is int
+            && request.resource.data.byteSize >= 0))
+        && noteId.size() <= 150;
+    }
+
     match /contactAccess/config {
       allow get: if isVerifiedUser();
       allow list: if false;
@@ -44,14 +75,20 @@ service cloud.firestore {
 
     match /users/{userId}/privateData/{documentId} {
       allow read: if documentId == 'contacts'
-        && ((isOwner() && request.auth.uid == userId)
-          || (isApprovedEditor() && userId == accessConfig().ownerUid));
+        && canAccessPrivateData(userId);
       allow create, update: if documentId == 'contacts'
-        && ((isOwner() && request.auth.uid == userId)
-          || (isApprovedEditor() && userId == accessConfig().ownerUid))
+        && canAccessPrivateData(userId)
         && request.resource.data.keys().hasOnly(['contacts', 'updatedAt'])
         && request.resource.data.contacts is list;
       allow delete: if false;
+
+      match /items/{noteId} {
+        allow read: if documentId == 'notes' && canAccessPrivateData(userId);
+        allow create, update: if documentId == 'notes'
+          && canAccessPrivateData(userId)
+          && validNote(noteId);
+        allow delete: if documentId == 'notes' && canAccessPrivateData(userId);
+      }
     }
   }
 }

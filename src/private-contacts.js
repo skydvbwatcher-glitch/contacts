@@ -95,6 +95,51 @@ export async function saveContacts(user, contacts) {
   await setDoc(reference, { contacts, updatedAt: serverTimestamp() });
 }
 
+function notesCollection(ownerUid) {
+  return collection(db, "users", ownerUid, "privateData", "notes", "items");
+}
+
+export async function loadNotes(user) {
+  const ownerUid = await assertCanAccess(user);
+  const snapshot = await getDocs(notesCollection(ownerUid));
+  return snapshot.docs.map(note => ({ ...note.data(), id: note.id }));
+}
+
+export async function saveNote(user, note) {
+  const ownerUid = await assertCanAccess(user);
+  if (!note || typeof note.id !== "string" || !note.id || note.id.includes("/")) {
+    throw new Error("The note has an invalid ID.");
+  }
+  const { id, ...data } = note;
+  if (new TextEncoder().encode(JSON.stringify(data)).byteLength > 900000) {
+    throw new Error("This note is too large to store securely. Keep each note under 900 KB.");
+  }
+  await setDoc(doc(notesCollection(ownerUid), id), data);
+}
+
+export async function deleteNote(user, id) {
+  const ownerUid = await assertCanAccess(user);
+  if (typeof id !== "string" || !id || id.includes("/")) throw new Error("The note has an invalid ID.");
+  await deleteDoc(doc(notesCollection(ownerUid), id));
+}
+
+export function observeNotes(user, callback, onError = console.error) {
+  let ownerUid;
+  let unsubscribe = () => {};
+  let cancelled = false;
+  assertCanAccess(user).then(uid => {
+    if (cancelled) return;
+    ownerUid = uid;
+    unsubscribe = onSnapshot(notesCollection(ownerUid), snapshot => {
+      callback(snapshot.docs.map(note => ({ ...note.data(), id: note.id })));
+    }, onError);
+  }).catch(onError);
+  return () => {
+    cancelled = true;
+    unsubscribe();
+  };
+}
+
 export async function listAuthorizedEditors(user) {
   if (!isOwner(user)) throw new Error("Only the contact owner can manage editor access.");
   await getOwnerUid(user);

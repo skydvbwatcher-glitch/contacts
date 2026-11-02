@@ -93,6 +93,13 @@ h1{font-size:19px;line-height:1;margin:0;font-weight:650;letter-spacing:0}
 .notice{position:fixed;right:22px;bottom:20px;max-width:min(420px,calc(100vw - 32px));padding:11px 14px;border:1px solid #53615b;border-radius:7px;background:#1e2b2c;color:var(--text);box-shadow:0 8px 26px #0005;font-size:13px;z-index:5}
 .notice[hidden]{display:none}
 .file-input{display:none}
+#authGate{position:fixed;inset:0;z-index:10;display:grid;place-items:center;padding:20px;background:#0d1213}
+#authGate[hidden]{display:none}
+#authCard{width:min(440px,100%);padding:24px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+#authCard p{margin:10px 0;color:var(--muted)}
+#authCard button{margin:6px 6px 0 0}
+#authError{color:var(--danger)!important}
+#migrationActions{margin-top:12px}
 @media(max-width:760px){.shell{padding:0 14px}.topbar{height:64px}.local-label{display:none}.top-actions{gap:6px}.button{min-height:36px;padding:0 10px;font-size:13px}.toolbar{flex-wrap:wrap;gap:9px;padding:12px 0}.search-wrap{flex-basis:100%;max-width:none}.library-meta{margin-left:auto}.workspace{grid-template-columns:1fr;gap:10px;min-height:auto}.sidebar{max-height:37vh;min-height:200px}.detail{min-height:58vh}.editor{padding:20px 17px}.title-input{font-size:25px}.file-head{padding:20px 17px}.file-content{padding:18px 17px}.file-footer{padding:12px 17px}}
 @media(max-width:420px){.brand{gap:8px}.brand-mark{width:30px;height:30px}.topbar{gap:8px}.top-actions .button{padding:0 8px}.filter{padding:6px 8px;font-size:12px}.library-meta{font-size:11px}}
 </style>
@@ -100,8 +107,10 @@ h1{font-size:19px;line-height:1;margin:0;font-weight:650;letter-spacing:0}
 <body>
 <div class="shell">
   <header class="topbar">
-    <div class="brand"><div class="brand-mark" aria-hidden="true">N</div><h1>Notes</h1><span class="local-label">Saved in this browser</span></div>
+    <div class="brand"><div class="brand-mark" aria-hidden="true">N</div><h1>Notes</h1><span class="local-label">Shared with approved Contacts users</span></div>
     <div class="top-actions">
+      <a class="button" href="./">Contacts</a>
+      <button class="button" id="signOutButton" type="button" hidden>Sign out</button>
       <button class="button" id="importButton" type="button">Import .txt</button>
       <input class="file-input" id="fileInput" type="file" accept=".txt,text/plain" multiple>
       <button class="button" id="backupButton" type="button">Export backup</button>
@@ -153,6 +162,21 @@ h1{font-size:19px;line-height:1;margin:0;font-weight:650;letter-spacing:0}
   </main>
 </div>
 <div class="notice" id="notice" role="status" hidden></div>
+<section id="authGate" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+  <div id="authCard">
+    <h2 id="authTitle">Private Notes</h2>
+    <p id="authStatus">Checking sign-in…</p>
+    <p id="authError" role="alert"></p>
+    <button class="button primary" id="authSignIn" type="button" hidden>Sign in with Google</button>
+    <button class="button" id="retryNotes" type="button" hidden>Retry</button>
+    <div id="migrationActions" hidden>
+      <p id="migrationStatus"></p>
+      <button class="button primary" id="migrateLocalNotes" type="button">Import this browser’s notes</button>
+      <button class="button" id="exportLocalNotes" type="button" hidden>Download local backup</button>
+      <button class="button" id="skipMigration" type="button">Start with shared Notes</button>
+    </div>
+  </div>
+</section>
 <script>
 const $=selector=>document.querySelector(selector);
 const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
@@ -161,8 +185,9 @@ const formatSize=bytes=>bytes<1024?`${bytes} B`:`${(bytes/1024).toFixed(1)} KB`;
 const normalizeSearch=value=>String(value??'').normalize('NFC').toLocaleLowerCase();
 const COLORS=['none','rose','amber','lemon','mint','sky','lilac'];
 const noteColor=value=>COLORS.includes(value)?value:'none';
-const MAX_FILE_BYTES=5*1024*1024;
-let database,items=[],activeId=null,activeItem=null,filter='all',saveTimer,noticeTimer;
+const MAX_FILE_BYTES=850000;
+let database,items=[],localItems=[],activeId=null,activeItem=null,filter='all',saveTimer,noticeTimer;
+let privateContactsApi=null,privateNotesUser=null,notesUnsubscribe=null,editorAccessUnsubscribe=null,authLoadVersion=0,migrationItems=[];
 
 function openDatabase(){
   return new Promise((resolve,reject)=>{
@@ -184,9 +209,83 @@ function transact(mode,operation){
     transaction.onerror=transaction.onabort=()=>reject(transaction.error);
   });
 }
-const loadItems=()=>transact('readonly',store=>store.getAll());
-const putItem=item=>transact('readwrite',store=>store.put(item));
-const removeItem=id=>transact('readwrite',store=>store.delete(id));
+const loadLocalItems=()=>transact('readonly',store=>store.getAll());
+const putLocalItem=item=>transact('readwrite',store=>store.put(item));
+const removeLocalItem=id=>transact('readwrite',store=>store.delete(id));
+const loadItems=()=>privateNotesUser?privateContactsApi.loadNotes(privateNotesUser):loadLocalItems();
+const putItem=item=>privateNotesUser?privateContactsApi.saveNote(privateNotesUser,item):putLocalItem(item);
+const removeItem=id=>privateNotesUser?privateContactsApi.deleteNote(privateNotesUser,id):removeLocalItem(id);
+const authGate=$('#authGate'),authStatus=$('#authStatus'),authError=$('#authError');
+const signInButton=$('#authSignIn'),signOutButton=$('#signOutButton');
+const migrationActions=$('#migrationActions'),migrationStatus=$('#migrationStatus');
+const libraryControls=['#newButton','#emptyNewButton','#importButton','#backupButton'];
+function setLibraryControlsEnabled(enabled){
+  libraryControls.forEach(selector=>{const control=$(selector);if(control)control.disabled=!enabled;});
+}
+function clearSharedNotes(){
+  privateNotesUser=null;items=[];activeId=null;activeItem=null;
+  clearTimeout(saveTimer);renderList();showEmpty();
+}
+function showAuth(status,error=''){
+  authStatus.textContent=status;authError.textContent=error;authGate.hidden=false;
+}
+async function loadSharedNotes(user){
+  const version=++authLoadVersion;
+  notesUnsubscribe?.();notesUnsubscribe=null;
+  editorAccessUnsubscribe?.();editorAccessUnsubscribe=null;
+  clearSharedNotes();setLibraryControlsEnabled(false);
+  signInButton.hidden=true;signOutButton.hidden=false;migrationActions.hidden=true;$('#retryNotes').hidden=true;
+  showAuth('Loading shared Notes…');
+  try{
+    const sharedItems=await privateContactsApi.loadNotes(user);
+    if(version!==authLoadVersion)return;
+    privateNotesUser=user;items=sharedItems;renderList();
+    const isOwner=user.emailVerified&&user.email?.toLowerCase()===privateContactsApi.allowedEmail;
+    const sharedIds=new Set(sharedItems.map(item=>item.id));
+    const localOnly=localItems.filter(item=>!sharedIds.has(item.id));
+    migrationItems=localOnly.filter(item=>{
+      const {id,...data}=item;
+      return new TextEncoder().encode(JSON.stringify(data)).byteLength<=900000;
+    });
+    const oversizedLocalCount=localOnly.length-migrationItems.length;
+    if(isOwner&&migrationItems.length){
+      migrationStatus.textContent=`Import ${migrationItems.length} local note${migrationItems.length===1?'':'s'} and text file${migrationItems.length===1?'':'s'} into the shared library? Approved Contacts users will be able to read and edit them.${oversizedLocalCount?` ${oversizedLocalCount} oversized item${oversizedLocalCount===1?' remains':'s remain'} only in this browser.`:''}`;
+      migrationActions.hidden=false;
+      $('#exportLocalNotes').hidden=!oversizedLocalCount;
+    }else if(isOwner&&oversizedLocalCount){
+      migrationStatus.textContent=`${oversizedLocalCount} local item${oversizedLocalCount===1?' is':'s are'} too large for shared storage and will remain only in this browser.`;
+      migrationActions.hidden=false;$('#migrateLocalNotes').hidden=true;$('#exportLocalNotes').hidden=false;
+    }else{
+      authStatus.textContent='Shared Notes loaded.';
+      authGate.hidden=true;setLibraryControlsEnabled(true);
+      if(items.length){const recent=matchingItems()[0];if(recent)await openItem(recent);}
+    }
+    notesUnsubscribe=privateContactsApi.observeNotes(user,updated=>{
+      if(version!==authLoadVersion)return;
+      items=updated;renderList();
+      if(activeId&&!items.some(item=>item.id===activeId))showEmpty();
+    },error=>{
+      console.error('Shared Notes could not be synchronized.',error);
+      notify(`Could not sync shared Notes: ${error.message}`);
+    });
+    editorAccessUnsubscribe=privateContactsApi.observeEditorAccess(user,()=>{
+      authLoadVersion++;notesUnsubscribe?.();notesUnsubscribe=null;
+      editorAccessUnsubscribe?.();editorAccessUnsubscribe=null;
+      clearSharedNotes();setLibraryControlsEnabled(false);signOutButton.hidden=true;
+      showAuth('Notes access was revoked.','The Contacts owner removed your access.');
+      privateContactsApi.signOutUser().catch(error=>{
+        console.error('Revoked Notes user could not be signed out.',error);
+        authError.textContent=error.message||'Sign out to clear this session.';
+      });
+    },error=>console.error('Notes editor access could not be checked.',error));
+  }catch(error){
+    if(version!==authLoadVersion)return;
+    console.error('Shared Notes could not be loaded.',error);
+    clearSharedNotes();signOutButton.hidden=false;
+    showAuth('Could not load shared Notes.',error.message||'Check your connection and try again.');
+    $('#retryNotes').hidden=false;
+  }
+}
 
 function notify(message){
   const notice=$('#notice');notice.textContent=message;notice.hidden=false;
@@ -285,7 +384,7 @@ async function importFiles(files){
   }
   items=await loadItems();renderList();
   if(added){const newest=items.filter(item=>item.type==='file').sort((a,b)=>b.createdAt-a.createdAt)[0];if(newest)openItem(newest);}
-  notify(`${added} file${added===1?'':'s'} imported${skipped?` · ${skipped} unsupported or over 5 MB skipped`:''}`);
+  notify(`${added} file${added===1?'':'s'} imported${skipped?` · ${skipped} unsupported or over 850 KB skipped`:''}`);
 }
 async function deleteActive(){
   if(!activeItem)return;
@@ -295,12 +394,13 @@ async function deleteActive(){
   try{await removeItem(activeId);items=await loadItems();showEmpty();renderList();notify('Deleted');}
   catch(error){notify(`Could not delete: ${error.message}`);}
 }
-async function exportBackup(){
-  const backup={app:'notes-library',version:1,exportedAt:new Date().toISOString(),items};
+function exportItemsBackup(itemsToExport,name='notes-backup'){
+  const backup={app:'notes-library',version:1,exportedAt:new Date().toISOString(),items:itemsToExport};
   const url=URL.createObjectURL(new Blob([JSON.stringify(backup,null,2)],{type:'application/json'}));
-  const link=document.createElement('a');link.href=url;link.download=`notes-backup-${new Date().toISOString().slice(0,10)}.json`;link.click();
+  const link=document.createElement('a');link.href=url;link.download=`${name}-${new Date().toISOString().slice(0,10)}.json`;link.click();
   setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
+async function exportBackup(){exportItemsBackup(items);}
 
 $('#newButton').addEventListener('click',createNote);
 $('#emptyNewButton').addEventListener('click',createNote);
@@ -325,6 +425,46 @@ $('#downloadFile').addEventListener('click',()=>{if(activeItem?.type==='file')do
 $('#importButton').addEventListener('click',()=>$('#fileInput').click());
 $('#fileInput').addEventListener('change',async event=>{if(event.target.files.length)await importFiles([...event.target.files]);event.target.value='';});
 $('#backupButton').addEventListener('click',exportBackup);
+$('#retryNotes').addEventListener('click',()=>{
+  if(privateNotesUser)void loadSharedNotes(privateNotesUser);
+  else void privateContactsApi.authReady.then(user=>{if(user)void loadSharedNotes(user);});
+});
+signInButton.addEventListener('click',async()=>{
+  signInButton.disabled=true;authError.textContent='';
+  try{await privateContactsApi.signIn();}
+  catch(error){console.error('Notes sign-in failed.',error);authError.textContent=error.message||'Google sign-in failed.';}
+  finally{signInButton.disabled=false;}
+});
+signOutButton.addEventListener('click',async()=>{
+  if(!await flushSave())return;
+  try{await privateContactsApi.signOutUser();}
+  catch(error){console.error('Notes sign-out failed.',error);notify(`Could not sign out: ${error.message}`);}
+});
+$('#exportLocalNotes').addEventListener('click',()=>exportItemsBackup(localItems,'local-notes-backup'));
+$('#migrateLocalNotes').addEventListener('click',async event=>{
+  if(!privateNotesUser||!migrationItems.length)return;
+  const button=event.currentTarget;button.disabled=true;
+  migrationStatus.textContent='Importing local notes to the shared library…';
+  try{
+    for(const item of migrationItems)await privateContactsApi.saveNote(privateNotesUser,item);
+    const migratedIds=new Set(migrationItems.map(item=>item.id));
+    localItems=localItems.filter(item=>!migratedIds.has(item.id));
+    items=await privateContactsApi.loadNotes(privateNotesUser);migrationItems=[];
+    authGate.hidden=true;setLibraryControlsEnabled(true);renderList();
+    if(items.length){const recent=matchingItems()[0];if(recent)await openItem(recent);}
+    notify(localItems.length
+      ?`Shared notes imported. ${localItems.length} oversized item${localItems.length===1?' remains':'s remain'} only in this browser.`
+      :'Local notes imported into shared Notes.');
+  }catch(error){
+    console.error('Local Notes migration failed.',error);
+    migrationStatus.textContent=`Import failed: ${error.message}. You can retry; already imported notes will be updated.`;
+    button.disabled=false;
+  }
+});
+$('#skipMigration').addEventListener('click',async()=>{
+  migrationActions.hidden=true;authGate.hidden=true;setLibraryControlsEnabled(true);
+  if(items.length){const recent=matchingItems()[0];if(recent)await openItem(recent);}
+});
 document.addEventListener('keydown',event=>{
   if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='k'){event.preventDefault();$('#search').focus();}
   if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='n'){event.preventDefault();createNote();}
@@ -332,9 +472,27 @@ document.addEventListener('keydown',event=>{
 });
 
 (async()=>{
-  try{database=await openDatabase();items=await loadItems();renderList();
-    if(items.length){const recent=matchingItems()[0];if(recent)openItem(recent);}else showEmpty();
-  }catch(error){$('#libraryMeta').textContent='Storage unavailable';$('#results').innerHTML='<div class="list-empty">This browser could not open local storage. Try loading this page from the website instead of a private browsing window.</div>';$('#emptyState').hidden=false;$('#emptyState').querySelector('p').textContent='Notes are stored locally in this browser. Check browser storage settings and reload.';$('#emptyNewButton').disabled=true;$('#newButton').disabled=true;$('#importButton').disabled=true;$('#backupButton').disabled=true;}
+  try{
+    try{
+      database=await openDatabase();localItems=await loadLocalItems();
+    }catch(error){
+      console.error('Local Notes migration storage is unavailable.',error);
+      localItems=[];
+    }
+    privateContactsApi=await import('./src/private-contacts.js?v=notes-shared-1');
+    privateContactsApi.observeAuth(user=>{
+      if(user){void loadSharedNotes(user);return;}
+      authLoadVersion++;notesUnsubscribe?.();notesUnsubscribe=null;
+      editorAccessUnsubscribe?.();editorAccessUnsubscribe=null;
+      clearSharedNotes();setLibraryControlsEnabled(false);
+      signInButton.hidden=false;signOutButton.hidden=true;migrationActions.hidden=true;$('#retryNotes').hidden=true;
+      showAuth('Sign in with an approved Google account to access shared Notes.');
+    });
+  }catch(error){
+    console.error('Notes could not initialize.',error);
+    setLibraryControlsEnabled(false);
+    showAuth('Notes could not initialize.',error.message||'Reload the page and try again.');
+  }
 })();
 </script>
 </body>
