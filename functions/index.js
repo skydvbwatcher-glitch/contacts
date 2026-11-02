@@ -87,7 +87,13 @@ async function fetchAirport(a) {
   throw lastErr;
 }
 
-exports.planes = onRequest({ region: "us-central1", maxInstances: 3, memory: "256MiB", timeoutSeconds: 60 }, async (req, res) => {
+exports.planes = onRequest({
+  region: "us-central1",
+  maxInstances: 3,
+  memory: "256MiB",
+  timeoutSeconds: 60,
+  cors: ["https://skydvbwatcher-glitch.github.io"],
+}, async (req, res) => {
   res.set("Cache-Control", "public, max-age=10, s-maxage=15");
   if (cache.body && Date.now() - cache.t < 10000) return res.json(cache.body);
   try {
