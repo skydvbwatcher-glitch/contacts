@@ -70,7 +70,7 @@ const km=(a,b)=>{
   return 2*R*Math.asin(Math.sqrt(h));
 };
 
-const MIRRORS=['https://overpass.private.coffee/api/interpreter','https://overpass-api.de/api/interpreter'];
+const MIRRORS=['https://overpass.openstreetmap.fr/api/interpreter','https://overpass.private.coffee/api/interpreter','https://overpass-api.de/api/interpreter'];
 const CACHE_MS=7*24*3600*1000;
 const GP_MS=3*3600*1000;
 const cacheKey=(maxKm)=>`gas_st_${origin.lat.toFixed(3)}_${origin.lng.toFixed(3)}_${maxKm}`;
