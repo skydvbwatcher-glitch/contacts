@@ -69,12 +69,13 @@ input{flex:1;min-width:180px}button{cursor:pointer;background:var(--acc);border-
 
   <h2>OpenMHz (trunked police, fire &amp; EMS)</h2>
   <div class="card">
-    <p class="m" style="margin-top:0">OpenMHz has hundreds of systems, mostly US. Open the full list and pick yours, or search for an area below. It plays on openmhz.com, which does not allow embedding.</p>
+    <p class="m" style="margin-top:0">Search 484 OpenMHz systems by city, county, state (e.g. NY), agency, or words like police or fire. Mostly US; there are no Ontario systems. Opens on openmhz.com, which does not allow embedding.</p>
     <form id="omf">
-      <input id="omq" placeholder="Area, e.g. Chicago, Boston, Buffalo" aria-label="OpenMHz area" required>
-      <button>Search OpenMHz</button>
+      <input id="omq" placeholder="e.g. Boston, Cook IL, fire, NYPD" aria-label="Search OpenMHz systems" autocomplete="off">
+      <button>Search</button>
     </form>
-    <div class="chips" id="omchips"><a href="https://openmhz.com/" target="_blank" rel="noopener noreferrer">▶ All OpenMHz systems</a></div>
+    <div class="grid" id="omres" style="margin-top:12px" aria-live="polite"></div>
+    <div class="chips" id="omchips"><a href="https://openmhz.com/systems" target="_blank" rel="noopener noreferrer">▶ All OpenMHz systems</a></div>
   </div>
 
   <h2>Scanner sites</h2>
@@ -109,11 +110,29 @@ document.getElementById('sf').onsubmit=e=>{
     a.append(b,m);out.append(a);
   }
 };
-const omUrl=q=>'https://www.google.com/search?q='+encodeURIComponent('site:openmhz.com '+q);
-document.getElementById('omf').onsubmit=e=>{e.preventDefault();const q=document.getElementById('omq').value.trim();if(q)window.open(omUrl(q),'_blank','noopener');};
-for(const c of ['Chicago','Boston','New York','Buffalo','Detroit','Los Angeles']){
-  const a=document.createElement('a');a.href=omUrl(c);a.target='_blank';a.rel='noopener noreferrer';a.textContent=c;document.getElementById('omchips').append(a);
+let omData=null;
+const omRes=document.getElementById('omres');
+async function omSearch(){
+  const q=document.getElementById('omq').value.trim().toLowerCase();
+  omRes.textContent='';
+  if(!q)return;
+  if(!omData){
+    try{omData=await (await fetch('data/openmhz-systems.json')).json();}
+    catch(e){omRes.textContent='Could not load the system list.';return;}
+  }
+  const words=q.split(/\s+/);
+  const hits=omData.filter(x=>{const h=(x.n+' '+x.c+' '+x.t+' '+x.d).toLowerCase();return words.every(w=>h.includes(w));});
+  if(!hits.length){omRes.textContent='No OpenMHz systems match “'+q+'”.';return;}
+  for(const x of hits.slice(0,60)){
+    const a=document.createElement('a');a.href='https://openmhz.com/system/'+encodeURIComponent(x.s);a.target='_blank';a.rel='noopener noreferrer';
+    const b=document.createElement('b');b.textContent=x.n+' ↗';
+    const m=document.createElement('small');m.textContent=[x.c,x.t].filter(Boolean).join(', ')+(x.d?' · '+x.d:'');
+    a.append(b,m);omRes.append(a);
+  }
+  if(hits.length>60){const p=document.createElement('p');p.className='m';p.textContent='Showing 60 of '+hits.length+'. Add more words to narrow down.';omRes.append(p);}
 }
+document.getElementById('omf').onsubmit=e=>{e.preventDefault();omSearch();};
+document.getElementById('omq').addEventListener('input',omSearch);
 const chips=document.getElementById('chips');
 for(const c of cities){
   const a=document.createElement('a');a.href=url(c,'police fire');a.target='_blank';a.rel='noopener noreferrer';a.textContent=c;chips.append(a);
