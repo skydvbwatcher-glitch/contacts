@@ -10,10 +10,16 @@ these permissions; do not make the database public.
 Notes can also import Evernote `.enex` exports. Titles, tags, dates, and readable text are
 preserved; embedded Evernote attachments are reported but not imported.
 
-The Planes page shows representative, type-matched aircraft photos from Wikimedia Commons
-with image credits and license links. Arrival estimates use live distance and speed;
-gate assignments, boarding times, and scheduled arrivals require a separate flight schedule
-provider and are not part of the ADS-B feed.
+The Planes page searches worldwide airports by city or country and live aircraft by flight
+callsign or registration, and includes a worldwide live aircraft map, airport traffic maps,
+and a Belgrade Airport (LYBE) radio section with direct Ground 118.300 and Tower 118.100 links to
+LiveATC's official player. LiveATC prohibits third-party use of its audio streams, so its feeds play
+on LiveATC. The page also has airport-code and frequency searches for other LiveATC feeds. The
+worldwide map is provided live by ADS-B Exchange; selected airport traffic uses nearby ADS-B data.
+Airport locations are from the daily-updated OurAirports directory. Aircraft photos are representative,
+type-matched images from Wikimedia Commons with image credits and license links. Arrival estimates use
+live distance and speed; gate assignments, boarding times, and scheduled arrivals require a separate
+flight schedule provider.
 
 The initial contacts can be imported from the existing contacts JavaScript/JSON file
 after signing in. The public contacts bundle is excluded from Hosting. Contacts
@@ -22,5 +28,5 @@ recovery snapshots and bookmarks remain local to the browser unless explicitly e
 Deploy Hosting and the restrictive Firestore rules together:
 
 ```powershell
-firebase deploy --only hosting,firestore:rules
+firebase deploy --only hosting,firestore:rules,functions:planes
 ```

@@ -3,14 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Planes – Toronto &amp; Hamilton</title>
+<title>Planes — Worldwide airports &amp; live aircraft</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
 <style>
 :root{--bg:#0d1117;--card:#161b22;--line:#30363d;--fg:#e6edf3;--mut:#8b949e;--acc:#1f6feb;--ok:#3fb950;--warn:#d29922}
 *{box-sizing:border-box}body{margin:0;font:16px system-ui,sans-serif;background:var(--bg);color:var(--fg)}
 header{position:sticky;top:0;background:var(--card);border-bottom:1px solid var(--line);padding:10px;display:flex;gap:8px;flex-wrap:wrap;z-index:2;align-items:center}
 button{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px;cursor:pointer}
 button.on{background:var(--acc);border-color:var(--acc)}
-main{max-width:900px;margin:auto;padding:10px}
+button:disabled{opacity:.55;cursor:wait}
+main{max-width:1100px;margin:auto;padding:10px}
 h2{margin:16px 0 6px;font-size:18px}
 .c{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px}
 .top{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
@@ -26,26 +28,152 @@ h2{margin:16px 0 6px;font-size:18px}
 details{margin-top:6px}summary{cursor:pointer;color:var(--mut);font-size:13px}
 dl{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;margin:6px 0 0;font-size:13px}dt{color:var(--mut)}dd{margin:0}
 #status{padding:6px 10px;color:var(--mut);font-size:13px}
-nav#pages{display:flex;gap:6px;padding:8px 10px;background:#010409;border-bottom:1px solid var(--line);overflow-x:auto;white-space:nowrap}
-nav#pages a{color:var(--fg);text-decoration:none;padding:6px 10px;border-radius:8px;border:1px solid var(--line);font-size:14px}
-nav#pages a.on{background:var(--acc);border-color:var(--acc)}
+nav#pages{display:flex;align-items:center;justify-content:center;gap:8px;padding:12px 10px;background:var(--bg);border-bottom:1px solid var(--line);overflow-x:auto;white-space:nowrap}
+nav#pages a{color:var(--mut);text-decoration:none;padding:8px 13px;border-radius:999px;border:1px solid transparent;font-size:14px;transition:background .18s,border-color .18s,color .18s}
+nav#pages a:hover{color:var(--fg);background:var(--card);border-color:var(--line)}
+nav#pages a.on{color:#fff;background:var(--acc);border-color:var(--acc)}
+@media(max-width:760px){nav#pages{justify-content:flex-start}}
+.search-panel{max-width:1100px;margin:18px auto 10px;padding:18px;background:var(--card);border:1px solid var(--line);border-radius:14px}
+.search-panel h1{font-size:24px;margin:0 0 5px}
+.search-panel p,.helper{color:var(--mut);font-size:13px;margin:0 0 14px}
+.search-tabs{display:flex;gap:7px;flex-wrap:wrap;margin:14px 0}
+.search-tabs button{min-width:100px}
+.search-row{display:flex;align-items:end;gap:8px;flex-wrap:wrap}
+.search-field{display:grid;gap:5px;flex:1;min-width:220px;color:var(--mut);font-size:13px}
+.search-field input{width:100%;font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px}
+.primary{background:var(--acc);border-color:var(--acc)}
+#airportResults{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px;margin-top:12px}
+.airport-option{text-align:left;min-height:84px;padding:12px}
+.airport-option strong,.airport-option span{display:block}
+.airport-option span{margin-top:5px;color:var(--mut);font-size:12px}
+.search-message{color:var(--mut);font-size:13px;grid-column:1/-1}
+.load-more{grid-column:1/-1;justify-self:center}
+.controls{max-width:1100px;margin:10px auto 0}
+.map-panel{max-width:1100px;margin:10px auto;padding:10px;background:var(--card);border:1px solid var(--line);border-radius:12px}
+.map-heading{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 0 8px;font-size:15px}
+#worldMap,#liveMap{width:100%;height:520px;border:0;border-radius:8px;background:#dce7ed;overflow:hidden}
+#liveMap{height:420px}
+.map-tabs{display:flex;gap:7px;margin:0 0 8px}
+.map-tabs button{font-size:13px}
+.map-tabs button.on{background:var(--acc);border-color:var(--acc)}
+.plane-marker{display:flex;align-items:center;justify-content:center;width:30px;height:30px;border:2px solid #fff;border-radius:50%;background:#1f6feb;color:#fff;box-shadow:0 1px 5px #0009;font-size:19px;line-height:1}
+.plane-marker.arr{background:#238636}.plane-marker.dep{background:#1f6feb}.plane-marker.gnd{background:#9a6700}
+.leaflet-popup-content{min-width:145px}.leaflet-popup-content strong,.leaflet-popup-content span{display:block;margin:3px 0}
+.leaflet-popup-content span{color:#57606a;font-size:12px}
+.radio-panel{max-width:1100px;margin:10px auto;padding:14px;background:var(--card);border:1px solid var(--line);border-radius:12px}
+.radio-heading{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:6px}
+.radio-heading h2{margin:0;font-size:18px}
+.radio-panel p{color:var(--mut);font-size:13px;margin:6px 0 12px}
+.radio-panel a{color:#58a6ff}
+.radio-live-pill{display:inline-flex;align-items:center;gap:6px;color:var(--mut);font-size:11px;font-weight:700;letter-spacing:.08em}
+.lybe-feed-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.lybe-feed-card{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px;border:1px solid var(--line);border-radius:10px;background:#0d1117}
+.lybe-feed-card strong,.lybe-feed-card span{display:block}
+.lybe-feed-card strong{font-size:14px}
+.lybe-feed-card span{margin-top:4px;color:var(--mut);font-size:12px}
+.lybe-feed-link{flex:none;padding:8px 12px;border:1px solid var(--acc);border-radius:8px;background:var(--acc);color:#fff!important;text-decoration:none;font-size:13px;font-weight:650}
+.liveatc-search{margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+.liveatc-search h3{margin:0 0 5px;font-size:15px}
+.liveatc-search>p{margin:0 0 10px;color:var(--mut);font-size:12px}
+.liveatc-search-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.liveatc-search-card{padding:12px;border:1px solid var(--line);border-radius:9px;background:#0d1117}
+.liveatc-search-card label{display:block;margin-bottom:7px;font-size:12px;font-weight:650}
+.liveatc-search-form{display:flex;gap:8px}
+.liveatc-search-form input{width:100%;min-width:0;min-height:40px;padding:8px 10px;border:1px solid var(--line);border-radius:7px;background:var(--card);color:var(--fg);font:inherit}
+.liveatc-search-form input:focus{border-color:var(--acc);outline:2px solid color-mix(in srgb,var(--acc) 35%,transparent);outline-offset:1px}
+.liveatc-search-form button{flex:none;padding:7px 11px;background:var(--acc);border-color:var(--acc);font-size:13px;font-weight:650}
+.liveatc-examples{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:10px;color:var(--mut);font-size:12px}
+.liveatc-examples a{color:#58a6ff}
+.radio-notice{margin:12px 0 0!important;padding:10px 12px;border-left:3px solid var(--acc);background:#0d1117;color:var(--mut);font-size:12px!important;line-height:1.55}
+.radio-notice a{color:#58a6ff}
+.source-note{color:var(--mut);font-size:12px;line-height:1.55;margin:22px 0}
+@media(max-width:700px){.search-panel{margin:10px;padding:14px}.search-panel h1{font-size:21px}.search-tabs button{flex:1;min-width:75px}.search-field{min-width:100%}.top{align-items:flex-start;flex-direction:column;gap:4px}#worldMap{height:440px}#liveMap{height:340px}.lybe-feed-grid,.liveatc-search-grid{grid-template-columns:1fr}.lybe-feed-card{align-items:flex-start;flex-direction:column}}
 </style>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 </head>
 <body>
 <nav id="pages"><a href="contacts-v2.html">👤 Kontakti</a><a href="bookmarks-v3.html">🔖 Bookmarks</a><a href="mysites-v4.html">🌐 Moje web stranice</a><a href="gas.html">⛽ Gas</a><a href="notes.html">📝 Notes</a><a href="planes.html" class="on">✈ Planes</a><a href="./">🏠 Stara</a></nav>
-<header>
+<section class="search-panel" aria-labelledby="pageTitle">
+  <h1 id="pageTitle">Worldwide planes</h1>
+  <p>Find airports around the world, or look up a live aircraft by flight number or tail registration.</p>
+  <div class="search-tabs" role="tablist" aria-label="Search by">
+    <button type="button" class="search-tab on" data-mode="city" role="tab" aria-selected="true">City</button>
+    <button type="button" class="search-tab" data-mode="country" role="tab" aria-selected="false">Country</button>
+    <button type="button" class="search-tab" data-mode="flight" role="tab" aria-selected="false">Flight</button>
+    <button type="button" class="search-tab" data-mode="tail" role="tab" aria-selected="false">Tail</button>
+  </div>
+  <form id="searchForm" class="search-row">
+    <label class="search-field" for="q"><span id="searchLabel">City name</span><input id="q" type="search" placeholder="Try Toronto, London, or Tokyo" autocomplete="off"></label>
+    <button id="go" class="primary" type="submit">Search</button>
+  </form>
+  <p id="searchHint" class="helper" style="margin:8px 0 0">Airport directory includes large, medium, small, seaplane, and heliport locations worldwide.</p>
+  <div id="airportResults" aria-live="polite"></div>
+</section>
+<header class="controls" id="liveControls" aria-label="Aircraft filters">
   <button data-f="all" class="on">All</button>
   <button data-f="arr">Arriving</button>
   <button data-f="dep">Departing</button>
   <button data-f="gnd">On ground</button>
-  <input id="q" type="search" placeholder="Search flight, airline, city, tail…" style="flex:1;min-width:160px;font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px">
-  <button id="go">↻ Refresh</button>
+  <button id="refresh" type="button">↻ Refresh</button>
   <label style="color:var(--mut);font-size:13px"><input type="checkbox" id="auto" checked> auto 20 s</label>
 </header>
 <div id="status">Loading…</div>
+<section class="map-panel" aria-labelledby="mapHeading">
+  <h2 class="map-heading"><span id="mapHeading">Worldwide live flight map</span><small id="mapCount" style="color:var(--mut);font-size:12px;font-weight:400">Global traffic</small></h2>
+  <div class="map-tabs" role="group" aria-label="Map coverage">
+    <button id="worldMapTab" type="button" class="on" aria-pressed="true">Worldwide traffic</button>
+    <button id="nearbyMapTab" type="button" aria-pressed="false">Selected airport</button>
+  </div>
+  <iframe id="worldMap" src="https://globe.adsbexchange.com/" title="Worldwide live aircraft map from ADS-B Exchange" loading="eager" referrerpolicy="no-referrer"></iframe>
+  <div id="liveMap" role="application" aria-label="Map showing live aircraft positions" hidden></div>
+</section>
+<section class="radio-panel" aria-labelledby="radioHeading">
+  <div class="radio-heading">
+    <h2 id="radioHeading">Belgrade Airport radio · LYBE</h2>
+    <span class="radio-live-pill">LIVEATC OFFICIAL PLAYER</span>
+  </div>
+  <p>Choose a Belgrade (BEG/LYBE) frequency. Listening opens in LiveATC’s official player.</p>
+  <div class="lybe-feed-grid" aria-label="Belgrade airport radio feeds">
+    <div class="lybe-feed-card">
+      <div><strong>Ground</strong><span>118.300 MHz · LYBE</span></div>
+      <a class="lybe-feed-link" href="https://www.liveatc.net/hlisten.php?mount=lybe2_gnd_118300&amp;icao=lybe" target="_blank" rel="noopener noreferrer">Listen ↗</a>
+    </div>
+    <div class="lybe-feed-card">
+      <div><strong>Tower</strong><span>118.100 MHz · LYBE</span></div>
+      <a class="lybe-feed-link" href="https://www.liveatc.net/hlisten.php?mount=lybe2_twr_118100&amp;icao=lybe" target="_blank" rel="noopener noreferrer">Listen ↗</a>
+    </div>
+  </div>
+  <section class="liveatc-search" aria-labelledby="liveatcSearchTitle">
+    <h3 id="liveatcSearchTitle">Search LiveATC</h3>
+    <p>Find LiveATC feeds by airport code or radio frequency. Searches open on LiveATC, where its official player is available.</p>
+    <div class="liveatc-search-grid">
+      <div class="liveatc-search-card">
+        <form class="liveatc-search-form" action="https://www.liveatc.net/search/" method="get" target="_blank" rel="noopener">
+          <label class="sr-only" for="liveatcAirportCode">Airport or ARTCC code</label>
+          <input id="liveatcAirportCode" name="icao" type="search" placeholder="Airport code, e.g. BEG or KBOS" autocomplete="off" required maxlength="12" pattern="[A-Za-z0-9]{2,12}" title="Enter a 2–12 character airport or ARTCC code">
+          <button type="submit">Search airport ↗</button>
+        </form>
+      </div>
+      <div class="liveatc-search-card">
+        <form class="liveatc-search-form" action="https://www.liveatc.net/search/f.php" method="get" target="_blank" rel="noopener">
+          <label class="sr-only" for="liveatcFrequency">Frequency in MHz</label>
+          <input id="liveatcFrequency" name="freq" type="text" inputmode="decimal" placeholder="Frequency, e.g. 118.100" autocomplete="off" required maxlength="8" pattern="[0-9]{2,3}(\.[0-9]{1,3})?" title="Enter a frequency such as 118.100">
+          <button type="submit">Search frequency ↗</button>
+        </form>
+      </div>
+    </div>
+    <div class="liveatc-examples">Quick search:
+      <a href="https://www.liveatc.net/search/?icao=BEG" target="_blank" rel="noopener noreferrer">Belgrade (BEG) ↗</a>
+      <a href="https://www.liveatc.net/search/?icao=KBOS" target="_blank" rel="noopener noreferrer">Boston Logan (KBOS) ↗</a>
+      <a href="https://www.liveatc.net/search/?icao=EGLL" target="_blank" rel="noopener noreferrer">London Heathrow (EGLL) ↗</a>
+    </div>
+  </section>
+  <p class="radio-notice">Belgrade feeds play on <a href="https://www.liveatc.net/terms/" target="_blank" rel="noopener noreferrer">LiveATC's official site</a>; its terms prohibit embedding or third-party use of its audio streams. Use the searches below to explore other airports and frequencies on LiveATC.</p>
+</section>
 <main>
   <div id="list"></div>
-  <p style="color:var(--mut);font-size:13px">Live ADS-B data from aircraft within 25 nm of each airport. Aircraft photos are representative images of the same aircraft type, not necessarily the exact aircraft being tracked; photo credits and licenses link to Wikimedia Commons. Airline and route (from → to) come from a public route database and may occasionally be wrong or missing, especially for small planes and charters. Arriving/departing uses the route when known, otherwise it is estimated from altitude, climb rate and heading. Arrival estimates are based on current distance and speed, not an airline schedule. <b>Gate assignments, boarding times and schedule-based arrival times are not available</b> from ADS-B; those need a separate airline or airport schedule feed. For airport boards open
+  <p class="source-note">The worldwide map is provided live by ADS-B Exchange. Searching for an airport switches the nearby map and aircraft list to ADS-B data within 25 nautical miles. Airport names and locations come from the daily-updated OurAirports open-data directory. Aircraft photos are representative images of the same aircraft type, not necessarily the exact aircraft being tracked; photo credits and licenses link to Wikimedia Commons. Airline and route (from → to) come from a public route database and may occasionally be wrong or missing, especially for small planes and charters. Arriving/departing uses the route when known, otherwise it is estimated from altitude, climb rate and heading. Arrival estimates are based on current distance and speed, not an airline schedule. <b>Gate assignments, boarding times and schedule-based arrival times are not available</b> from ADS-B; those need a separate airline or airport schedule feed. For airport boards open
     <a style="color:#58a6ff" href="https://www.flightaware.com/live/airport/CYYZ" target="_blank" rel="noopener noreferrer">YYZ board ↗</a> ·
     <a style="color:#58a6ff" href="https://www.flightaware.com/live/airport/CYHM" target="_blank" rel="noopener noreferrer">YHM board ↗</a>.
     Aircraft that don't broadcast ADS-B (some military) are not shown.</p>
@@ -53,20 +181,108 @@ nav#pages a.on{background:var(--acc);border-color:var(--acc)}
 <script>
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let data=null,filter='all',timer=null;
+let data=null,filter='all',timer=null,searchMode='city',currentParams={},liveController=null,airportController=null;
+let airportMatches=[],airportTotal=0,mapMode='world',visiblePlaneCount=0;
 const PLANES_API=location.hostname==='skydvbwatcher-glitch.github.io'
   ?'https://us-central1-contacts-7ed77.cloudfunctions.net/planes'
   :'/api/planes';
-
 const toRad=x=>x*Math.PI/180;
 const bearing=(a,b)=>{const y=Math.sin(toRad(b.lon-a.lon))*Math.cos(toRad(b.lat)),x=Math.cos(toRad(a.lat))*Math.sin(toRad(b.lat))-Math.sin(toRad(a.lat))*Math.cos(toRad(b.lat))*Math.cos(toRad(b.lon-a.lon));return (Math.atan2(y,x)*180/Math.PI+360)%360;};
 const angDiff=(a,b)=>Math.abs(((a-b+540)%360)-180);
 
 const IATA={YYZ:'CYYZ',YHM:'CYHM'};
+const liveMap=L.map('liveMap',{scrollWheelZoom:false}).setView([25,0],2);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+  maxZoom:19,
+  attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+}).addTo(liveMap);
+const planeMarkers=L.layerGroup().addTo(liveMap);
+const worldRenderer=L.canvas({padding:0.5});
+let mapTarget='';
+function setMapMode(mode){
+  const worldwide=mode==='world';
+  mapMode=worldwide?'world':'nearby';
+  $('#worldMap').hidden=!worldwide;
+  $('#liveMap').hidden=worldwide;
+  $('#worldMapTab').classList.toggle('on',worldwide);
+  $('#nearbyMapTab').classList.toggle('on',!worldwide);
+  $('#worldMapTab').setAttribute('aria-pressed',String(worldwide));
+  $('#nearbyMapTab').setAttribute('aria-pressed',String(!worldwide));
+  $('#mapHeading').textContent=worldwide?'Worldwide live flight map':'Selected airport traffic map';
+  $('#mapCount').textContent=worldwide?'Global traffic from ADS-B Exchange':`${visiblePlaneCount} aircraft with positions`;
+  if(!worldwide)setTimeout(()=>liveMap.invalidateSize(),0);
+}
+liveMap.on('focus',()=>liveMap.scrollWheelZoom.enable());
+liveMap.on('blur',()=>liveMap.scrollWheelZoom.disable());
+function updateMap(){
+  if(!data)return;
+  planeMarkers.clearLayers();
+  const points=[];
+  let visible=0;
+  for(const [code,ap] of Object.entries(data.airports)){
+    const airportPoint=ap.lat!==null&&ap.lat!==undefined&&ap.lon!==null&&ap.lon!==undefined&&
+      Number.isFinite(+ap.lat)&&Number.isFinite(+ap.lon)?[+ap.lat,+ap.lon]:null;
+    if(airportPoint){
+      points.push(airportPoint);
+      const airportMarker=L.circleMarker(airportPoint,{radius:5,color:'#fff',weight:2,fillColor:'#f0883e',fillOpacity:1}).addTo(planeMarkers);
+      const airportPopup=document.createElement('strong');
+      airportPopup.textContent=`${code} · ${ap.name}`;
+      airportMarker.bindPopup(airportPopup);
+    }
+    for(const plane of ap.aircraft||[]){
+      if(plane.lat===null||plane.lat===undefined||plane.lon===null||plane.lon===undefined||
+          plane.lat===''||plane.lon===''||!Number.isFinite(+plane.lat)||!Number.isFinite(+plane.lon))continue;
+      const state=classify(plane,ap,code);
+      if(filter!=='all'&&state!==filter)continue;
+      const position=[+plane.lat,+plane.lon];
+      points.push(position);
+      visible++;
+      const heading=Number.isFinite(+(plane.track??plane.true_heading))?Number(plane.track??plane.true_heading):0;
+      const marker=ap.global
+        ?L.circleMarker(position,{
+          renderer:worldRenderer,radius:3,color:'#fff',weight:0.5,
+          fillColor:state==='arr'?'#238636':state==='dep'?'#1f6feb':state==='gnd'?'#9a6700':'#8b949e',
+          fillOpacity:0.85,
+        }).addTo(planeMarkers)
+        :L.marker(position,{icon:L.divIcon({
+          className:'',
+          html:`<span class="plane-marker ${state}" style="transform:rotate(${heading}deg)" aria-label="${esc((plane.flight||plane.r||plane.hex||'Aircraft')+' heading '+heading+' degrees')}">▲</span>`,
+          iconSize:[30,30],
+          iconAnchor:[15,15],
+        })}).addTo(planeMarkers);
+      const popup=document.createElement('div');
+      const title=document.createElement('strong');
+      title.textContent=(plane.flight||plane.r||plane.hex||'Unknown aircraft').trim();
+      popup.append(title);
+      const details=[
+        LABEL[state],
+        plane.r?`Tail ${plane.r}`:'',
+        plane.t||plane.desc||'',
+        plane.alt_baro==='ground'?'On ground':plane.alt_baro!==null&&plane.alt_baro!==undefined&&Number.isFinite(+plane.alt_baro)?`${Math.round(+plane.alt_baro).toLocaleString()} ft`:'',
+        plane.gs!==null&&plane.gs!==undefined&&Number.isFinite(+plane.gs)?`${Math.round(+plane.gs)} kt`:'',
+        `${(+plane.lat).toFixed(4)}, ${(+plane.lon).toFixed(4)}`,
+      ].filter(Boolean);
+      details.forEach(text=>{const line=document.createElement('span');line.textContent=text;popup.append(line);});
+      marker.bindPopup(popup);
+    }
+  }
+  if(mapMode==='nearby')  visiblePlaneCount=visible;
+  if(mapMode==='nearby')$('#mapCount').textContent=`${visible} aircraft with positions`;
+  const target=JSON.stringify([Object.keys(data.airports),currentParams]);
+  if(points.length&&target!==mapTarget){
+    if(points.length===1)liveMap.setView(points[0],8);
+    else liveMap.fitBounds(L.latLngBounds(points),{padding:[24,24],maxZoom:8});
+    mapTarget=target;
+  }else if(!points.length&&target!==mapTarget){
+    liveMap.setView([25,0],2);
+    mapTarget=target;
+  }
+  setTimeout(()=>liveMap.invalidateSize(),0);
+}
 function classify(p,ap,code){
   const rt=p.route;
   if(rt&&rt.length>=2&&p.alt_baro!=='ground'){
-    const icao=IATA[code];
+    const icao=ap.icao||IATA[code];
     if(rt[rt.length-1].icao===icao&&rt[0].icao!==icao)return 'arr';
     if(rt[0].icao===icao&&rt[rt.length-1].icao!==icao)return 'dep';
   }
@@ -77,6 +293,7 @@ function classify(p,ap,code){
   if(alt>14000)return 'other';
   if(rate<-300)return 'arr';
   if(rate>300)return 'dep';
+  if(!Number.isFinite(ap.lat)||!Number.isFinite(ap.lon))return 'other';
   if(alt<6000&&Number.isFinite(p.track)&&Number.isFinite(p.lat)){
     const toAp=bearing(p,ap);
     return angDiff(p.track,toAp)<70?'arr':'dep';
@@ -125,7 +342,6 @@ const FIELDS=[['Airline','airline'],['Hex (ICAO)','hex'],['Registration','r'],['
  ['Outside air temp','oat',' °C'],['Total air temp','tat',' °C'],['Wind speed','ws',' kt'],['Wind direction','wd','°'],['QNH','nav_qnh',' hPa'],['Position','_pos'],['Last seen','seen',' s ago'],['Source type','type']];
 
 const routeText=p=>p.route?p.route.map(a=>`${a.city||a.name} (${a.iata||a.icao})`).join(' → '):'';
-const searchText=p=>[p.flight,p.r,p.t,p.desc,p.ownOp,p.airline,p.hex,routeText(p)].join(' ').toLowerCase();
 function card(p,ap){
   const k=p._k,call=(p.flight||'').trim()||p.r||p.hex;
   const photo=photoCache.get(p.t);
@@ -155,33 +371,130 @@ function card(p,ap){
 
 function render(){
   if(!data)return;
+  updateMap();
   let html='',total=0;
   for(const [code,ap] of Object.entries(data.airports)){
-    const q=$('#q').value.trim().toLowerCase();
     const list=ap.aircraft.map(p=>({...p,_k:classify(p,ap,code)}))
       .filter(p=>filter==='all'||p._k===filter)
-      .filter(p=>!q||searchText(p).includes(q))
       .sort((a,b)=>(a.dst??999)-(b.dst??999));
     total+=list.length;
-    html+=`<h2>${esc(code)} · ${esc(ap.name)} <small style="color:var(--mut);font-weight:400">${list.length} aircraft</small></h2>`+(list.map(p=>card(p,code)).join('')||'<p style="color:var(--mut)">None right now.</p>');
+    const place=[ap.city,ap.countryName||ap.country].filter(Boolean).join(', ');
+    html+=`<h2>${esc(code)} · ${esc(ap.name)} <small style="color:var(--mut);font-weight:400">${list.length} aircraft${place?' · '+esc(place):''}</small></h2>`+(list.map(p=>card(p,code)).join('')||'<p style="color:var(--mut)">None right now.</p>');
   }
   $('#list').innerHTML=html;
   $('#status').textContent=`${total} aircraft · updated ${new Date(data.t).toLocaleTimeString()}`;
 }
 
-async function load(){
-  $('#go').disabled=true;
+async function loadLive(params=currentParams){
+  if(liveController)liveController.abort();
+  const controller=new AbortController();
+  liveController=controller;
+  currentParams={...params};
+  $('#refresh').disabled=true;
+  $('#status').textContent='Loading live aircraft…';
   try{
-    const r=await fetch(PLANES_API);
+    const query=new URLSearchParams(params);
+    const queryString=query.toString();
+    const r=await fetch(PLANES_API+(queryString?'?'+queryString:''),{signal:controller.signal});
     if(!r.ok)throw new Error((await r.json().catch(()=>({}))).error||('HTTP '+r.status));
-    data=await r.json();render();
-  }catch(e){$('#status').textContent='Error: '+e.message;}
-  $('#go').disabled=false;
+    data=await r.json();
+    $('#list').hidden=false;
+    render();
+  }catch(e){
+    if(e.name!=='AbortError')$('#status').textContent='Error: '+e.message;
+  }finally{if(liveController===controller)$('#refresh').disabled=false;}
 }
-function schedule(){clearInterval(timer);if($('#auto').checked)timer=setInterval(()=>{if(!document.hidden)load();},20000);}
+function showAirportResults(message){$('#airportResults').innerHTML=`<div class="search-message">${esc(message)}</div>`;}
+function renderAirportResults(){
+  const results=$('#airportResults');
+  results.innerHTML='';
+  airportMatches.forEach((airport,index)=>{
+    const place=[airport.city,airport.countryName].filter(Boolean).join(', ')||airport.country||'Location not listed';
+    const code=airport.iata||airport.icao||airport.ident;
+    results.insertAdjacentHTML('beforeend',`<button type="button" class="airport-option" data-airport="${index}"><strong>${esc(airport.name)}</strong><span>${esc(place)} · ${esc(code||'No code')} · ${esc(airport.type.replaceAll('_',' '))}</span></button>`);
+  });
+  if(!airportMatches.length)showAirportResults('No airports found. Try another spelling or search by country.');
+  else{
+    results.insertAdjacentHTML('afterbegin',`<div class="search-message">Showing ${airportMatches.length} of ${airportTotal} matching airports.</div>`);
+    if(airportMatches.length<airportTotal){
+      results.insertAdjacentHTML('beforeend','<button type="button" class="load-more" id="loadMore">Show more airports</button>');
+      $('#loadMore').onclick=()=>searchAirports(true);
+    }
+  }
+}
+async function searchAirports(append=false){
+  const query=$('#q').value.trim();
+  if(query.length<2){showAirportResults('Enter at least 2 characters to search airports.');return;}
+  if(airportController)airportController.abort();
+  airportController=new AbortController();
+  const offset=append?airportMatches.length:0;
+  $('#go').disabled=true;
+  if(!append){airportMatches=[];  airportTotal=0;}
+  showAirportResults(append?'Loading more airports…':'Searching worldwide airports…');
+  try{
+    const params=new URLSearchParams({airports:searchMode,q:query,offset:String(offset)});
+    const r=await fetch(`${PLANES_API}?${params}`,{signal:airportController.signal});
+    if(!r.ok)throw new Error((await r.json().catch(()=>({}))).error||`HTTP ${r.status}`);
+    const result=await r.json();
+    airportMatches=append?airportMatches.concat(result.airports):result.airports;
+    airportTotal=result.total;
+    renderAirportResults();
+    $('#status').textContent=`${airportTotal.toLocaleString()} matching airports · directory from OurAirports`;
+  }catch(e){
+    if(e.name!=='AbortError')showAirportResults('Airport search failed: '+e.message);
+  }finally{$('#go').disabled=false;}
+}
+function setSearchMode(mode){
+  if(airportController)airportController.abort();
+  searchMode=mode;
+  document.querySelectorAll('.search-tab').forEach(button=>{
+    const selected=button.dataset.mode===mode;
+    button.classList.toggle('on',selected);
+    button.setAttribute('aria-selected',String(selected));
+  });
+  const settings={
+    city:['City name','Try Toronto, London, or Tokyo','Search airports by city, airport name, or code.'],
+    country:['Country','Try Canada, Japan, or United States','Find airports in a country. Large and medium airports appear first; use Show more for the rest.'],
+    flight:['Flight number or callsign','Try AC123 or UAL123','Look up a live flight by its ADS-B callsign.'],
+    tail:['Tail registration','Try C-FABC or N123AB','Look up a live aircraft by its registration / tail number.'],
+  }[mode];
+  $('#searchLabel').textContent=settings[0];
+  $('#q').placeholder=settings[1];
+  $('#searchHint').textContent=settings[2];
+  $('#airportResults').innerHTML='';
+}
+async function submitSearch(event){
+  event.preventDefault();
+  const query=$('#q').value.trim();
+  if(searchMode==='city'||searchMode==='country'){await searchAirports();return;}
+  if(!/^[a-z0-9-]{2,12}$/i.test(query)){
+    $('#status').textContent='Enter a valid flight callsign or aircraft registration (2–12 letters, numbers, or hyphens).';
+    return;
+  }
+  const params={[searchMode]:query.toUpperCase()};
+  $('#airportResults').innerHTML='';
+  setMapMode('nearby');
+  await loadLive(params);
+}
+function schedule(){clearInterval(timer);if($('#auto').checked)timer=setInterval(()=>{if(!document.hidden)loadLive();},20000);}
 document.querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>{filter=b.dataset.f;document.querySelectorAll('[data-f]').forEach(x=>x.classList.toggle('on',x===b));render();});
-$('#q').oninput=render;$('#go').onclick=load;$('#auto').onchange=schedule;
-load();schedule();
+document.querySelectorAll('.search-tab').forEach(button=>button.onclick=()=>setSearchMode(button.dataset.mode));
+$('#searchForm').addEventListener('submit',submitSearch);
+$('#airportResults').addEventListener('click',event=>{
+  const button=event.target.closest('[data-airport]');
+  if(!button)return;
+  const airport=airportMatches[Number(button.dataset.airport)];
+  if(!airport)return;
+  const ident=airport.icao||airport.ident||airport.iata||'AIRPORT';
+  setMapMode('nearby');
+  loadLive({lat:String(airport.lat),lon:String(airport.lon),radius:'25',name:airport.name,ident,icao:airport.icao||'',city:airport.city||'',country:airport.countryName||airport.country||''});
+});
+$('#refresh').onclick=()=>loadLive();
+$('#worldMapTab').onclick=()=>setMapMode('world');
+$('#nearbyMapTab').onclick=()=>setMapMode('nearby');
+$('#auto').onchange=schedule;
+setMapMode('world');
+loadLive({});schedule();
 </script>
 </body>
 </html>
