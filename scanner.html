@@ -34,6 +34,16 @@ input{flex:1;min-width:180px}button{cursor:pointer;background:var(--acc);border-
   <p class="m">Live public-safety radio from around the world. Streams play on the providers' own sites (they do not allow embedding), so each link opens in a new tab.</p>
 
   <div class="card">
+    <h2 style="margin-top:0">🔎 Search all scanner sources</h2>
+    <form id="sf">
+      <input id="sq" placeholder="City, county, agency or airport, e.g. Hamilton, Boston police, Toronto fire" aria-label="Search scanners" required>
+      <select id="ss" aria-label="Service"><option value="">Police + fire + EMS</option><option value="police">Police</option><option value="fire">Fire</option><option value="EMS">EMS</option><option value="air traffic">Air traffic</option></select>
+      <button>Search</button>
+    </form>
+    <div class="grid" id="sr" style="margin-top:12px" aria-live="polite"></div>
+  </div>
+
+  <div class="card">
     <h2 style="margin-top:0">Find a feed by city or county</h2>
     <form id="f">
       <input id="q" placeholder="City, county or agency, e.g. Hamilton Ontario" aria-label="City or agency" required>
@@ -84,6 +94,21 @@ const cities=['Hamilton ON','Toronto ON','Burlington ON','Mississauga ON','New Y
 const url=(q,t)=>'https://www.google.com/search?q='+encodeURIComponent('site:broadcastify.com '+q+' '+t+' live audio feed');
 const open_=(q,t)=>window.open(url(q,t),'_blank','noopener');
 document.getElementById('f').onsubmit=e=>{e.preventDefault();const q=document.getElementById('q').value.trim();if(q)open_(q,document.getElementById('type').value);};
+const SRC=[['Broadcastify','broadcastify.com','live audio feed'],['OpenMHz','openmhz.com',''],['Scanner Radio','scannerradio.app','listen live'],['RadioReference','radioreference.com','live audio feed'],['LiveATC','liveatc.net','']];
+document.getElementById('sf').onsubmit=e=>{
+  e.preventDefault();
+  const q=document.getElementById('sq').value.trim(),s=document.getElementById('ss').value;
+  if(!q)return;
+  const out=document.getElementById('sr');out.textContent='';
+  for(const [name,site,extra] of SRC){
+    if(name==='LiveATC'&&s&&s!=='air traffic')continue;
+    const terms=['site:'+site,q,s||'police fire',extra].filter(Boolean).join(' ');
+    const a=document.createElement('a');a.href='https://www.google.com/search?q='+encodeURIComponent(terms);a.target='_blank';a.rel='noopener noreferrer';
+    const b=document.createElement('b');b.textContent=name+' ↗';
+    const m=document.createElement('small');m.textContent='Results for “'+q+'”';
+    a.append(b,m);out.append(a);
+  }
+};
 const omUrl=q=>'https://www.google.com/search?q='+encodeURIComponent('site:openmhz.com '+q);
 document.getElementById('omf').onsubmit=e=>{e.preventDefault();const q=document.getElementById('omq').value.trim();if(q)window.open(omUrl(q),'_blank','noopener');};
 for(const c of ['Chicago','Boston','New York','Buffalo','Detroit','Los Angeles']){
