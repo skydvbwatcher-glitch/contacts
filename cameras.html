@@ -24,21 +24,83 @@ input{width:100%;font:inherit;color:var(--fg);background:var(--card);border:1px 
 .grid a:hover{border-color:var(--acc)}
 .grid b{display:block;color:var(--fg);margin-bottom:4px}.grid small{color:var(--mut)}
 #none{color:var(--mut)}
+.naxi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:12px}
+.naxi-camera{min-width:0;padding:10px;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+.naxi-camera h3{margin:0 0 8px;font-size:16px}
+.naxi-camera video{display:block;width:100%;aspect-ratio:16/9;background:#000}
+.naxi-camera button{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 12px;cursor:pointer}
+.naxi-camera-error{color:#ff7b72;font-size:13px}
 </style>
 </head>
 <body>
 <nav id="pages"><a href="contacts-v2.html">👤 Kontakti</a><a href="bookmarks-v3.html">🔖 Bookmarks</a><a href="mysites-v4.html">🌐 Moje web stranice</a><a href="gas.html">⛽ Gas</a><a href="notes.html">📝 Notes</a><a href="planes.html">✈ Planes</a><a href="scanner.html">🚓 Scanner</a><a href="cameras.html" class="on">📷 Cameras</a><a href="./">🏠 Stara</a></nav>
 <main>
   <h1>📷 Live Cameras</h1>
-  <p class="m">Traffic, border and city cameras. Streams are run by each owner and cannot be embedded here, so every card opens the official camera page in a new tab.</p>
+  <h2>Naxi Radio – Belgrade traffic cameras</h2>
+  <p class="m">Select a camera and press play. Streams are provided by Naxi Radio. <a href="https://www.naxi.rs/kamere" target="_blank" rel="noopener noreferrer">Open Naxi’s camera page ↗</a></p>
+  <div class="naxi-grid" id="naxiCameras"></div>
+  <p class="m">Other traffic, border and city camera directories open on their official websites.</p>
   <input id="q" type="search" placeholder="Filter: Ontario, Toronto, border, Texas, Alberta…" aria-label="Filter cameras" autocomplete="off">
   <div class="tabs" id="tabs"></div>
   <div class="grid" id="list"></div>
   <p id="none" hidden>No cameras match.</p>
 </main>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js"></script>
 <script>
+const NAXI_CAMERAS=[
+  ['Brankov most - Terazijski tunel','brankov'],
+  ['Most Gazela','gazela'],
+  ['Pančevački most','pancevac'],
+  ['Autokomanda','autokomanda'],
+  ['Autoput Novi Beograd','genex'],
+  ['Trg Republike','trgrepublike'],
+  ['Slavija','slavija'],
+  ['Bulevar Mihajla Pupina','pupina'],
+  ['Trg Nikole Pašića','trgnikole'],
+  ['Most na Adi - Bulevar Milutina Milankovića','ada'],
+  ['Savski trg','zeleznicka'],
+  ['Plavi most - Autoput','plavimost'],
+  ['Bogoslovija','bogoslovija'],
+  ['Nemanjina','nemanjina'],
+  ['Jurija Gagarina','gagarina'],
+  ['Takovska','takovska'],
+  ['Kružni tok Novi Beograd','opstinanbg'],
+  ['Bulevar Despota Stefana','despotastefana'],
+  ['Vukov spomenik','vuk']
+];
+const naxiCameras=document.getElementById('naxiCameras');
+for(const [name,stream] of NAXI_CAMERAS){
+  const card=document.createElement('section');card.className='naxi-camera';
+  const title=document.createElement('h3');title.textContent=name;
+  const video=document.createElement('video');video.controls=true;video.preload='none';video.playsInline=true;video.hidden=true;
+  video.setAttribute('aria-label',name);
+  const load=document.createElement('button');load.type='button';load.textContent='Load live camera';
+  const error=document.createElement('p');error.className='naxi-camera-error';error.hidden=true;
+  card.append(title,load,video,error);naxiCameras.append(card);
+  const url=`https://streamer.devnet.rs/hls/${stream}.m3u8`;
+  load.addEventListener('click',()=>{
+    load.disabled=true;load.textContent='Loading camera…';error.hidden=true;
+    if(Hls.isSupported()){
+      const hls=new Hls({autoStartLoad:false});
+      hls.on(Hls.Events.MANIFEST_PARSED,()=>{
+        video.hidden=false;load.hidden=true;
+        video.addEventListener('play',()=>hls.startLoad(),{once:true});
+      });
+      hls.on(Hls.Events.ERROR,(_event,data)=>{
+        if(!data.fatal)return;
+        hls.destroy();load.disabled=false;load.textContent='Retry camera';error.textContent='This camera stream is unavailable right now. Try again later or open Naxi’s camera page.';error.hidden=false;
+      });
+      hls.loadSource(url);hls.attachMedia(video);
+    }else if(video.canPlayType('application/vnd.apple.mpegurl')){
+      video.src=url;video.hidden=false;load.hidden=true;
+    }else{
+      load.disabled=false;load.textContent='Retry camera';error.textContent='Live playback is not supported in this browser.';error.hidden=false;
+    }
+  });
+}
 const D=[
 ['Serbia','Serbia – Border crossing cameras (MUP)','Horgos, Kelebija, Batrovci, Sid, Presevo and more, run by the Ministry of Interior.','https://mup.gov.rs/wps/portal/en/Cameras'],
+['Serbia','Serbia – Naxi Radio traffic cameras','Live Belgrade traffic cameras, including Brankov most, Gazela, Pančevački most, Autokomanda and Trg Republike.','https://www.naxi.rs/kamere'],
 ['Serbia','Serbia – My Patrol','Serbian traffic and road map: police patrols, cameras and road conditions.','https://www.mypatrol.app/?lng=en'],
 ['Serbia','Serbia – Radar Puls','Real-time reports of police and speed radars on Serbian roads.','https://radarpuls.com/sr-latn'],
 ['Serbia','Serbia – Roads and traffic (Putevi Srbije)','Road conditions and traffic for Serbian state roads.','https://www.putevi-srbije.rs/'],
