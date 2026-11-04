@@ -73,6 +73,17 @@ service cloud.firestore {
       allow delete: if isOwner();
     }
 
+    match /users/{userId}/privateData/gasSettings {
+      allow read: if isOwner() && request.auth.uid == userId;
+      allow create, update: if isOwner()
+        && request.auth.uid == userId
+        && request.resource.data.keys().hasOnly(['googleApiKey', 'fuel', 'updatedAt'])
+        && request.resource.data.googleApiKey is string
+        && request.resource.data.googleApiKey.size() <= 200
+        && request.resource.data.fuel in ['REGULAR_UNLEADED', 'MIDGRADE', 'PREMIUM', 'DIESEL'];
+      allow delete: if false;
+    }
+
     match /users/{userId}/privateData/{documentId} {
       allow read: if documentId == 'contacts'
         && canAccessPrivateData(userId);

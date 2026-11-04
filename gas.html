@@ -47,7 +47,7 @@ nav#pages a.on{color:#fff;background:var(--acc);border-color:var(--acc)}
   <label>Latitude</label><input id="lat" type="number" step="any">
   <label>Longitude</label><input id="lng" type="number" step="any">
   <h4 style="margin:16px 0 0">Google prices (optional)</h4>
-  <p style="color:var(--mut);font-size:13px">With a Google API key (Places API (New)), Google’s fuel prices fill empty price boxes. Prices you type always win. The key is stored only in this browser; restrict it to this site’s URL in Google Cloud.</p>
+  <p style="color:var(--mut);font-size:13px">With a Google API key (Places API (New)), Google’s fuel prices fill empty price boxes. Prices you type always win. The key is saved in this browser and synced to your private account when signed in as the owner; restrict it to this site’s URL in Google Cloud.</p>
   <label>Google API key</label><input id="key" type="password" autocomplete="off">
   <label>Fuel type</label><select id="fuel"><option value="REGULAR_UNLEADED">Regular</option><option value="MIDGRADE">Midgrade</option><option value="PREMIUM">Premium</option><option value="DIESEL">Diesel</option></select>
   <div style="display:flex;gap:8px;margin-top:12px"><button value="save" id="save">Save</button><button value="cancel" class="g">Cancel</button></div>
@@ -219,6 +219,32 @@ $('#save').onclick=()=>{
   load(false);
 };
 load(false);
+</script>
+<script type="module">
+import {observeUser,isOwner,signIn,loadGasSettings,saveGasSettings} from './src/gas-settings.js?v=1';
+const btn=document.createElement('button');
+btn.className='g';btn.hidden=true;btn.textContent='🔐 Sign in to sync key';
+$('#cfg').after(btn);
+let owner=null;
+btn.onclick=async()=>{try{await signIn();}catch(e){setStatus('Sign-in failed: '+e.message);}};
+const push=async()=>{
+  if(!owner)return;
+  try{await saveGasSettings(owner,{googleApiKey:store.get('gas_key',''),fuel:store.get('gas_fuel','REGULAR_UNLEADED')});}
+  catch(e){setStatus('Could not sync settings: '+e.message);}
+};
+observeUser(async user=>{
+  owner=isOwner(user)?user:null;
+  btn.hidden=!!owner;
+  if(!owner)return;
+  try{
+    const remote=await loadGasSettings(owner);
+    const localKey=store.get('gas_key','');
+    if(remote?.googleApiKey&&(remote.googleApiKey!==localKey||remote.fuel!==store.get('gas_fuel','REGULAR_UNLEADED'))){
+      store.set('gas_key',remote.googleApiKey);store.set('gas_fuel',remote.fuel);load(false);
+    }else if(!remote&&localKey)push();
+  }catch(e){setStatus('Could not load synced settings: '+e.message);}
+});
+$('#save').addEventListener('click',push);
 </script>
 </body>
 </html>
