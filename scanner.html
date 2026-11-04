@@ -57,6 +57,16 @@ input{flex:1;min-width:180px}button{cursor:pointer;background:var(--acc);border-
     </div>
   </div>
 
+  <h2>OpenMHz (trunked police, fire &amp; EMS)</h2>
+  <div class="card">
+    <p class="m" style="margin-top:0">OpenMHz has hundreds of systems, mostly US. Open the full list and pick yours, or search for an area below. It plays on openmhz.com, which does not allow embedding.</p>
+    <form id="omf">
+      <input id="omq" placeholder="Area, e.g. Chicago, Boston, Buffalo" aria-label="OpenMHz area" required>
+      <button>Search OpenMHz</button>
+    </form>
+    <div class="chips" id="omchips"><a href="https://openmhz.com/" target="_blank" rel="noopener noreferrer">▶ All OpenMHz systems</a></div>
+  </div>
+
   <h2>Scanner sites</h2>
   <div class="grid">
     <a href="https://www.broadcastify.com/listen/" target="_blank" rel="noopener noreferrer"><b>Broadcastify ↗</b><small>Largest directory of live police, fire and EMS feeds. Browse by country, state/province, county.</small></a>
@@ -74,6 +84,11 @@ const cities=['Hamilton ON','Toronto ON','Burlington ON','Mississauga ON','New Y
 const url=(q,t)=>'https://www.google.com/search?q='+encodeURIComponent('site:broadcastify.com '+q+' '+t+' live audio feed');
 const open_=(q,t)=>window.open(url(q,t),'_blank','noopener');
 document.getElementById('f').onsubmit=e=>{e.preventDefault();const q=document.getElementById('q').value.trim();if(q)open_(q,document.getElementById('type').value);};
+const omUrl=q=>'https://www.google.com/search?q='+encodeURIComponent('site:openmhz.com '+q);
+document.getElementById('omf').onsubmit=e=>{e.preventDefault();const q=document.getElementById('omq').value.trim();if(q)window.open(omUrl(q),'_blank','noopener');};
+for(const c of ['Chicago','Boston','New York','Buffalo','Detroit','Los Angeles']){
+  const a=document.createElement('a');a.href=omUrl(c);a.target='_blank';a.rel='noopener noreferrer';a.textContent=c;document.getElementById('omchips').append(a);
+}
 const chips=document.getElementById('chips');
 for(const c of cities){
   const a=document.createElement('a');a.href=url(c,'police fire');a.target='_blank';a.rel='noopener noreferrer';a.textContent=c;chips.append(a);
