@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Live Cameras</title>
+<style>
+:root{--bg:#0d1117;--card:#161b22;--line:#30363d;--fg:#e6edf3;--mut:#8b949e;--acc:#1f6feb}
+*{box-sizing:border-box}body{margin:0;font:16px system-ui,sans-serif;background:var(--bg);color:var(--fg)}
+nav#pages{display:flex;align-items:center;justify-content:center;gap:8px;padding:12px 10px;background:var(--bg);border-bottom:1px solid var(--line);overflow-x:auto;white-space:nowrap}
+nav#pages a{color:var(--mut);text-decoration:none;padding:8px 13px;border-radius:999px;border:1px solid transparent;font-size:14px;transition:background .18s,border-color .18s,color .18s}
+nav#pages a:hover{color:var(--fg);background:var(--card);border-color:var(--line)}
+nav#pages a.on{color:#fff;background:var(--acc);border-color:var(--acc)}
+@media(max-width:760px){nav#pages{justify-content:flex-start}}
+main{max-width:1000px;margin:auto;padding:16px}
+h1{margin:8px 0}h2{margin:24px 0 8px;font-size:18px}
+p.m{color:var(--mut);font-size:14px;margin:4px 0 12px}
+input{width:100%;font:inherit;color:var(--fg);background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.tabs button{font:inherit;color:var(--mut);background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:7px 14px;cursor:pointer}
+.tabs button.on{color:#fff;background:var(--acc);border-color:var(--acc)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.grid a{display:block;color:#58a6ff;text-decoration:none;border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--card)}
+.grid a:hover{border-color:var(--acc)}
+.grid b{display:block;color:var(--fg);margin-bottom:4px}.grid small{color:var(--mut)}
+#none{color:var(--mut)}
+</style>
+</head>
+<body>
+<nav id="pages"><a href="contacts-v2.html">👤 Kontakti</a><a href="bookmarks-v3.html">🔖 Bookmarks</a><a href="mysites-v4.html">🌐 Moje web stranice</a><a href="gas.html">⛽ Gas</a><a href="notes.html">📝 Notes</a><a href="planes.html">✈ Planes</a><a href="scanner.html">🚓 Scanner</a><a href="cameras.html" class="on">📷 Cameras</a><a href="./">🏠 Stara</a></nav>
+<main>
+  <h1>📷 Live Cameras</h1>
+  <p class="m">Traffic, border and city cameras. Streams are run by each owner and cannot be embedded here, so every card opens the official camera page in a new tab.</p>
+  <input id="q" type="search" placeholder="Filter: Ontario, Toronto, border, Texas, Alberta…" aria-label="Filter cameras" autocomplete="off">
+  <div class="tabs" id="tabs"></div>
+  <div class="grid" id="list"></div>
+  <p id="none" hidden>No cameras match.</p>
+</main>
+<script>
+const D=[
+['Serbia','Serbia – Border crossing cameras (MUP)','Horgos, Kelebija, Batrovci, Sid, Presevo and more, run by the Ministry of Interior.','https://mup.gov.rs/wps/portal/en/Cameras'],
+['Serbia','Serbia – Roads and traffic (Putevi Srbije)','Road conditions and traffic for Serbian state roads.','https://www.putevi-srbije.rs/'],
+['Ontario','Ontario 511 – Traffic cameras','Official MTO highway cameras across Ontario (401, 400, QEW, 403 and more).','https://511on.ca/'],
+['Ontario','Toronto – Traffic cameras (City of Toronto)','Downtown, DVP, Gardiner and arterial road cameras.','https://www.toronto.ca/services-payments/streets-parking-transportation/road-restrictions-closures/traffic-cameras/'],
+['Ontario','Niagara Falls – Live cams','Falls views from Niagara Falls Tourism.','https://www.niagarafallslive.com/'],
+['Canada','BC – DriveBC cameras','Highway webcams across British Columbia.','https://www.drivebc.ca/'],
+['Canada','Alberta 511 – Cameras','Highway cameras across Alberta.','https://511.alberta.ca/'],
+['Canada','Saskatchewan – Highway Hotline','Road conditions and cameras for Saskatchewan.','https://hotline.gov.sk.ca/'],
+['Canada','Manitoba 511','Road conditions and cameras for Manitoba.','https://www.manitoba511.ca/'],
+['Canada','Québec 511','Cameras and road conditions for Québec.','https://www.quebec511.info/'],
+['Canada','New Brunswick 511','Road conditions and cameras for New Brunswick.','https://511.gnb.ca/'],
+['Canada','Nova Scotia 511','Road conditions and cameras for Nova Scotia.','https://511.novascotia.ca/'],
+['Canada','Newfoundland and Labrador 511','Road conditions and cameras for NL.','https://511nl.ca/'],
+['Canada','Yukon 511','Road conditions and cameras for Yukon.','https://511yukon.ca/'],
+['Canada','Canada – Weather and road webcams (Environment Canada)','Official weather observation pages.','https://weather.gc.ca/'],
+['USA','New York 511','Cameras across New York State and NYC.','https://511ny.org/'],
+['USA','Pennsylvania 511','PennDOT cameras.','https://www.511pa.com/'],
+['USA','Michigan – MiDrive','MDOT traffic cameras (near Windsor/Detroit).','https://mdotjboss.state.mi.us/MiDrive/'],
+['USA','Ohio – OHGO','ODOT cameras for Ohio.','https://www.ohgo.com/'],
+['USA','Massachusetts – Mass511','MassDOT cameras (Boston area).','https://mass511.com/'],
+['USA','New Jersey 511','NJDOT traffic cameras.','https://511nj.org/'],
+['USA','Illinois – Getting Around Illinois','IDOT cameras (Chicago area).','https://www.travelmidwest.com/'],
+['USA','Florida 511','FDOT cameras across Florida.','https://fl511.com/'],
+['USA','Georgia 511','GDOT cameras (Atlanta and statewide).','https://511ga.org/'],
+['USA','Texas – DriveTexas','TxDOT road conditions and cameras.','https://drivetexas.org/'],
+['USA','California – Caltrans QuickMap','Live cameras across California.','https://quickmap.dot.ca.gov/'],
+['USA','San Francisco Bay Area 511','Bay Area traffic cameras.','https://511.org/'],
+['USA','Washington State DOT','Seattle and statewide cameras.','https://wsdot.com/travel/real-time/map'],
+['USA','Virginia 511','VDOT cameras.','https://511virginia.org/'],
+['USA','Minnesota 511','MnDOT cameras.','https://511mn.org/'],
+['USA','Wisconsin 511','WisDOT cameras.','https://511wi.gov/'],
+['Europe','Europe – Windy webcams map','Map of street, city and traffic webcams across Europe.','https://www.windy.com/webcams'],
+['Europe','Europe – SkylineWebcams','Live HD street and city cams: Italy, Spain, Croatia, Greece, Germany, France and more.','https://www.skylinewebcams.com/en/webcam.html'],
+['Europe','Europe – Webcamtaxi','Street and city webcams by country across Europe.','https://www.webcamtaxi.com/en/'],
+['Europe','Europe – EarthCam','Landmark and city cameras, including Prague, Dublin, Venice.','https://www.earthcam.com/world/'],
+['Europe','Europe – Live street cams (Worldcam)','Street webcams in many European cities.','https://worldcam.eu/'],
+['Europe','Belgrade, Serbia – Webcams','Belgrade city and street cameras.','https://www.webcamtaxi.com/en/serbia/belgrade/'],
+['Europe','Germany – Webcams','City and street cameras in Germany.','https://www.webcamtaxi.com/en/germany/'],
+['Europe','Italy – Webcams (Rome, Venice, Milan)','City and street cameras in Italy.','https://www.skylinewebcams.com/en/webcam/italia.html'],
+['Europe','Spain – Webcams','City and street cameras in Spain.','https://www.skylinewebcams.com/en/webcam/espana.html'],
+['Europe','Croatia – Webcams','City and coast cameras in Croatia.','https://www.skylinewebcams.com/en/webcam/hrvatska.html'],
+['Europe','France – Webcams','City and street cameras in France.','https://www.webcamtaxi.com/en/france/'],
+['Europe','United Kingdom – Traffic cameras (National Highways)','Motorway and A-road cameras for England.','https://trafficcameras.uk/'],
+['Europe','Netherlands – Webcams','City and street cameras in the Netherlands.','https://www.webcamtaxi.com/en/netherlands/'],
+['World','Windy – Webcams worldwide','Map of webcams across the world.','https://www.windy.com/webcams'],
+['World','SkylineWebcams – Live HD cameras','Cities, beaches and landmarks.','https://www.skylinewebcams.com/'],
+['World','EarthCam – Network of webcams','Times Square, landmarks and more.','https://www.earthcam.com/'],
+['World','Webcamtaxi – Cities worldwide','Live city cameras by country.','https://www.webcamtaxi.com/en/']
+];
+const REG=['All',...new Set(D.map(x=>x[0]))];
+let reg='All';
+const tabs=document.getElementById('tabs'),list=document.getElementById('list'),q=document.getElementById('q'),none=document.getElementById('none');
+function draw(){
+  const w=q.value.toLowerCase().split(/\s+/).filter(Boolean);
+  list.textContent='';let n=0;
+  for(const [r,t,d,u] of D){
+    if(reg!=='All'&&r!==reg)continue;
+    const h=(r+' '+t+' '+d).toLowerCase();
+    if(!w.every(x=>h.includes(x)))continue;
+    const a=document.createElement('a');a.href=u;a.target='_blank';a.rel='noopener noreferrer';
+    const b=document.createElement('b');b.textContent=t+' ↗';
+    const s=document.createElement('small');s.textContent=r+' · '+d;
+    a.append(b,s);list.append(a);n++;
+  }
+  none.hidden=n>0;
+}
+for(const r of REG){
+  const b=document.createElement('button');b.textContent=r;b.className=r===reg?'on':'';
+  b.onclick=()=>{reg=r;for(const x of tabs.children)x.className=x.textContent===r?'on':'';draw();};
+  tabs.append(b);
+}
+q.addEventListener('input',draw);draw();
+</script>
+</body>
+</html>
