@@ -17,11 +17,13 @@ dialog{background:var(--card);color:var(--fg);border:1px solid var(--line);borde
 dialog::backdrop{background:#0009}label{display:block;margin:8px 0 2px;color:var(--mut);font-size:13px}
 dialog input,dialog textarea,dialog select{width:100%}.row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
 #status{padding:6px 10px;color:var(--mut);font-size:13px}
-nav#pages{display:flex;gap:6px;padding:8px 10px;background:#010409;border-bottom:1px solid var(--line);overflow-x:auto;white-space:nowrap}
-nav#pages a{color:var(--fg);text-decoration:none;padding:6px 10px;border-radius:8px;border:1px solid var(--line);font-size:14px}
-nav#pages a.on{background:var(--acc);border-color:var(--acc)}
+nav#pages{display:flex;align-items:center;justify-content:center;gap:8px;padding:12px 10px;background:var(--bg);border-bottom:1px solid var(--line);overflow-x:auto;white-space:nowrap}
+nav#pages a{color:var(--mut);text-decoration:none;padding:8px 13px;border-radius:999px;border:1px solid transparent;font-size:14px;transition:background .18s,border-color .18s,color .18s}
+nav#pages a:hover{color:var(--fg);background:var(--card);border-color:var(--line)}
+nav#pages a.on{color:#fff;background:var(--acc);border-color:var(--acc)}
 nav#pages button{margin-left:auto}
 #manageEditors{margin-left:0!important}
+@media(max-width:760px){nav#pages{justify-content:flex-start}}
 #editorAccessDialog{width:min(460px,94vw);padding:20px}
 #editorAccessDialog p,#editorAccessStatus{color:var(--mut)}
 #editorAccessForm{display:flex;gap:8px;flex-wrap:wrap}
